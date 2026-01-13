@@ -1,0 +1,6 @@
+@Betkibans.Server_HostAddress = http://localhost:5192
+
+GET {{Betkibans.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

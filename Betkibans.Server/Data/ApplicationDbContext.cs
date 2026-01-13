@@ -1,0 +1,194 @@
+using Betkibans.Server.Models;
+using Betkibans.Server.Models.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
+namespace Betkibans.Server.Data;
+
+// Changed: Now extends IdentityDbContext<ApplicationUser>
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+{
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
+        : base(options)
+    {
+    }
+    
+    // E-commerce tables (NOT User and Role - Identity handles those)
+    public DbSet<Seller> Sellers { get; set; }
+    public DbSet<Address> Addresses { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Material> Materials { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<ProductImage> ProductImages { get; set; }
+    public DbSet<ProductMaterial> ProductMaterials { get; set; }
+    public DbSet<Cart> Carts { get; set; }
+    public DbSet<CartItem> CartItems { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Review> Reviews { get; set; }
+    public DbSet<RepairRequest> RepairRequests { get; set; }
+    public DbSet<RepairQuote> RepairQuotes { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder); // IMPORTANT: Call base first for Identity
+        
+        // Seller Configuration
+        modelBuilder.Entity<Seller>(entity =>
+        {
+            entity.HasKey(e => e.SellerId);
+            entity.Property(e => e.BusinessName).IsRequired().HasMaxLength(200);
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+        });
+        
+        // Address Configuration
+        modelBuilder.Entity<Address>(entity =>
+        {
+            entity.HasKey(e => e.AddressId);
+            entity.Property(e => e.AddressLine1).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.City).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.District).IsRequired().HasMaxLength(100);
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+        });
+        
+        // Category Configuration
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.HasKey(e => e.CategoryId);
+            entity.Property(e => e.CategoryName).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => e.CategoryName).IsUnique();
+        });
+        
+        // Material Configuration
+        modelBuilder.Entity<Material>(entity =>
+        {
+            entity.HasKey(e => e.MaterialId);
+            entity.Property(e => e.MaterialName).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => e.MaterialName).IsUnique();
+        });
+        
+        // Product Configuration
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.ProductId);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Price).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.Length).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.Width).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.Height).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.Weight).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.AverageRating).HasColumnType("decimal(3,2)");
+            
+            entity.HasOne(e => e.Seller).WithMany(s => s.Products).HasForeignKey(e => e.SellerId);
+            entity.HasOne(e => e.Category).WithMany(c => c.Products).HasForeignKey(e => e.CategoryId);
+        });
+        
+        // ProductImage Configuration
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.HasKey(e => e.ProductImageId);
+            entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(500);
+            entity.HasOne(e => e.Product).WithMany(p => p.ProductImages).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // ProductMaterial Configuration
+        modelBuilder.Entity<ProductMaterial>(entity =>
+        {
+            entity.HasKey(e => e.ProductMaterialId);
+            entity.HasOne(e => e.Product).WithMany(p => p.ProductMaterials).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Material).WithMany(m => m.ProductMaterials).HasForeignKey(e => e.MaterialId).OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // Cart Configuration
+        modelBuilder.Entity<Cart>(entity =>
+        {
+            entity.HasKey(e => e.CartId);
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+        });
+        
+        // CartItem Configuration
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.CartItemId);
+            entity.HasOne(e => e.Cart).WithMany(c => c.CartItems).HasForeignKey(e => e.CartId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Product).WithMany(p => p.CartItems).HasForeignKey(e => e.ProductId);
+        });
+        
+        // Order Configuration
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.OrderId);
+            entity.Property(e => e.OrderNumber).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SubTotal).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.ShippingCost).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.TaxAmount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(10,2)");
+            entity.HasIndex(e => e.OrderNumber).IsUnique();
+            
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+            entity.HasOne(e => e.Address).WithMany(a => a.Orders).HasForeignKey(e => e.AddressId);
+        });
+        
+        // OrderItem Configuration
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(e => e.OrderItemId);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.TotalPrice).HasColumnType("decimal(10,2)");
+            entity.HasOne(e => e.Order).WithMany(o => o.OrderItems).HasForeignKey(e => e.OrderId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Product).WithMany(p => p.OrderItems).HasForeignKey(e => e.ProductId);
+        });
+        
+        // Payment Configuration
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.PaymentId);
+            entity.Property(e => e.Amount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.PaymentMethod).IsRequired().HasMaxLength(50);
+            entity.HasOne(e => e.Order).WithOne(o => o.Payment).HasForeignKey<Payment>(e => e.OrderId).OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // Review Configuration
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.HasKey(e => e.ReviewId);
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.HasOne(e => e.Product).WithMany(p => p.Reviews).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+        });
+        
+        // RepairRequest Configuration
+        modelBuilder.Entity<RepairRequest>(entity =>
+        {
+            entity.HasKey(e => e.RepairRequestId);
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+            entity.HasOne(e => e.Product).WithMany().HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.SetNull);
+        });
+        
+        // RepairQuote Configuration
+        modelBuilder.Entity<RepairQuote>(entity =>
+        {
+            entity.HasKey(e => e.RepairQuoteId);
+            entity.Property(e => e.EstimatedCost).HasColumnType("decimal(10,2)");
+            entity.HasOne(e => e.RepairRequest).WithMany(r => r.RepairQuotes).HasForeignKey(e => e.RepairRequestId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Seller).WithMany(s => s.RepairQuotes).HasForeignKey(e => e.SellerId);
+        });
+        
+        // Seed Data
+        modelBuilder.Entity<Category>().HasData(
+            new Category { CategoryId = 1, CategoryName = "Chairs", Description = "Bamboo and cane chairs", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Category { CategoryId = 2, CategoryName = "Tables", Description = "Bamboo and cane tables", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Category { CategoryId = 3, CategoryName = "Storage", Description = "Storage furniture", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Category { CategoryId = 4, CategoryName = "Decorative", Description = "Decorative items", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Category { CategoryId = 5, CategoryName = "Outdoor", Description = "Outdoor furniture", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+        );
+        
+        modelBuilder.Entity<Material>().HasData(
+            new Material { MaterialId = 1, MaterialName = "Bamboo", Description = "Natural bamboo", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Material { MaterialId = 2, MaterialName = "Cane", Description = "Natural cane", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Material { MaterialId = 3, MaterialName = "Rattan", Description = "Natural rattan", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Material { MaterialId = 4, MaterialName = "Mixed", Description = "Mixed materials", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+        );
+    }
+}
