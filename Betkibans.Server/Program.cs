@@ -1,7 +1,10 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Betkibans.Server.Data;
+using Betkibans.Server.Interfaces;
 using Betkibans.Server.Models;
+using Betkibans.Server.Repositories;
+using Betkibans.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -148,6 +151,15 @@ builder.Services.AddScoped<Betkibans.Server.Interfaces.IProductService,
 
 builder.Services.AddScoped<Betkibans.Server.Interfaces.ISellerService,
     Betkibans.Server.Services.SellerService>();
+
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
+builder.Services.AddScoped<IMaterialService, MaterialService>();
+
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICartService, CartService>();
 
 var app = builder.Build();
 

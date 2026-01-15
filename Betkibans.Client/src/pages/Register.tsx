@@ -1,0 +1,212 @@
+import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const Register = () => {
+    const navigate = useNavigate();
+    
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [role, setRole] = useState('Consumer'); 
+    
+    const [message, setMessage] = useState('');
+    const [isError, setIsError] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    
+    const brandGreen = '#2E4F3E';
+    const beigeBg = '#FAF8F5';
+
+    const handleRegister = async (e: any) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setMessage('');
+        setIsError(false);
+
+        if (password !== confirmPassword) {
+            setMessage("Passwords do not match!");
+            setIsError(true);
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            await axios.post('http://localhost:5192/api/auth/register', {
+                fullName: fullName,
+                email: email,
+                phoneNumber: phone,
+                password: password,
+                role: role
+            });
+
+            setMessage("✅ Account Created! Redirecting to Login...");
+            setTimeout(() => {
+                navigate('/');
+            }, 2000);
+
+        } catch (err: any) {
+            setIsError(true);
+            setMessage(err.response?.data?.Message || "Registration Failed. Try a stronger password.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="container-fluid vh-100 d-flex p-0">
+
+            {/* LEFT SIDE: Illustration */}
+            <div className="d-none d-lg-flex col-lg-6 flex-column justify-content-center align-items-center"
+                 style={{ backgroundColor: beigeBg }}>
+
+                <div className="w-75 mb-4">
+                    <h2 className="fw-bold" style={{ color: brandGreen, fontFamily: 'serif', letterSpacing: '1px' }}>
+                        Betkibans
+                    </h2>
+                </div>
+
+                <div className="mb-4">
+                    <img
+                        src="/register-illustration.png"
+                        alt="Join Betkibans"
+                        style={{ maxWidth: '95%', height: 'auto' }}
+                    />
+                </div>
+
+                <div className="d-flex justify-content-between w-75 mt-3 pt-3 border-top">
+                    <div className="d-flex align-items-center gap-2">
+                        <span style={{ fontSize: '1.5rem' }}>📦</span>
+                        <div>
+                            <small className="fw-bold d-block text-dark">Track Orders</small>
+                            <small className="text-muted" style={{ fontSize: '0.7rem' }}>View order history</small>
+                        </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                        <span style={{ fontSize: '1.5rem' }}>🔧</span>
+                        <div>
+                            <small className="fw-bold d-block text-dark">Request Repairs</small>
+                            <small className="text-muted" style={{ fontSize: '0.7rem' }}>Get repair services</small>
+                        </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                        <span style={{ fontSize: '1.5rem' }}>💰</span>
+                        <div>
+                            <small className="fw-bold d-block text-dark">Exclusive Offers</small>
+                            <small className="text-muted" style={{ fontSize: '0.7rem' }}>Deals & discounts</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT SIDE: Registration Form (Tighter Spacing) */}
+            <div className="col-12 col-lg-6 d-flex align-items-center justify-content-center bg-white"
+                 style={{ overflowY: 'auto', height: '100vh', scrollbarWidth: 'none' }}>
+
+                <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+
+                <div style={{ width: '500px', padding: '1.5rem' }}>
+
+                    <h2 className="fw-bold mb-1">Create Your Account</h2>
+                    <p className="text-muted mb-3 small">Sign up now and discover our bamboo & cane furniture collection!</p>
+
+                    {/* Tabs */}
+                    <div className="d-flex mb-3 p-1 rounded-3" style={{ backgroundColor: '#EFEFEF' }}>
+                        <button
+                            className="btn w-50 border-0 rounded-3 text-muted small"
+                            onClick={() => navigate('/')}
+                        >
+                            Login
+                        </button>
+                        <button
+                            className="btn w-50 border-0 rounded-3 shadow-sm fw-bold small"
+                            style={{ backgroundColor: 'white', color: brandGreen }}
+                        >
+                            Register
+                        </button>
+                    </div>
+
+                    {message && (
+                        <div className={`alert ${isError ? 'alert-danger' : 'alert-success'} text-center p-2 small`} role="alert">
+                            {message}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleRegister}>
+                        <div className="mb-2">
+                            <label className="form-label fw-bold small mb-1">Full Name *</label>
+                            <input type="text" className="form-control p-2" placeholder="Your full name" required
+                                   value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                        </div>
+
+                        <div className="mb-2">
+                            <label className="form-label fw-bold small mb-1">Email Address *</label>
+                            <input type="email" className="form-control p-2" placeholder="email@example.com" required
+                                   value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
+
+                        <div className="row mb-2">
+                            <div className="col-6">
+                                <label className="form-label fw-bold small mb-1">Phone Number *</label>
+                                <input type="text" className="form-control p-2" placeholder="+977-98..." required
+                                       value={phone} onChange={(e) => setPhone(e.target.value)} />
+                            </div>
+                            <div className="col-6">
+                                <label className="form-label fw-bold small mb-1">Confirm Password</label>
+                                <input type="password" className="form-control p-2" placeholder="••••••" required
+                                       value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="mb-2">
+                            <label className="form-label fw-bold small mb-1">Password *</label>
+                            <input type="password" className="form-control p-2" placeholder="••••••" required
+                                   value={password} onChange={(e) => setPassword(e.target.value)} />
+                        </div>
+
+                        {/* Role Selection */}
+                        <div className="mb-3 mt-3">
+                            <label className="form-label fw-bold small d-block mb-1">I want to register as:</label>
+                            <div className="d-flex gap-3">
+                                <div className="form-check">
+                                    <input className="form-check-input" type="radio" name="role" id="buyer"
+                                           value="Consumer" checked={role === 'Consumer'} onChange={() => setRole('Consumer')} />
+                                    <label className="form-check-label small" htmlFor="buyer">Customer (Buyer)</label>
+                                </div>
+                                <div className="form-check">
+                                    <input className="form-check-input" type="radio" name="role" id="seller"
+                                           value="Seller" checked={role === 'Seller'} onChange={() => setRole('Seller')} />
+                                    <label className="form-check-label small" htmlFor="seller">Seller (Artisan)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="form-check mb-3">
+                            <input className="form-check-input" type="checkbox" required id="terms" />
+                            <label className="form-check-label small" htmlFor="terms">I agree to the Terms & Conditions</label>
+                        </div>
+
+                        <button type="submit" className="btn w-100 p-2 text-white fw-bold mb-3"
+                                style={{ backgroundColor: brandGreen }} disabled={isLoading}>
+                            {isLoading ? 'Creating Account...' : 'Create Account'}
+                        </button>
+
+                        <div className="text-center small">
+                            Already have an account?
+                            <span
+                                className="fw-bold cursor-pointer"
+                                style={{cursor:'pointer', color: brandGreen}}
+                                onClick={() => navigate('/')}
+                            >
+                                {' '}Login here
+                            </span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Register;

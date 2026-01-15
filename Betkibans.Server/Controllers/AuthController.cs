@@ -69,14 +69,14 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
 {
     try
     {
-        // Check if email already exists
+        // Checking if email already exists
         var existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser != null)
         {
             return BadRequest(new { message = "Email already registered" });
         }
 
-        // Create ApplicationUser
+        // Creating ApplicationUser
         var user = new ApplicationUser
         {
             UserName = dto.Email,
@@ -86,17 +86,17 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
             EmailConfirmed = true
         };
 
-        // Create user account
+        // Creating user account
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded)
         {
             return BadRequest(new { message = "User creation failed", errors = result.Errors });
         }
 
-        // Determine role (default to Consumer if not specified)
+        // Determine role (default to Consumer if it is not specified)
         string role = dto.Role ?? "Consumer";
         
-        // Assign role
+        // Assigning role
         await _userManager.AddToRoleAsync(user, role);
 
         // If Seller role, create Seller profile automatically
@@ -105,7 +105,7 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
             var seller = new Models.Entities.Seller
             {
                 UserId = user.Id,
-                BusinessName = "", // Empty - will be completed later
+                BusinessName = "", // Empty - will be completed later on
                 IsVerified = false,
                 CreatedAt = DateTime.UtcNow
             };
@@ -181,7 +181,7 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
                 BusinessAddress = dto.BusinessAddress,
                 City = dto.City,
                 District = dto.District,
-                IsVerified = false, // Important: starts as unverified
+                IsVerified = false, 
                 CreatedAt = DateTime.UtcNow
             };
 

@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Betkibans.Server.Data;
 
-// Changed: Now extends IdentityDbContext<ApplicationUser>
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
@@ -13,7 +12,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
     
-    // E-commerce tables (NOT User and Role - Identity handles those)
+    // Tables
     public DbSet<Seller> Sellers { get; set; }
     public DbSet<Address> Addresses { get; set; }
     public DbSet<Category> Categories { get; set; }
@@ -32,14 +31,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); // IMPORTANT: Call base first for Identity
+        base.OnModelCreating(modelBuilder); // Keep this!
         
-        // Seller Configuration
+        // --- 🔴 THE CRITICAL FIX IS HERE ---
         modelBuilder.Entity<Seller>(entity =>
         {
             entity.HasKey(e => e.SellerId);
             entity.Property(e => e.BusinessName).IsRequired().HasMaxLength(200);
-            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+
+            // FIX: Use 'e.User' explicitly instead of 'HasOne<ApplicationUser>()'
+            // This tells EF: "The 'User' property uses the 'UserId' column."
+            entity.HasOne(e => e.User) 
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade); 
         });
         
         // Address Configuration
