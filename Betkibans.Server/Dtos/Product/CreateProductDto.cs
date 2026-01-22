@@ -30,4 +30,7 @@ public class CreateProductDto
 
     // List of material IDs (e.g., [1, 2] for Bamboo and Cane)
     public List<int> MaterialIds { get; set; } = new List<int>();
+    
+    [Required(ErrorMessage = "At least one product image is required.")]
+    public List<IFormFile> Images { get; set; } = new List<IFormFile>();
 }

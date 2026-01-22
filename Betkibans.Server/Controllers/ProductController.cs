@@ -1,6 +1,6 @@
-using Betkibans.Server.DTOs.Product;
-using Betkibans.Server.Interfaces;
 using Betkibans.Server.Data;
+using Betkibans.Server.DTOs.Product; // Make sure you have this namespace
+using Betkibans.Server.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,197 +8,192 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
+[ApiController]
 public class ProductController : ControllerBase
 {
-    private readonly IProductService _productService;
     private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _environment; // Needed for file saving
 
-    public ProductController(IProductService productService, ApplicationDbContext context)
+    public ProductController(ApplicationDbContext context, IWebHostEnvironment environment)
     {
-        _productService = productService ?? throw new ArgumentNullException(nameof(productService));
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _context = context;
+        _environment = environment;
     }
 
-    // GET: api/product
+    // GET: api/Product
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetAllProducts()
+    public async Task<IActionResult> GetAllProducts(
+        [FromQuery] string? search,
+        [FromQuery] int[]? categoryIds, 
+        [FromQuery] int[]? materialIds,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        [FromQuery] string? sort
+    )
     {
-        try
+        var query = _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.ProductImages)
+            .Include(p => p.ProductMaterials)
+            .ThenInclude(pm => pm.Material)
+            .Where(p => p.IsActive)
+            .AsQueryable();
+
+        // --- FILTERING LOGIC ---
+        
+        // 1. Search
+        if (!string.IsNullOrEmpty(search))
         {
-            var products = await _productService.GetAllProductsAsync();
-            return Ok(products);
+            var lowerSearch = search.ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(lowerSearch) 
+                                     || p.Description.ToLower().Contains(lowerSearch));
         }
-        catch (Exception ex)
+
+        // 2. Categories (Show products that match ANY of the selected categories)
+        if (categoryIds != null && categoryIds.Length > 0)
         {
-            return StatusCode(500, new { message = "Error retrieving products", error = ex.Message });
+            query = query.Where(p => categoryIds.Contains(p.CategoryId));
         }
+
+        // 3. Materials
+        if (materialIds != null && materialIds.Length > 0)
+        {
+            query = query.Where(p => p.ProductMaterials.Any(pm => materialIds.Contains(pm.MaterialId)));
+        }
+
+        // 4. Price
+        if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice);
+        if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice);
+
+        // 5. Sorting
+        switch (sort)
+        {
+            case "price_asc": query = query.OrderBy(p => p.Price); break;
+            case "price_desc": query = query.OrderByDescending(p => p.Price); break;
+            default: query = query.OrderByDescending(p => p.CreatedAt); break;
+        }
+
+        return Ok(await query.ToListAsync());
     }
 
-    // GET: api/product/{id}
+    // GET: api/Product/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<ProductResponseDto>> GetProductById(int id)
+    public async Task<IActionResult> GetProduct(int id)
     {
-        try
-        {
-            var product = await _productService.GetProductByIdAsync(id);
-            if (product == null)
-                return NotFound(new { message = $"Product with ID {id} not found" });
+        var product = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.ProductImages)
+            .Include(p => p.ProductMaterials)
+                .ThenInclude(pm => pm.Material)
+            .FirstOrDefaultAsync(p => p.ProductId == id);
 
-            return Ok(product);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error retrieving product", error = ex.Message });
-        }
+        if (product == null) return NotFound();
+
+        return Ok(product);
     }
-
-    // GET: api/product/seller/{sellerId}
-    [HttpGet("seller/{sellerId}")]
-    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetProductsBySeller(int sellerId)
-    {
-        try
-        {
-            var products = await _productService.GetProductsBySellerIdAsync(sellerId);
-            return Ok(products);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error retrieving seller products", error = ex.Message });
-        }
-    }
-
-    // GET: api/product/category/{categoryId}
-    [HttpGet("category/{categoryId}")]
-    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetProductsByCategory(int categoryId)
-    {
-        try
-        {
-            var products = await _productService.GetProductsByCategoryIdAsync(categoryId);
-            return Ok(products);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error retrieving category products", error = ex.Message });
-        }
-    }
-
-    // POST: api/product
+    
     [HttpPost]
     [Authorize(Roles = "Seller")]
-    public async Task<ActionResult<ProductResponseDto>> CreateProduct([FromBody] CreateProductDto dto)
+    [Consumes("multipart/form-data")] 
+    public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto dto)
     {
-        try
+        // 1. Validate Seller
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return StatusCode(403, "Seller profile not found.");
+        if (!seller.IsVerified) return StatusCode(403, "Only verified sellers can add products.");
+
+        // 2. Validate Images exist
+        if (dto.Images == null || dto.Images.Count == 0)
+             return BadRequest("At least one image is required.");
+
+        // 3. Create Product Entity (Basic Info)
+        var product = new Product
         {
-            Console.WriteLine("[CreateProduct] Method called");
-            Console.WriteLine($"[CreateProduct] _productService is null: {_productService == null}");
-            Console.WriteLine($"[CreateProduct] _context is null: {_context == null}");
+            SellerId = seller.SellerId,
+            CategoryId = dto.CategoryId,
+            Name = dto.Name,
+            Description = dto.Description,
+            Price = dto.Price,
+            StockQuantity = dto.StockQuantity,
+            Length = dto.Length,
+            Width = dto.Width,
+            Height = dto.Height,
+            Weight = dto.Weight,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
 
-            // Get authenticated user ID
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
-            Console.WriteLine($"[CreateProduct] UserId from token: {userId}");
-            
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User not authenticated" });
-            }
+        _context.Products.Add(product);
+        await _context.SaveChangesAsync(); // Save to generate ProductId
 
-            // Get seller profile
-            var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
-            
-            Console.WriteLine($"[CreateProduct] Seller found: {seller != null}");
-            
-            if (seller == null)
-            {
-                return BadRequest(new { message = "Seller profile not found" });
-            }
+        // 4. Handle Image Uploads
+        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "products", $"product_{product.ProductId}");
+        if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
 
-            Console.WriteLine($"[CreateProduct] SellerId: {seller.SellerId}, IsVerified: {seller.IsVerified}");
-
-            // Check if seller is verified
-            if (!seller.IsVerified)
-            {
-                return StatusCode(403, new { message = "Your seller account is not verified yet. Please complete KYC verification to list products." });
-            }
-
-            Console.WriteLine($"[CreateProduct] About to call CreateProductAsync");
-
-            // Create product
-            var product = await _productService.CreateProductAsync(dto, seller.SellerId);
-            
-            Console.WriteLine($"[CreateProduct] Product created successfully with ID: {product.ProductId}");
-            
-            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, product);
-        }
-        catch (Exception ex)
+        var isFirstImage = true;
+        foreach (var file in dto.Images)
         {
-            Console.WriteLine($"[CreateProduct] EXCEPTION: {ex.Message}");
-            Console.WriteLine($"[CreateProduct] Stack Trace: {ex.StackTrace}");
-            return StatusCode(500, new { message = "Error creating product", error = ex.Message, stackTrace = ex.StackTrace });
+            if (file.Length > 0)
+            {
+                // Generate unique filename
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var filePath = Path.Combine(uploadPath, fileName);
+
+                // Save to disk
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Save path to database
+                _context.ProductImages.Add(new ProductImage
+                {
+                    ProductId = product.ProductId,
+                    ImageUrl = $"/uploads/products/product_{product.ProductId}/{fileName}",
+                    IsPrimary = isFirstImage // First uploaded image is primary
+                });
+                isFirstImage = false;
+            }
         }
+        await _context.SaveChangesAsync(); // Save image records
+
+        // 5. Link Materials
+        if (dto.MaterialIds != null && dto.MaterialIds.Any())
+        {
+            foreach (var matId in dto.MaterialIds)
+            {
+                _context.ProductMaterials.Add(new ProductMaterial
+                {
+                    ProductId = product.ProductId,
+                    MaterialId = matId
+                });
+            }
+            await _context.SaveChangesAsync(); // Save material links
+        }
+
+        return Ok(new { message = "Product created successfully with images!", productId = product.ProductId });
     }
-
-    // PUT: api/product/{id}
+    
     [HttpPut("{id}")]
     [Authorize(Roles = "Seller")]
-    public async Task<ActionResult<ProductResponseDto>> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
+    public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
     {
-        try
-        {
-            if (id != dto.ProductId)
-                return BadRequest(new { message = "Product ID mismatch" });
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return Unauthorized();
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "User not authenticated" });
+        var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
+        if (product == null) return NotFound("Product not found or access denied.");
 
-            var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
-            if (seller == null)
-                return BadRequest(new { message = "Seller profile not found" });
+        // Update fields
+        product.Name = dto.Name;
+        product.Description = dto.Description;
+        product.Price = dto.Price;
+        product.StockQuantity = dto.StockQuantity;
 
-            var product = await _productService.UpdateProductAsync(dto, seller.SellerId);
-            return Ok(product);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(403, new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error updating product", error = ex.Message });
-        }
-    }
-
-    // DELETE: api/product/{id}
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Seller,Admin")]
-    public async Task<ActionResult> DeleteProduct(int id)
-    {
-        try
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "User not authenticated" });
-
-            var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
-            if (seller == null)
-                return BadRequest(new { message = "Seller profile not found" });
-
-            var result = await _productService.DeleteProductAsync(id, seller.SellerId);
-            if (!result)
-                return NotFound(new { message = $"Product with ID {id} not found" });
-
-            return Ok(new { message = "Product deleted successfully" });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(403, new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error deleting product", error = ex.Message });
-        }
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Product updated successfully." });
     }
 }
