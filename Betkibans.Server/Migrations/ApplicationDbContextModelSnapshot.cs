@@ -336,6 +336,10 @@ namespace Betkibans.Server.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<decimal>("ShippingCost")
                         .HasColumnType("decimal(10,2)");
 
@@ -527,6 +531,9 @@ namespace Betkibans.Server.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("boolean");
 
@@ -717,6 +724,9 @@ namespace Betkibans.Server.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("KycDocumentPath")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RejectionReason")
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
@@ -1055,11 +1065,13 @@ namespace Betkibans.Server.Migrations
 
             modelBuilder.Entity("Betkibans.Server.Models.Entities.Seller", b =>
                 {
-                    b.HasOne("Betkibans.Server.Models.ApplicationUser", null)
+                    b.HasOne("Betkibans.Server.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

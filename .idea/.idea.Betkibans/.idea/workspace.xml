@@ -9,7 +9,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="931b833f-b53d-4cee-a699-d9a7f655d545" name="Changes" comment="" />
+    <list default="true" id="931b833f-b53d-4cee-a699-d9a7f655d545" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Betkibans/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Betkibans/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/Login.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/Register.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/src/main.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Controllers/SellerController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Controllers/SellerController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Migrations/ApplicationDbContextModelSnapshot.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Order.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Order.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/OrderItem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/OrderItem.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Seller.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Seller.cs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,10 +32,26 @@
   <component name="DpaMonitoringSettings">
     <option name="firstShow" value="false" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+        <option value="TypeScript File" />
+        <option value="TypeScript JSX File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/cc1ad596b4fde937674ff6c832655e53b7c6cc97b1b7a38893ad352a788057/PrincipalExtensions.cs" root0="SKIP_HIGHLIGHTING" />
+  </component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
 }</component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -30,6 +60,9 @@
   &quot;associatedIndex&quot;: 0
 }</component>
   <component name="ProjectId" id="37VCGleXT8ox4h0iUcGoDRpqwJp" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -42,6 +75,8 @@
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -134,13 +169,21 @@
       <workItem from="1768050567774" duration="901000" />
       <workItem from="1768091611940" duration="2673000" />
       <workItem from="1768105648369" duration="4633000" />
-      <workItem from="1768277637247" duration="655000" />
+      <workItem from="1768277637247" duration="986000" />
+      <workItem from="1769520986729" duration="4730000" />
+      <workItem from="1770210973876" duration="4715000" />
+      <workItem from="1770450321694" duration="3489000" />
+      <workItem from="1770455521203" duration="3917000" />
+      <workItem from="1770459487374" duration="5343000" />
+      <workItem from="1770892282803" duration="2148000" />
+      <workItem from="1770898108557" duration="3518000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />

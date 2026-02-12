@@ -1,7 +1,9 @@
+using Betkibans.Server.Data;
 using Betkibans.Server.DTOs.Seller;
-using Betkibans.Server.Interfaces;
+using Betkibans.Server.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
@@ -10,149 +12,156 @@ namespace Betkibans.Server.Controllers;
 [Route("api/[controller]")]
 public class SellerController : ControllerBase
 {
-    private readonly ISellerService _sellerService;
+    private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _environment;
 
-    public SellerController(ISellerService sellerService)
+    public SellerController(ApplicationDbContext context, IWebHostEnvironment environment)
     {
-        _sellerService = sellerService;
+        _context = context;
+        _environment = environment;
     }
 
-    // GET: api/seller/profile
+    // ===========================
+    // SELLER ACTIONS
+    // ===========================
+
+    // GET: api/Seller/profile
     [HttpGet("profile")]
     [Authorize(Roles = "Seller")]
-    public async Task<ActionResult<SellerResponseDto>> GetProfile()
+    public async Task<IActionResult> GetProfile()
     {
-        try
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "User not authenticated" });
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            var profile = await _sellerService.GetSellerProfileAsync(userId);
-            if (profile == null)
-                return NotFound(new { message = "Seller profile not found" });
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return NotFound(new { message = "Seller profile not found" });
 
-            return Ok(profile);
-        }
-        catch (Exception ex)
+        return Ok(new 
         {
-            return StatusCode(500, new { message = "Error retrieving profile", error = ex.Message });
-        }
+            sellerId = seller.SellerId,
+            businessName = seller.BusinessName,
+            businessDescription = seller.BusinessDescription,
+            city = seller.City,
+            district = seller.District,
+            isVerified = seller.IsVerified,
+            kycDocumentPath = seller.KycDocumentPath,
+            createdAt = seller.CreatedAt,
+            verifiedAt = seller.VerifiedAt,
+            rejectionReason = seller.RejectionReason
+        });
     }
 
-    // POST: api/seller/complete-profile
+    // POST: api/Seller/complete-profile
     [HttpPost("complete-profile")]
     [Authorize(Roles = "Seller")]
-    public async Task<ActionResult<SellerResponseDto>> CompleteProfile([FromBody] CompleteSellerProfileDto dto)
+    public async Task<IActionResult> CompleteProfile([FromBody] CompleteSellerProfileDto dto)
     {
-        try
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "User not authenticated" });
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        
+        if (seller == null) return NotFound("Seller not found");
 
-            var profile = await _sellerService.CompleteSellerProfileAsync(userId, dto);
-            return Ok(new 
-            { 
-                message = "Profile completed successfully. Please upload KYC documents for verification.",
-                profile 
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error completing profile", error = ex.Message });
-        }
+        seller.BusinessName = dto.BusinessName;
+        seller.BusinessDescription = dto.BusinessDescription;
+        seller.BusinessAddress = dto.BusinessAddress;
+        seller.City = dto.City;
+        seller.District = dto.District;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Profile updated.", profile = seller });
     }
 
-    // POST: api/seller/upload-kyc
-    // POST: api/seller/upload-kyc
+    // POST: api/Seller/upload-kyc
     [HttpPost("upload-kyc")]
     [Authorize(Roles = "Seller")]
     [Consumes("multipart/form-data")]
-    public async Task<ActionResult<SellerResponseDto>> UploadKyc([FromForm] UploadKycDto dto)
+    public async Task<IActionResult> UploadKyc([FromForm] UploadKycDto dto)
     {
-        try
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return NotFound("Seller not found");
+
+        if (dto.BusinessLicense == null || dto.IdDocument == null)
+            return BadRequest("Missing documents");
+
+        // Save Files Logic
+        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "kyc", $"seller_{seller.SellerId}");
+        if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+
+        async Task<string> SaveFile(IFormFile file)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "User not authenticated" });
-
-            if (dto.BusinessLicense == null || dto.IdDocument == null)
-                return BadRequest(new { message = "Business license and ID document are required" });
-
-            var profile = await _sellerService.UploadKycDocumentsAsync(
-                userId,
-                dto.BusinessLicense,
-                dto.IdDocument,
-                dto.TaxDocument
-            );
-
-            return Ok(new
-            {
-                message = "KYC documents uploaded successfully. Your profile is under review.",
-                profile
-            });
+            var fileName = $"{DateTime.Now.Ticks}_{file.FileName}";
+            var filePath = Path.Combine(uploadPath, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create)) { await file.CopyToAsync(stream); }
+            return $"/uploads/kyc/seller_{seller.SellerId}/{fileName}";
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error uploading documents", error = ex.Message });
-        }
+
+        seller.KycDocumentPath = await SaveFile(dto.BusinessLicense);
+        await SaveFile(dto.IdDocument); // Save ID but we only store one path in DB for now
+        
+        seller.IsVerified = false; 
+        seller.RejectionReason = null;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "KYC Uploaded", profile = seller });
     }
 
-    // GET: api/seller/pending (Admin only)
+    // ===========================
+    // ADMIN ACTIONS (Restored!)
+    // ===========================
+
+    // GET: api/Seller/pending
+    // This is the endpoint your Frontend was looking for (Error 404 fixed!)
     [HttpGet("pending")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<SellerListDto>>> GetPendingSellers()
+    [Authorize(Roles = "Admin")] 
+    public async Task<IActionResult> GetPendingSellers()
     {
-        try
-        {
-            var sellers = await _sellerService.GetPendingSellersAsync();
-            return Ok(sellers);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error retrieving pending sellers", error = ex.Message });
-        }
+        var pendingSellers = await _context.Sellers
+            .Include(s => s.User) // <--- This requires Step 1 to be done!
+            .Where(s => !s.IsVerified && s.KycDocumentPath != null && s.RejectionReason == null)
+            .Select(s => new
+            {
+                s.SellerId,
+                s.BusinessName,
+                s.City,
+                s.District,
+                s.KycDocumentPath,
+                s.CreatedAt,
+                // These names must match what your Frontend expects
+                UserEmail = s.User.Email,
+                UserFullName = s.User.FullName
+            })
+            .ToListAsync();
+
+        return Ok(pendingSellers);
     }
-
-    // GET: api/seller/all (Admin only)
-    [HttpGet("all")]
+    
+    // PUT: api/Seller/verify/{sellerId}
+    [HttpPut("verify/{sellerId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<SellerListDto>>> GetAllSellers()
+    public async Task<IActionResult> VerifySeller(int sellerId, [FromBody] VerificationDto dto)
     {
-        try
-        {
-            var sellers = await _sellerService.GetAllSellersAsync();
-            return Ok(sellers);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error retrieving sellers", error = ex.Message });
-        }
-    }
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.SellerId == sellerId);
+        if (seller == null) return NotFound("Seller not found");
 
-    // PUT: api/seller/verify
-    [HttpPut("verify")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<SellerResponseDto>> VerifySeller([FromBody] VerifySellerDto dto)
-    {
-        try
-        {
-            var adminUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(adminUserId))
-                return Unauthorized(new { message = "Admin not authenticated" });
+        var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var seller = await _sellerService.VerifySellerAsync(dto.SellerId, adminUserId, dto.IsApproved, dto.RejectionReason);
-            
-            var message = dto.IsApproved 
-                ? "Seller verified successfully" 
-                : "Seller verification rejected";
-
-            return Ok(new { message, seller });
-        }
-        catch (Exception ex)
+        if (dto.IsApproved)
         {
-            return StatusCode(500, new { message = "Error verifying seller", error = ex.Message });
+            seller.IsVerified = true;
+            seller.VerifiedAt = DateTime.UtcNow;
+            seller.VerifiedBy = adminId;
+            seller.RejectionReason = null;
         }
+        else
+        {
+            seller.IsVerified = false;
+            seller.RejectionReason = dto.RejectionReason;
+            // Optional: reset KYC path to force re-upload
+            // seller.KycDocumentPath = null; 
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = dto.IsApproved ? "Seller Verified" : "Seller Rejected" });
     }
 }
