@@ -10,6 +10,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout'; 
 import OrderSuccess from './pages/OrderSuccess';
+import RequestRepair from './pages/RequestRepair';
+import MyRepairs from './pages/MyRepairs';
 
 // Seller Pages
 import SellerDashboard from './pages/SellerDashboard';
@@ -18,6 +20,7 @@ import UploadKYC from './pages/UploadKYC';
 import CreateProduct from './pages/CreateProduct';
 import SellerProducts from './pages/SellerProducts';
 import EditProduct from './pages/EditProduct';
+import SellerRepairDashboard from './pages/SellerRepairDashboard';
 
 // Admin Pages
 import AdminPanel from './pages/AdminPanel';
@@ -36,6 +39,8 @@ function App() {
                                     <Route path="/product/:id" element={<ProductDetailPage />} />
                                     <Route path="/login" element={<Login />} />
                                     <Route path="/register" element={<Register />} />
+                                    <Route path="/request-repair" element={<RequestRepair />} />
+                                    <Route path="/my-repairs" element={<MyRepairs />} />
 
                                     {/* Seller Routes */}
                                     <Route path="/seller/dashboard" element={<SellerDashboard />} />
@@ -44,6 +49,7 @@ function App() {
                                     <Route path="/seller/create-product" element={<CreateProduct />} />
                                     <Route path="/seller/products" element={<SellerProducts />} />
                                     <Route path="/seller/edit-product/:id" element={<EditProduct />} />
+                                    <Route path="/seller/repairs" element={<SellerRepairDashboard />} />
 
                                     {/* Admin Routes */}
                                     <Route path="/admin/panel" element={<AdminPanel />} />

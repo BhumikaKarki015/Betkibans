@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Betkibans.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a484e443172febdcb50acab00f16dee32fdac17b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9ddd25ae27939ac86054e491332656b34a4b2d98")]
 [assembly: System.Reflection.AssemblyProductAttribute("Betkibans.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Betkibans.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

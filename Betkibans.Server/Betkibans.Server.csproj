@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <Folder Include="wwwroot\uploads\kyc\" />
+      <Folder Include="wwwroot\uploads\repairs\" />
     </ItemGroup>
 
 </Project>

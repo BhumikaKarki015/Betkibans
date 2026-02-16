@@ -11,18 +11,22 @@
   <component name="ChangeListManager">
     <list default="true" id="931b833f-b53d-4cee-a699-d9a7f655d545" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Betkibans/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Betkibans/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Client/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Client/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/Login.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/Register.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Client/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Client/src/main.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Controllers/SellerController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Controllers/SellerController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Migrations/ApplicationDbContextModelSnapshot.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Order.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Order.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/OrderItem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/OrderItem.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Seller.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Models/Entities/Seller.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/Betkibans.Server.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/Betkibans.Server.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/bin/Debug/net8.0/Betkibans.Server.dll" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/bin/Debug/net8.0/Betkibans.Server.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/bin/Debug/net8.0/Betkibans.Server.exe" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/bin/Debug/net8.0/Betkibans.Server.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/bin/Debug/net8.0/Betkibans.Server.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/bin/Debug/net8.0/Betkibans.Server.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.AssemblyInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.AssemblyInfoInputs.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.csproj.CoreCompileInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.csproj.CoreCompileInputs.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.dll" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.sourcelink.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/Betkibans.Server.sourcelink.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/apphost.exe" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/apphost.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/ref/Betkibans.Server.dll" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/ref/Betkibans.Server.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/refint/Betkibans.Server.dll" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/refint/Betkibans.Server.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" beforeDir="false" afterPath="$PROJECT_DIR$/Betkibans.Server/obj/Debug/net8.0/rjsmrazor.dswa.cache.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -176,7 +180,8 @@
       <workItem from="1770455521203" duration="3917000" />
       <workItem from="1770459487374" duration="5343000" />
       <workItem from="1770892282803" duration="2148000" />
-      <workItem from="1770898108557" duration="3518000" />
+      <workItem from="1770898108557" duration="4135000" />
+      <workItem from="1771242534340" duration="4586000" />
     </task>
     <servers />
   </component>
