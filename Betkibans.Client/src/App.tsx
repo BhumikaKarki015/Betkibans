@@ -1,17 +1,28 @@
 import { Routes, Route } from 'react-router-dom';
-import { CartProvider } from './contexts/CartContext'; 
+import { CartProvider } from './contexts/CartContext';
 import { AuthProvider } from './contexts/AuthContext';
+import Layout from './components/common/Layout';
+import { WishlistProvider } from './contexts/WishlistContext';
 
-// Public Pages
+// Public & Customer Pages
+import Home from './pages/Home'; 
 import Login from './pages/Login';
+import ChangePassword from './pages/ChangePassword';
 import Register from './pages/Register';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import Cart from './pages/Cart';
-import Checkout from './pages/Checkout'; 
+import Checkout from './pages/Checkout';
+import PaymentSuccess from './pages/PaymentSuccess';
+import OrderDetail from './pages/OrderDetail';
 import OrderSuccess from './pages/OrderSuccess';
 import RequestRepair from './pages/RequestRepair';
 import MyRepairs from './pages/MyRepairs';
+import CareGuide from './pages/CareGuide';
+import OrderHistory from './pages/OrderHistory';
+import UserProfile from './pages/UserProfile';
+import AddressManagement from './pages/AddressManagement';
+import Wishlist from './pages/Wishlist';
 
 // Seller Pages
 import SellerDashboard from './pages/SellerDashboard';
@@ -21,6 +32,7 @@ import CreateProduct from './pages/CreateProduct';
 import SellerProducts from './pages/SellerProducts';
 import EditProduct from './pages/EditProduct';
 import SellerRepairDashboard from './pages/SellerRepairDashboard';
+import SellerOrders from './pages/SellerOrders';
 
 // Admin Pages
 import AdminPanel from './pages/AdminPanel';
@@ -28,35 +40,48 @@ import AdminPanel from './pages/AdminPanel';
 function App() {
         return (
             <AuthProvider>
-                    <CartProvider> {/* ✅ Wrap with CartProvider so cart updates everywhere */}
+                    <CartProvider>
+                            <WishlistProvider>
                             <Routes>
-                                    {/* Public & Customer Routes */}
-                                    <Route path="/" element={<ProductListPage />} />
-                                    <Route path="/products" element={<ProductListPage />} />
-                                    <Route path="/cart" element={<Cart />} />
-                                    <Route path="/checkout" element={<Checkout />} /> {/* ✅ New */}
-                                    <Route path="/order-success" element={<OrderSuccess />} /> {/* ✅ New */}
-                                    <Route path="/product/:id" element={<ProductDetailPage />} />
-                                    <Route path="/login" element={<Login />} />
-                                    <Route path="/register" element={<Register />} />
-                                    <Route path="/request-repair" element={<RequestRepair />} />
-                                    <Route path="/my-repairs" element={<MyRepairs />} />
-
-                                    {/* Seller Routes */}
-                                    <Route path="/seller/dashboard" element={<SellerDashboard />} />
-                                    <Route path="/seller/complete-profile" element={<CompleteProfile />} />
-                                    <Route path="/seller/upload-kyc" element={<UploadKYC />} />
-                                    <Route path="/seller/create-product" element={<CreateProduct />} />
-                                    <Route path="/seller/products" element={<SellerProducts />} />
-                                    <Route path="/seller/edit-product/:id" element={<EditProduct />} />
-                                    <Route path="/seller/repairs" element={<SellerRepairDashboard />} />
-
-                                    {/* Admin Routes */}
+                                    {/* Admin routes - NO Layout wrapper */}
                                     <Route path="/admin/panel" element={<AdminPanel />} />
 
-                                    {/* Fallback for 404 - Optional but good for quality */}
-                                    <Route path="*" element={<div className="p-5 text-center"><h1>404 - Page Not Found</h1></div>} />
+                                    {/* All other routes - WITH Layout wrapper */}
+                                    <Route path="/*" element={
+                                            <Layout>
+                                                    <Routes>
+                                                            <Route path="/" element={<Home />} />
+                                                            <Route path="/products" element={<ProductListPage />} />
+                                                            <Route path="/cart" element={<Cart />} />
+                                                            <Route path="/checkout" element={<Checkout />} />
+                                                            <Route path="/payment/success" element={<PaymentSuccess />} />
+                                                            <Route path="/order-success" element={<OrderSuccess />} />
+                                                            <Route path="/product/:id" element={<ProductDetailPage />} />
+                                                            <Route path="/login" element={<Login />} />
+                                                            <Route path="/register" element={<Register />} />
+                                                            <Route path="/change-password" element={<ChangePassword />} />
+                                                            <Route path="/request-repair" element={<RequestRepair />} />
+                                                            <Route path="/my-repairs" element={<MyRepairs />} />
+                                                            <Route path="/care-guide" element={<CareGuide />} />
+                                                            <Route path="/orders" element={<OrderHistory />} />
+                                                            <Route path="/orders/:orderId" element={<OrderDetail />} />
+                                                            <Route path="/addresses" element={<AddressManagement />} />
+                                                            <Route path="/profile" element={<UserProfile />} />
+                                                            <Route path="/wishlist" element={<Wishlist />} />
+                                                            <Route path="/seller/dashboard" element={<SellerDashboard />} />
+                                                            <Route path="/seller/complete-profile" element={<CompleteProfile />} />
+                                                            <Route path="/seller/upload-kyc" element={<UploadKYC />} />
+                                                            <Route path="/seller/create-product" element={<CreateProduct />} />
+                                                            <Route path="/seller/products" element={<SellerProducts />} />
+                                                            <Route path="/seller/edit-product/:id" element={<EditProduct />} />
+                                                            <Route path="/seller/repairs" element={<SellerRepairDashboard />} />
+                                                            <Route path="/seller/orders" element={<SellerOrders />} />
+                                                            <Route path="*" element={<div className="p-5 text-center"><h1>404 - Page Not Found</h1></div>} />
+                                                    </Routes>
+                                            </Layout>
+                                    } />
                             </Routes>
+                            </WishlistProvider>
                     </CartProvider>
             </AuthProvider>
         );
