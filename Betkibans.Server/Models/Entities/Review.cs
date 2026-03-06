@@ -13,6 +13,7 @@ public class Review
     public DateTime? UpdatedAt { get; set; }
 
     // Navigation Properties
+    public ApplicationUser User { get; set; } = null!;
     public Product Product { get; set; } = null!;
 }
     
