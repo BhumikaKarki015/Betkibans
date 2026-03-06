@@ -1,13 +1,27 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from './Header';
-// We'll build the Footer soon
-const Footer = () => <footer className="bg-gray-800 text-white p-4 text-center mt-auto">© 2026 Betkibans</footer>;
+import Footer from './Footer';
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+interface LayoutProps {
+    children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+    const location = useLocation();
+    
+    const hideLayoutPaths = ['/login', '/register'];
+    
+    const shouldHideLayout = hideLayoutPaths.includes(location.pathname);
+
+    if (shouldHideLayout) {
+        return <main>{children}</main>;
+    }
+
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="d-flex flex-column min-vh-100">
             <Header />
-            <main className="flex-grow">
+            <main className="flex-grow-1">
                 {children}
             </main>
             <Footer />
