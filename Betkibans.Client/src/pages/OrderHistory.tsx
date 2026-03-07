@@ -62,6 +62,18 @@ const OrderHistory = () => {
         </div>
     );
 
+    const handleCancelOrder = async (orderId: number) => {
+        if (!confirm('Are you sure you want to cancel this order?')) return;
+        try {
+            await api.post(`/Order/cancel/${orderId}`);
+            setOrders(prev =>
+                prev.map(o => o.orderId === orderId ? { ...o, status: 'Cancelled' } : o)
+            );
+        } catch {
+            alert('Failed to cancel order. Please try again.');
+        }
+    };
+
     return (
         <div className="container py-5" style={{ maxWidth: 860 }}>
 
@@ -200,6 +212,7 @@ const OrderHistory = () => {
                                             {/* Cancel — Pending only */}
                                             {isPending && (
                                                 <button className="btn btn-sm fw-medium"
+                                                        onClick={() => handleCancelOrder(order.orderId)}
                                                         style={{ fontSize: 12, borderRadius: 20, border: '1px solid #C62828', color: '#C62828', backgroundColor: 'transparent' }}>
                                                     <i className="bi bi-x-circle me-1"></i>Cancel Order
                                                 </button>
