@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Betkibans.Server.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace Betkibans.Server.Controllers
 {
@@ -12,10 +14,12 @@ namespace Betkibans.Server.Controllers
     public class AdminController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public AdminController(ApplicationDbContext context)
+        public AdminController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: api/Admin/pending-sellers
@@ -24,7 +28,7 @@ namespace Betkibans.Server.Controllers
         public async Task<IActionResult> GetPendingSellers()
         {
             var pendingSellers = await _context.Sellers
-                .Include(s => s.User) 
+                .Include(s => s.User)
                 .Where(s => !s.IsVerified && s.KycDocumentPath != null && s.RejectionReason == null)
                 .Select(s => new
                 {
@@ -63,11 +67,151 @@ namespace Betkibans.Server.Controllers
             {
                 seller.IsVerified = false;
                 seller.RejectionReason = dto.RejectionReason;
-                seller.KycDocumentPath = null; 
+                seller.KycDocumentPath = null;
             }
 
             await _context.SaveChangesAsync();
             return Ok(new { message = dto.IsApproved ? "Seller Verified" : "Seller Rejected" });
+        }
+
+        // GET: api/Admin/users
+        [HttpGet("users")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _context.Users
+                .OfType<ApplicationUser>()
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
+            var result = new List<object>();
+            foreach (var u in users)
+            {
+                var roles = await _userManager.GetRolesAsync(u);
+                result.Add(new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.Email,
+                    u.PhoneNumber,
+                    u.CreatedAt,
+                    Role = roles.FirstOrDefault() ?? "Buyer",
+                    IsActive = true
+                });
+            }
+            return Ok(result);
+        }
+
+        // GET: api/Admin/products
+        [HttpGet("products")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var products = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new
+                {
+                    p.ProductId,
+                    p.Name,
+                    p.Price,
+                    p.StockQuantity,
+                    p.IsActive,
+                    p.CreatedAt,
+                    CategoryName = p.Category != null ? p.Category.CategoryName : "—",
+                    SellerBusinessName = p.Seller != null ? p.Seller.BusinessName : "—",
+                    AverageRating = p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 0.0,
+                    TotalReviews = p.Reviews.Count
+                })
+                .ToListAsync();
+
+            return Ok(products);
+        }
+
+        // PATCH: api/Admin/products/{productId}/toggle
+        [HttpPatch("products/{productId}/toggle")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ToggleProduct(int productId)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return NotFound();
+            product.IsActive = !product.IsActive;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Product status updated.", isActive = product.IsActive });
+        }
+
+        // GET: api/Admin/orders
+        [HttpGet("orders")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.Address)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+
+            var result = orders.Select(o => {
+                var user = _context.Users.Find(o.UserId) as ApplicationUser;
+                return new
+                {
+                    o.OrderId,
+                    o.OrderNumber,
+                    o.TotalAmount,
+                    o.Status,
+                    o.CreatedAt,
+                    UserName = user?.FullName ?? "—",
+                    City = o.Address?.City ?? "—"
+                };
+            });
+
+            return Ok(result);
+        }
+
+        // GET: api/Admin/repairs
+        [HttpGet("repairs")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllRepairs()
+        {
+            var repairs = await _context.RepairRequests
+                .Include(r => r.Product)
+                .Include(r => r.RepairQuotes)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            var result = repairs.Select(r => {
+                var user = _context.Users.Find(r.UserId) as ApplicationUser;
+                return new
+                {
+                    r.RepairRequestId,
+                    ProductName = r.Product != null ? r.Product.Name : "General Item",
+                    r.Description,
+                    r.DamageImageUrl,
+                    r.Status,
+                    r.CreatedAt,
+                    r.UserId,
+                    UserName = user?.FullName ?? "—",
+                    QuotesCount = r.RepairQuotes.Count
+                };
+            });
+
+            return Ok(result);
+        }
+
+        // GET: api/Admin/stats
+        [HttpGet("stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetStats()
+        {
+            return Ok(new
+            {
+                TotalUsers    = await _context.Users.CountAsync(),
+                TotalSellers  = await _context.Sellers.CountAsync(s => s.IsVerified),
+                TotalProducts = await _context.Products.CountAsync(p => p.IsActive),
+                TotalOrders   = await _context.Orders.CountAsync(),
+                TotalRevenue  = await _context.Orders.SumAsync(o => (decimal?)o.TotalAmount) ?? 0
+            });
         }
     }
 
@@ -77,3 +221,109 @@ namespace Betkibans.Server.Controllers
         public string? RejectionReason { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
