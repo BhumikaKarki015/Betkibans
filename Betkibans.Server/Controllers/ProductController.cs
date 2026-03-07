@@ -1,5 +1,5 @@
 using Betkibans.Server.Data;
-using Betkibans.Server.DTOs.Product; // Make sure you have this namespace
+using Betkibans.Server.DTOs.Product; 
 using Betkibans.Server.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -121,6 +121,12 @@ public class ProductController : ControllerBase
             Width = dto.Width,
             Height = dto.Height,
             Weight = dto.Weight,
+            DiscountPrice = dto.DiscountPrice,
+            Color = dto.Color,
+            FinishType = dto.FinishType,
+            CraftingTimeDays = dto.CraftingTimeDays,
+            CareInstructions = dto.CareInstructions,
+            CareWarnings = dto.CareWarnings,
             CreatedAt = DateTime.UtcNow,
             IsActive = true
         };
@@ -192,8 +198,35 @@ public class ProductController : ControllerBase
         product.Description = dto.Description;
         product.Price = dto.Price;
         product.StockQuantity = dto.StockQuantity;
+        product.DiscountPrice = dto.DiscountPrice;
+        product.Color = dto.Color;
+        product.FinishType = dto.FinishType;
+        product.CraftingTimeDays = dto.CraftingTimeDays;
+        product.CareInstructions = dto.CareInstructions;
+        product.CareWarnings = dto.CareWarnings;
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Product updated successfully." });
+    }
+    
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Seller")]
+    public async Task<IActionResult> DeleteProduct(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return Unauthorized();
+
+        var product = await _context.Products
+            .FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
+    
+        if (product == null) return NotFound("Product not found or access denied.");
+
+        // Soft delete — keeps order history intact
+        product.IsActive = false;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Product deleted successfully." });
     }
 }
