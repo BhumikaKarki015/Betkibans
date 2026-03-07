@@ -29,6 +29,12 @@ public class UpdateProductDto
     public decimal? Width { get; set; }
     public decimal? Height { get; set; }
     public decimal? Weight { get; set; }
+    public decimal? DiscountPrice { get; set; }
+    public string? Color { get; set; }
+    public string? FinishType { get; set; }
+    public string? CraftingTimeDays { get; set; }
+    public string? CareInstructions { get; set; }
+    public string? CareWarnings { get; set; }
 
     public bool IsActive { get; set; } = true;
 
