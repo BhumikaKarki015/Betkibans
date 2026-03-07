@@ -37,25 +37,33 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
     using var transaction = await _context.Database.BeginTransactionAsync();
     try
     {
-        // 1. CREATE THE ADDRESS FIRST
-        var newAddress = new Address
+        // 1. USE EXISTING ADDRESS OR CREATE NEW ONE
+        int addressId;
+        if (dto.AddressId.HasValue && dto.AddressId.Value > 0)
         {
-            UserId = userId,
-            FullName = dto.FullName,      
-            PhoneNumber = dto.Phone,     
-            AddressLine1 = dto.ShippingAddress, 
-            City = dto.City,
-            District = dto.City,          
-            CreatedAt = DateTime.UtcNow
-        };
-        _context.Addresses.Add(newAddress);
-        await _context.SaveChangesAsync(); // Save to generate newAddress.AddressId
-
+            addressId = dto.AddressId.Value;
+        }
+        else
+        {
+            var newAddress = new Address
+            {
+                UserId = userId,
+                FullName = dto.FullName,
+                PhoneNumber = dto.Phone,
+                AddressLine1 = dto.ShippingAddress,
+                City = dto.City,
+                District = dto.City,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Addresses.Add(newAddress);
+            await _context.SaveChangesAsync();
+            addressId = newAddress.AddressId;
+        }
         // 2. CREATE THE ORDER
         var order = new Order
         {
             UserId = userId,
-            AddressId = newAddress.AddressId, // Link to the newly created address
+            AddressId = addressId,
             OrderItems = new List<OrderItem>(), // Initialize to prevent null crash
             OrderNumber = $"BET-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}",
             ShippingCost = 150,
@@ -195,11 +203,14 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
         var orders = await _context.Orders
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Product)
-            .ThenInclude(p => p.Seller)
+            .ThenInclude(p => p.ProductImages)   // chain 1: Product → Images
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.Seller)          // chain 2: Product → Seller (separate Include)
             .Where(o => o.OrderItems.Any(oi => oi.Product.Seller.UserId == userId))
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
-
+        
         var response = orders.Select(o => new OrderResponseDto 
         {
             OrderId = o.OrderId,
@@ -213,7 +224,11 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
                 {
                     ProductName = oi.Product.Name,
                     Quantity = oi.Quantity,
-                    UnitPrice = oi.UnitPrice
+                    UnitPrice = oi.UnitPrice,
+                    ProductImage = oi.Product.ProductImages  
+                        .OrderBy(img => img.ProductImageId)
+                        .Select(img => img.ImageUrl)
+                        .FirstOrDefault()
                 }).ToList()
         }).ToList();
 
@@ -232,5 +247,22 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Status updated successfully" });
+    }
+    
+    [HttpPost("cancel/{orderId}")]
+    [Authorize]
+    public async Task<IActionResult> CancelOrder(int orderId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+    
+        if (order == null) return NotFound("Order not found.");
+        if (order.Status != "Pending") return BadRequest("Only pending orders can be cancelled.");
+    
+        order.Status = "Cancelled";
+        order.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    
+        return Ok(new { message = "Order cancelled successfully." });
     }
 }
