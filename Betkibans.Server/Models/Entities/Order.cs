@@ -4,6 +4,7 @@ namespace Betkibans.Server.Models.Entities;
 
 public class Order
 {
+    [Key]
     public int OrderId { get; set; }
     public string UserId { get; set; } = string.Empty; 
     public int AddressId { get; set; }
@@ -15,6 +16,8 @@ public class Order
     public string Status { get; set; } = "Pending"; // Pending, Processing, Shipped, Delivered, Cancelled
     [Required]
     public string PaymentMethod { get; set; } = "COD";
+    public string PaymentStatus { get; set; } = "Pending"; 
+    public string? KhaltiPidx { get; set; }
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

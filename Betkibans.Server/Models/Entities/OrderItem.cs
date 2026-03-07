@@ -16,13 +16,16 @@ public class OrderItem
 
     [Required]
     public int Quantity { get; set; }
+    
+    [Required]
+    public string ProductName { get; set; } = string.Empty;
 
-    // ✅ Records the individual price at the time of purchase
+    // Records the individual price at the time of purchase
     [Required]
     [Column(TypeName = "decimal(18,2)")]
     public decimal UnitPrice { get; set; }
 
-    // ✅ Records the subtotal for this specific item (Quantity * UnitPrice)
+    // Records the subtotal for this specific item (Quantity * UnitPrice)
     [Required]
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalPrice { get; set; }

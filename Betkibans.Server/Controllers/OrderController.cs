@@ -21,82 +21,101 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("place-order")]
-    public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
+public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
+{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Unauthorized();
+
+    var cart = await _context.Carts
+        .Include(c => c.CartItems)
+        .ThenInclude(ci => ci.Product)
+        .FirstOrDefaultAsync(c => c.UserId == userId);
+
+    if (cart == null || !cart.CartItems.Any())
+        return BadRequest("Your cart is empty.");
+
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null) return Unauthorized();
-
-        var cart = await _context.Carts
-            .Include(c => c.CartItems)
-            .ThenInclude(ci => ci.Product)
-            .FirstOrDefaultAsync(c => c.UserId == userId);
-
-        if (cart == null || !cart.CartItems.Any())
-            return BadRequest("Your cart is empty.");
-
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        // 1. CREATE THE ADDRESS FIRST
+        var newAddress = new Address
         {
-            var order = new Order
-            {
-                UserId = userId,
-                AddressId = dto.AddressId,
-                OrderNumber = $"BET-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}",
-                ShippingCost = 150,
-                TaxAmount = 0,
-                Status = "Pending",
-                PaymentMethod = dto.PaymentMethod,
-                Notes = dto.Notes,
-                CreatedAt = DateTime.UtcNow
-            };
+            UserId = userId,
+            FullName = dto.FullName,      
+            PhoneNumber = dto.Phone,     
+            AddressLine1 = dto.ShippingAddress, 
+            City = dto.City,
+            District = dto.City,          
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Addresses.Add(newAddress);
+        await _context.SaveChangesAsync(); // Save to generate newAddress.AddressId
 
-            decimal calculatedSubTotal = 0;
-
-            foreach (var item in cart.CartItems)
-            {
-                if (item.Product.StockQuantity < item.Quantity)
-                    return BadRequest($"Not enough stock for {item.Product.Name}");
-
-                var itemTotal = item.Product.Price * item.Quantity;
-                calculatedSubTotal += itemTotal;
-
-                order.OrderItems.Add(new OrderItem
-                {
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.Product.Price,
-                    TotalPrice = itemTotal
-                });
-
-                item.Product.StockQuantity -= item.Quantity;
-            }
-
-            order.SubTotal = calculatedSubTotal;
-            order.TotalAmount = calculatedSubTotal + order.ShippingCost + order.TaxAmount;
-
-            _context.Orders.Add(order);
-            _context.CartItems.RemoveRange(cart.CartItems);
-            
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            return Ok(new { orderId = order.OrderId, orderNumber = order.OrderNumber });
-        }
-        catch (Exception ex)
+        // 2. CREATE THE ORDER
+        var order = new Order
         {
-            await transaction.RollbackAsync();
-            return StatusCode(500, $"Internal error: {ex.Message}");
+            UserId = userId,
+            AddressId = newAddress.AddressId, // Link to the newly created address
+            OrderItems = new List<OrderItem>(), // Initialize to prevent null crash
+            OrderNumber = $"BET-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}",
+            ShippingCost = 150,
+            TaxAmount = 0,
+            Status = "Pending",
+            PaymentMethod = dto.PaymentMethod,
+            Notes = dto.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        decimal calculatedSubTotal = 0;
+
+        foreach (var item in cart.CartItems)
+        {
+            if (item.Product.StockQuantity < item.Quantity)
+                return BadRequest($"Not enough stock for {item.Product.Name}");
+
+            var itemTotal = item.Product.Price * item.Quantity;
+            calculatedSubTotal += itemTotal;
+
+            order.OrderItems.Add(new OrderItem
+            {
+                ProductId = item.ProductId,
+                ProductName = item.Product.Name, 
+                Quantity = item.Quantity,
+                UnitPrice = item.Product.Price,
+                TotalPrice = itemTotal
+            });
+
+            item.Product.StockQuantity -= item.Quantity;
         }
+
+        order.SubTotal = calculatedSubTotal;
+        order.TotalAmount = calculatedSubTotal + order.ShippingCost + order.TaxAmount;
+
+        _context.Orders.Add(order);
+        _context.CartItems.RemoveRange(cart.CartItems);
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return Ok(new { orderId = order.OrderId, orderNumber = order.OrderNumber });
     }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        // Log the actual error message to help debugging
+        return StatusCode(500, $"Internal error: {ex.Message}");
+    }
+}
 
     [HttpGet("my-orders")]
     public async Task<ActionResult<IEnumerable<OrderResponseDto>>> GetMyOrders()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+        if (userId == null) return Unauthorized(); // Extra safety for the demo
+
         var orders = await _context.Orders
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
+            .ThenInclude(oi => oi.Product)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
@@ -110,6 +129,8 @@ public class OrderController : ControllerBase
             CreatedAt = o.CreatedAt,
             OrderItems = o.OrderItems.Select(oi => new OrderItemResponseDto
             {
+                OrderItemId = oi.OrderItemId, 
+                ProductId = oi.ProductId,
                 ProductName = oi.Product.Name,
                 Quantity = oi.Quantity,
                 UnitPrice = oi.UnitPrice
@@ -117,6 +138,51 @@ public class OrderController : ControllerBase
         }).ToList();
 
         return Ok(response);
+    }
+    
+    [HttpGet("{orderId}")]
+    [Authorize]
+    public async Task<IActionResult> GetOrderById(int orderId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(i => i.Product)
+            .ThenInclude(p => p.ProductImages)  
+            .Include(o => o.Address)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+
+        if (order == null) return NotFound();
+
+        return Ok(new {
+            order.OrderId,
+            order.OrderNumber,
+            order.Status,
+            order.PaymentMethod,
+            order.PaymentStatus,
+            order.TotalAmount,
+            order.SubTotal,
+            order.ShippingCost,
+            order.TaxAmount,
+            order.Notes,
+            order.CreatedAt,
+            // Map address fields explicitly
+            FullName = order.Address?.FullName ?? "",
+            ShippingAddress = order.Address?.AddressLine1 ?? "",
+            City = order.Address?.City ?? "",
+            Phone = order.Address?.PhoneNumber ?? "",
+            OrderItems = order.OrderItems.Select(i => new {
+                i.OrderItemId,
+                i.ProductId,
+                i.ProductName,
+                i.Quantity,
+                i.UnitPrice,
+                ProductImage = i.Product.ProductImages
+                    .OrderBy(img => img.ProductImageId)
+                    .Select(img => img.ImageUrl)
+                    .FirstOrDefault()
+            })
+        });
     }
 
     [HttpGet("seller-orders")]
@@ -128,8 +194,9 @@ public class OrderController : ControllerBase
         
         var orders = await _context.Orders
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-            .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId.ToString() == userId))
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.Seller)
+            .Where(o => o.OrderItems.Any(oi => oi.Product.Seller.UserId == userId))
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
@@ -141,7 +208,7 @@ public class OrderController : ControllerBase
             Status = o.Status,
             CreatedAt = o.CreatedAt,
             OrderItems = o.OrderItems
-                .Where(oi => oi.Product.SellerId.ToString() == userId)
+                .Where(oi => oi.Product.Seller.UserId == userId)
                 .Select(oi => new OrderItemResponseDto
                 {
                     ProductName = oi.Product.Name,

@@ -8,10 +8,14 @@ public class OrderResponseDto
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public List<OrderItemResponseDto> OrderItems { get; set; } = new();
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerPhone { get; set; } = string.Empty;
 }
 
 public class OrderItemResponseDto
 {
+    public int OrderItemId { get; set; }
+    public int ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
