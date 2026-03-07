@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-// ✅ FIX 1: Use 'import type' for these React types
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
 import { productService } from '../services/productService';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -24,27 +22,29 @@ const CreateProduct = () => {
     const [error, setError] = useState('');
     const [categories, setCategories] = useState<Category[]>([]);
     const [materials, setMaterials] = useState<Material[]>([]);
-    // ✅ NEW: State for selected images
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         price: '',
+        discountPrice: '',
         stockQuantity: '',
         categoryId: '',
         length: '',
         width: '',
         height: '',
         weight: '',
-        materialIds: [] as number[]
+        color: '',
+        finishType: '',
+        craftingTimeDays: '',
+        careInstructions: '',
+        careWarnings: '',
+        materialIds: [] as number[],
     });
 
     useEffect(() => {
-        if (!user || user.role !== 'Seller') {
-            navigate('/login');
-            return;
-        }
+        if (!user || user.role !== 'Seller') { navigate('/login'); return; }
         fetchCategoriesAndMaterials();
     }, [user, navigate]);
 
@@ -57,256 +57,373 @@ const CreateProduct = () => {
             setCategories(catData.data);
             setMaterials(matData.data);
         } catch (err) {
-            console.error('Failed to load categories/materials', err);
             setError('Failed to load form data. Ensure backend is running.');
         }
     };
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // ✅ NEW: Handle image selection
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            // Convert FileList to Array and convert to array of Files
             const filesArray = Array.from(e.target.files);
-            // Basic validation: Check if files are images (optional but recommended)
             const validImages = filesArray.filter(file => file.type.startsWith('image/'));
-
-            if (validImages.length !== filesArray.length) {
-                alert("Some files were not images and were ignored.");
-            }
-            setSelectedImages(prevImages => [...prevImages, ...validImages]);
+            if (validImages.length !== filesArray.length) alert('Some files were not images and were ignored.');
+            setSelectedImages(prev => [...prev, ...validImages]);
         }
     };
 
-    // ✅ NEW: Remove a selected image before upload
     const removeImage = (indexToRemove: number) => {
-        setSelectedImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
+        setSelectedImages(prev => prev.filter((_, i) => i !== indexToRemove));
     };
-
 
     const handleMaterialChange = (materialId: number) => {
-        const currentMaterials = [...formData.materialIds];
-        const index = currentMaterials.indexOf(materialId);
-        if (index > -1) {
-            currentMaterials.splice(index, 1);
-        } else {
-            currentMaterials.push(materialId);
-        }
-        setFormData({ ...formData, materialIds: currentMaterials });
+        const current = [...formData.materialIds];
+        const idx = current.indexOf(materialId);
+        if (idx > -1) current.splice(idx, 1);
+        else current.push(materialId);
+        setFormData({ ...formData, materialIds: current });
     };
 
-    // ✅ UPDATED: Completely rewritten handle Submit for FormData
+    // Live discount % calculation
+    const discountPercent = formData.price && formData.discountPrice
+        ? Math.round((1 - parseFloat(formData.discountPrice) / parseFloat(formData.price)) * 100)
+        : null;
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
-        // Validation
-        if (formData.materialIds.length === 0) {
-            setError('Please select at least one material');
-            setLoading(false);
-            return;
-        }
-        if (selectedImages.length === 0) {
-            setError('Please upload at least one product image');
+        if (formData.materialIds.length === 0) { setError('Please select at least one material'); setLoading(false); return; }
+        if (selectedImages.length === 0) { setError('Please upload at least one product image'); setLoading(false); return; }
+
+        // Validate discount price
+        if (formData.discountPrice && parseFloat(formData.discountPrice) >= parseFloat(formData.price)) {
+            setError('Discount price must be lower than the original price');
             setLoading(false);
             return;
         }
 
         try {
-            // 1. Create FormData object
             const data = new FormData();
-
-            // 2. Append simple text fields
             data.append('Name', formData.name);
             data.append('Description', formData.description);
             data.append('Price', formData.price.toString());
             data.append('StockQuantity', formData.stockQuantity.toString());
             data.append('CategoryId', formData.categoryId.toString());
+            if (formData.discountPrice) data.append('DiscountPrice', formData.discountPrice.toString());
             if (formData.length) data.append('Length', formData.length.toString());
             if (formData.width) data.append('Width', formData.width.toString());
             if (formData.height) data.append('Height', formData.height.toString());
             if (formData.weight) data.append('Weight', formData.weight.toString());
+            if (formData.color) data.append('Color', formData.color);
+            if (formData.finishType) data.append('FinishType', formData.finishType);
+            if (formData.craftingTimeDays) data.append('CraftingTimeDays', formData.craftingTimeDays.toString());
+            if (formData.careInstructions) data.append('CareInstructions', formData.careInstructions);
+            if (formData.careWarnings) data.append('CareWarnings', formData.careWarnings);
 
-            // 3. Append Arrays (Materials need special handling for FormData)
             formData.materialIds.forEach((id, index) => {
                 data.append(`MaterialIds[${index}]`, id.toString());
             });
+            selectedImages.forEach(image => data.append('Images', image));
 
-            // 4. Append Images
-            selectedImages.forEach((image) => {
-                // 'Images' must match the property name in the Backend DTO later
-                data.append('Images', image);
-            });
-
-            // 5. Send to service
             await productService.createProduct(data);
             navigate('/seller/products');
         } catch (err: any) {
-            console.error("Upload Error", err);
             if (err.response?.status === 403) {
                 setError('Your seller account is not verified or permission denied.');
             } else {
-                setError(err.response?.data?.message || 'Failed to create product. Check console for details.');
+                setError(err.response?.data?.message || 'Failed to create product.');
             }
         } finally {
             setLoading(false);
         }
     };
 
+    const inputStyle = { backgroundColor: '#FDFAF5', borderColor: '#DDD9D2', fontSize: 14 };
+    const cardStyle = { backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)', border: 'none', borderRadius: 12 };
+    const sectionNumStyle = { width: 28, height: 28, backgroundColor: '#2D6A4F', color: 'white', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 };
+
     return (
-        <Layout>
-            <div className="container py-4">
-                <div className="row">
-                    <div className="col-md-10 col-lg-8 mx-auto">
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h2 className="fw-bold mb-1">Add New Product</h2>
-                                <p className="text-muted mb-0">List a new bamboo or cane furniture item</p>
-                            </div>
-                            <button
-                                className="btn btn-outline-secondary"
-                                onClick={() => navigate('/seller/products')}
-                            >
-                                <i className="bi bi-arrow-left me-2"></i>
-                                Back
-                            </button>
+        <div style={{ backgroundColor: '#F5F2EC', minHeight: '100vh' }} className="py-4">
+            <div className="container" style={{ maxWidth: 760 }}>
+
+                {/* Header */}
+                <div className="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <nav style={{ fontSize: 13 }} className="mb-1">
+                            <span className="text-muted">Seller Dashboard</span>
+                            <span className="text-muted mx-2">›</span>
+                            <span style={{ color: '#2D6A4F' }}>Add Product</span>
+                        </nav>
+                        <h4 className="fw-bold mb-0">Add New Product</h4>
+                        <small className="text-muted">List a new bamboo or cane furniture item</small>
+                    </div>
+                    <button className="btn btn-sm fw-medium"
+                            onClick={() => navigate('/seller/products')}
+                            style={{ borderColor: '#CCC', color: '#555', borderRadius: 8, fontSize: 13 }}>
+                        <i className="bi bi-arrow-left me-1"></i>Back
+                    </button>
+                </div>
+
+                {error && (
+                    <div className="alert alert-danger d-flex align-items-center gap-2 mb-4" style={{ fontSize: 14 }}>
+                        <i className="bi bi-exclamation-triangle-fill"></i>{error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+
+                    {/* ── 1. Basic Information ── */}
+                    <div className="p-4 mb-3" style={cardStyle}>
+                        <div className="d-flex align-items-center gap-2 mb-3">
+                            <div style={sectionNumStyle}>1</div>
+                            <h6 className="fw-bold mb-0">Basic Information</h6>
                         </div>
 
-                        {error && (
-                            <div className="alert alert-danger" role="alert">
-                                <i className="bi bi-exclamation-triangle me-2"></i>
-                                {error}
+                        <div className="mb-3">
+                            <label className="form-label fw-medium" style={{ fontSize: 13 }}>Product Name *</label>
+                            <input type="text" className="form-control" name="name" value={formData.name}
+                                   onChange={handleChange} required placeholder="e.g. Handcrafted Bamboo Rocking Chair"
+                                   style={inputStyle} />
+                        </div>
+
+                        <div className="mb-3">
+                            <label className="form-label fw-medium" style={{ fontSize: 13 }}>Description *</label>
+                            <textarea className="form-control" name="description" value={formData.description}
+                                      onChange={handleChange} rows={4} required style={inputStyle}
+                                      placeholder="Describe materials, craftsmanship, unique features and care instructions..." />
+                            <small className="text-muted">{formData.description.length} / 2000</small>
+                        </div>
+
+                        <div className="row g-3">
+                            <div className="col-md-6">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Category *</label>
+                                <select className="form-select" name="categoryId" value={formData.categoryId}
+                                        onChange={handleChange} required style={inputStyle}>
+                                    <option value="">Select category</option>
+                                    {categories.map(c => <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>)}
+                                </select>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Materials *</label>
+                                <div className="rounded-2 p-2" style={{ ...inputStyle, border: '1px solid #DDD9D2', maxHeight: 110, overflowY: 'auto' }}>
+                                    {materials.map(mat => (
+                                        <div key={mat.materialId} className="form-check mb-1">
+                                            <input className="form-check-input" type="checkbox"
+                                                   id={`mat-${mat.materialId}`}
+                                                   checked={formData.materialIds.includes(mat.materialId)}
+                                                   onChange={() => handleMaterialChange(mat.materialId)} />
+                                            <label className="form-check-label" htmlFor={`mat-${mat.materialId}`}
+                                                   style={{ fontSize: 13 }}>{mat.materialName}</label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── 2. Pricing & Inventory ── */}
+                    <div className="p-4 mb-3" style={cardStyle}>
+                        <div className="d-flex align-items-center gap-2 mb-3">
+                            <div style={sectionNumStyle}>2</div>
+                            <h6 className="fw-bold mb-0">Pricing & Inventory</h6>
+                        </div>
+
+                        <div className="row g-3">
+                            <div className="col-md-4">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Price (NPR) *</label>
+                                <div className="input-group">
+                                    <span className="input-group-text" style={{ backgroundColor: '#F0EBE1', borderColor: '#DDD9D2', fontSize: 13 }}>Rs.</span>
+                                    <input type="number" className="form-control" name="price" value={formData.price}
+                                           onChange={handleChange} required min="0" style={inputStyle}
+                                           placeholder="15,000" />
+                                </div>
+                            </div>
+                            <div className="col-md-4">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>
+                                    Discount Price (Rs.)
+                                    {discountPercent !== null && discountPercent > 0 && (
+                                        <span className="ms-2 badge" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32', fontSize: 11 }}>
+                                            {discountPercent}% OFF
+                                        </span>
+                                    )}
+                                </label>
+                                <div className="input-group">
+                                    <span className="input-group-text" style={{ backgroundColor: '#F0EBE1', borderColor: '#DDD9D2', fontSize: 13 }}>Rs.</span>
+                                    <input type="number" className="form-control" name="discountPrice"
+                                           value={formData.discountPrice} onChange={handleChange} min="0"
+                                           style={inputStyle} placeholder="Optional" />
+                                </div>
+                            </div>
+                            <div className="col-md-4">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Stock Quantity *</label>
+                                <input type="number" className="form-control" name="stockQuantity"
+                                       value={formData.stockQuantity} onChange={handleChange} required min="0"
+                                       style={inputStyle} placeholder="20" />
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Crafting Time (Days)</label>
+                                <input type="text" className="form-control" name="craftingTimeDays"
+                                       value={formData.craftingTimeDays} onChange={handleChange}
+                                       style={inputStyle} placeholder="e.g. 3-4" />
+                                <small className="text-muted">How long does it take to make this product?</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── 3. Product Images ── */}
+                    <div className="p-4 mb-3" style={cardStyle}>
+                        <div className="d-flex align-items-center gap-2 mb-3">
+                            <div style={sectionNumStyle}>3</div>
+                            <h6 className="fw-bold mb-0">Product Images</h6>
+                        </div>
+
+                        <label className="form-label fw-medium" style={{ fontSize: 13 }}>
+                            Upload Images * <small className="text-muted fw-normal">(First image will be cover)</small>
+                        </label>
+
+                        {/* Drop zone */}
+                        <label className="d-flex flex-column align-items-center justify-content-center rounded-3 p-4 mb-2"
+                               style={{ border: '2px dashed #C5BFB4', cursor: 'pointer', backgroundColor: '#F8F5F0' }}>
+                            <i className="bi bi-cloud-upload" style={{ fontSize: 28, color: '#2D6A4F' }}></i>
+                            <span className="fw-medium mt-1" style={{ fontSize: 13 }}>Drag & drop or click to upload</span>
+                            <small className="text-muted">PNG, JPG, WEBP — Max 5 photos</small>
+                            <input type="file" className="d-none" multiple accept="image/png,image/jpeg,image/jpg,image/webp"
+                                   onChange={handleImageChange} />
+                        </label>
+
+                        {selectedImages.length > 0 && (
+                            <div className="d-flex flex-wrap gap-2 mt-2">
+                                {selectedImages.map((file, i) => (
+                                    <div key={i} className="position-relative" style={{ width: 80, height: 80 }}>
+                                        <img src={URL.createObjectURL(file)} alt="preview"
+                                             className="rounded-2 w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        {i === 0 && (
+                                            <span className="position-absolute bottom-0 start-0 w-100 text-center"
+                                                  style={{ backgroundColor: 'rgba(45,106,79,0.8)', color: 'white', fontSize: 9, borderRadius: '0 0 6px 6px', padding: '1px 0' }}>
+                                                Cover
+                                            </span>
+                                        )}
+                                        <button type="button"
+                                                className="position-absolute d-flex align-items-center justify-content-center"
+                                                onClick={() => removeImage(i)}
+                                                style={{ top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', backgroundColor: '#C62828', border: 'none', color: 'white', fontSize: 10, cursor: 'pointer' }}>
+                                            <i className="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
-
-                        <form onSubmit={handleSubmit}>
-                            {/* Basic Information Card */}
-                            <div className="card border-0 shadow-sm mb-4">
-                                <div className="card-body p-4">
-                                    <h5 className="card-title mb-3">Basic Information</h5>
-
-                                    <div className="mb-3">
-                                        <label htmlFor="name" className="form-label fw-medium">Product Name *</label>
-                                        <input type="text" className="form-control" id="name" name="name" value={formData.name} onChange={handleChange} required />
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <label htmlFor="description" className="form-label fw-medium">Description *</label>
-                                        <textarea className="form-control" id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required />
-                                    </div>
-
-                                    <div className="row">
-                                        <div className="col-md-6 mb-3">
-                                            <label htmlFor="categoryId" className="form-label fw-medium">Category *</label>
-                                            <select className="form-select" id="categoryId" name="categoryId" value={formData.categoryId} onChange={handleChange} required>
-                                                <option value="">Select category</option>
-                                                {categories.map(cat => <option key={cat.categoryId} value={cat.categoryId}>{cat.categoryName}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-medium">Materials *</label>
-                                            <div className="border rounded p-2 bg-light" style={{maxHeight: '100px', overflowY: 'auto'}}>
-                                                {materials.map(mat => (
-                                                    <div key={mat.materialId} className="form-check">
-                                                        <input className="form-check-input" type="checkbox" id={`material-${mat.materialId}`} checked={formData.materialIds.includes(mat.materialId)} onChange={() => handleMaterialChange(mat.materialId)} />
-                                                        <label className="form-check-label" htmlFor={`material-${mat.materialId}`}>{mat.materialName}</label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* ✅ NEW: Image Upload Section */}
-                            <div className="card border-0 shadow-sm mb-4">
-                                <div className="card-body p-4">
-                                    <h5 className="card-title mb-3">Product Images</h5>
-                                    <div className="mb-3">
-                                        <label htmlFor="images" className="form-label fw-medium">Upload Images (First image will be cover) *</label>
-                                        <input
-                                            type="file"
-                                            className="form-control"
-                                            id="images"
-                                            multiple
-                                            accept="image/png, image/jpeg, image/jpg, image/webp"
-                                            onChange={handleImageChange}
-                                        />
-                                        <div className="form-text">Supported formats: PNG, JPG, WEBP.</div>
-                                    </div>
-
-                                    {/* Image Previews */}
-                                    {selectedImages.length > 0 && (
-                                        <div className="d-flex flex-wrap gap-2 mt-3">
-                                            {selectedImages.map((file, index) => (
-                                                <div key={index} className="position-relative" style={{width: '80px', height: '80px'}}>
-                                                    <img src={URL.createObjectURL(file)} alt="preview" className="img-thumbnail w-100 h-100" style={{objectFit: 'cover'}} />
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle badge rounded-pill p-1"
-                                                        onClick={() => removeImage(index)}
-                                                    >
-                                                        <i className="bi bi-x"></i>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Pricing & Dimensions Card (Same as before) */}
-                            <div className="card border-0 shadow-sm mb-4">
-                                <div className="card-body p-4">
-                                    <h5 className="card-title mb-3">Pricing & Dimensions</h5>
-                                    <div className="row">
-                                        <div className="col-md-6 mb-3">
-                                            <label htmlFor="price" className="form-label fw-medium">Price (NPR) *</label>
-                                            <div className="input-group"><span className="input-group-text">NPR</span><input type="number" className="form-control" id="price" name="price" value={formData.price} onChange={handleChange} required min="0" step="0.01"/></div>
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label htmlFor="stockQuantity" className="form-label fw-medium">Stock Quantity *</label>
-                                            <input type="number" className="form-control" id="stockQuantity" name="stockQuantity" value={formData.stockQuantity} onChange={handleChange} required min="0"/>
-                                        </div>
-                                        {/* Dimensions (Optional) */}
-                                        <div className="col-md-3 mb-3">
-                                            <label htmlFor="length" className="form-label small">Length (cm)</label>
-                                            <input type="number" className="form-control form-control-sm" id="length" name="length" value={formData.length} onChange={handleChange} step="0.1"/>
-                                        </div>
-                                        <div className="col-md-3 mb-3">
-                                            <label htmlFor="width" className="form-label small">Width (cm)</label>
-                                            <input type="number" className="form-control form-control-sm" id="width" name="width" value={formData.width} onChange={handleChange} step="0.1"/>
-                                        </div>
-                                        <div className="col-md-3 mb-3">
-                                            <label htmlFor="height" className="form-label small">Height (cm)</label>
-                                            <input type="number" className="form-control form-control-sm" id="height" name="height" value={formData.height} onChange={handleChange} step="0.1"/>
-                                        </div>
-                                        <div className="col-md-3 mb-3">
-                                            <label htmlFor="weight" className="form-label small">Weight (kg)</label>
-                                            <input type="number" className="form-control form-control-sm" id="weight" name="weight" value={formData.weight} onChange={handleChange} step="0.1"/>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/seller/products')}>Cancel</button>
-                                <button type="submit" className="btn btn-success px-4" disabled={loading}>
-                                    {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Uploading...</> : 'Create Product'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
+
+                    {/* ── 4. Product Specifications ── */}
+                    <div className="p-4 mb-3" style={cardStyle}>
+                        <div className="d-flex align-items-center gap-2 mb-3">
+                            <div style={sectionNumStyle}>4</div>
+                            <h6 className="fw-bold mb-0">Product Specifications</h6>
+                        </div>
+
+                        {/* Dimensions */}
+                        <p className="fw-medium mb-2" style={{ fontSize: 13, color: '#555' }}>Dimensions</p>
+                        <div className="row g-2 mb-3">
+                            {['length', 'width', 'height', 'weight'].map((field) => (
+                                <div key={field} className="col-6 col-md-3">
+                                    <label className="form-label" style={{ fontSize: 12, color: '#777' }}>
+                                        {field.charAt(0).toUpperCase() + field.slice(1)} ({field === 'weight' ? 'kg' : 'cm'})
+                                    </label>
+                                    <input type="number" className="form-control form-control-sm" name={field}
+                                           value={(formData as any)[field]} onChange={handleChange}
+                                           step="0.1" style={inputStyle} />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Color & Finish */}
+                        <div className="row g-3">
+                            <div className="col-md-6">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Color</label>
+                                <input type="text" className="form-control" name="color" value={formData.color}
+                                       onChange={handleChange} style={inputStyle}
+                                       placeholder="e.g. Natural Bamboo Brown" />
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label fw-medium" style={{ fontSize: 13 }}>Finish Type</label>
+                                <div className="d-flex gap-2 flex-wrap mt-1">
+                                    {['Natural', 'Varnished', 'Painted', 'Polished', 'Other'].map(f => (
+                                        <button key={f} type="button"
+                                                onClick={() => setFormData({ ...formData, finishType: f })}
+                                                className="btn btn-sm fw-medium"
+                                                style={{
+                                                    fontSize: 12, borderRadius: 20,
+                                                    backgroundColor: formData.finishType === f ? '#2D6A4F' : '#F0EBE1',
+                                                    color: formData.finishType === f ? 'white' : '#555',
+                                                    border: formData.finishType === f ? 'none' : '1px solid #DDD9D2',
+                                                }}>
+                                            {f}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── 5. Care Instructions ── */}
+                    <div className="p-4 mb-3" style={cardStyle}>
+                        <div className="d-flex align-items-center gap-2 mb-3">
+                            <div style={sectionNumStyle}>5</div>
+                            <h6 className="fw-bold mb-0">Care Instructions</h6>
+                        </div>
+
+                        <div className="mb-3">
+                            <label className="form-label fw-medium" style={{ fontSize: 13 }}>
+                                General Care Instructions
+                                <small className="text-muted fw-normal ms-1">(shown in product page Care Guide tab)</small>
+                            </label>
+                            <textarea className="form-control" name="careInstructions" value={formData.careInstructions}
+                                      onChange={handleChange} rows={3} style={inputStyle}
+                                      placeholder="e.g. Wipe with soft dry cloth. Keep away from direct sunlight. Use mild soap solution for cleaning..." />
+                        </div>
+
+                        <div>
+                            <label className="form-label fw-medium" style={{ fontSize: 13 }}>
+                                Warnings & Cautions <small className="text-muted fw-normal">(optional)</small>
+                            </label>
+                            <textarea className="form-control" name="careWarnings" value={formData.careWarnings}
+                                      onChange={handleChange} rows={2} style={inputStyle}
+                                      placeholder="e.g. Do not drag across floor. Avoid harsh chemicals. Keep away from heat sources..." />
+                        </div>
+                    </div>
+
+                    {/* ── Confirmation & Submit ── */}
+                    <div className="p-4 mb-4" style={{ ...cardStyle, backgroundColor: '#F8F5F0' }}>
+                        <div className="form-check mb-0">
+                            <input className="form-check-input" type="checkbox" id="confirm" required />
+                            <label className="form-check-label" htmlFor="confirm" style={{ fontSize: 13, color: '#555' }}>
+                                I confirm that this product information is accurate and the product is handcrafted by me or my team
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="d-flex justify-content-end gap-2">
+                        <button type="button" className="btn fw-medium px-4"
+                                onClick={() => navigate('/seller/products')}
+                                style={{ borderColor: '#CCC', color: '#555', borderRadius: 8 }}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn fw-semibold px-5 text-white"
+                                disabled={loading}
+                                style={{ backgroundColor: '#2D6A4F', borderRadius: 8 }}>
+                            {loading
+                                ? <><span className="spinner-border spinner-border-sm me-2"></span>Uploading...</>
+                                : <><i className="bi bi-check-circle me-2"></i>Create Product</>}
+                        </button>
+                    </div>
+                </form>
             </div>
-        </Layout>
+        </div>
     );
 };
 
