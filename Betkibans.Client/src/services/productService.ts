@@ -1,7 +1,7 @@
 import api from './api';
 import type { Product } from '../types/Product';
 
-// 1. Define what filters look like
+// Define what filters look like
 export interface ProductFilters {
     search?: string;
     categoryIds?: number[];
@@ -12,11 +12,11 @@ export interface ProductFilters {
 }
 
 export const productService = {
-    // 2. Accept 'filters' as an argument here!
+    // Accept 'filters' as an argument here!
     getAllProducts: async (filters?: ProductFilters): Promise<Product[]> => {
         const params = new URLSearchParams();
 
-        // 3. Convert the object into URL parameters
+        // Convert the object into URL parameters
         if (filters) {
             if (filters.search) params.append('search', filters.search);
             if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
@@ -28,7 +28,7 @@ export const productService = {
             filters.materialIds?.forEach(id => params.append('materialIds', id.toString()));
         }
 
-        // 4. Send the parameters to the backend
+        // Send the parameters to the backend
         const response = await api.get('/Product', { params });
         return response.data;
     },
@@ -37,8 +37,7 @@ export const productService = {
         const response = await api.get(`/Product/${id}`);
         return response.data;
     },
-
-    // Note: Use FormData for creating products with images
+    
     createProduct: async (data: FormData): Promise<Product> => {
         const response = await api.post('/Product', data, {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -56,7 +55,7 @@ export const productService = {
     },
 
     getSellerProducts: async (): Promise<Product[]> => {
-        const response = await api.get('/Product');
+        const response = await api.get('/Product/seller/mine');
         return response.data;
     },
 };
