@@ -12,15 +12,23 @@ export interface Product {
     stockQuantity: number;
     categoryName: string;
     categoryId: number;
+    sellerBusinessName?: string;
+    discountPrice?: number;
 
     // Images
     productImages: ProductImage[];
-
-    // ✅ NEW: Added these missing dimension fields
+    productMaterials?: { materialId: number; materialName: string }[];
+    
     length?: number;
     width?: number;
     height?: number;
     weight?: number;
+    
+    color?: string;
+    finishType?: string;
+    craftingTimeDays?: string;
+    careInstructions?: string;
+    careWarnings?: string;
 
     // Optional fields
     materials?: string[];

@@ -51,16 +51,11 @@ export const productService = {
         return response.data;
     },
 
-    deleteProduct: async (id: number): Promise<void> => {
-        await api.delete(`/Product/${id}`);
+    deleteProduct: async (productId: number): Promise<void> => {
+        await api.delete(`/Product/${productId}`);
     },
 
     getSellerProducts: async (): Promise<Product[]> => {
-        // In a real app, you might want a specific endpoint like /Seller/products
-        // For now, filtering on the client side or using a specific endpoint is fine.
-        // Assuming your backend filters by the logged-in user automatically if you use /Product 
-        // OR you might need to add logic here. 
-        // For this fix, we are just focusing on the public list.
         const response = await api.get('/Product');
         return response.data;
     },
