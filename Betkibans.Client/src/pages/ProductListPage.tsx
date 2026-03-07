@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/common/Layout';
 import ProductCard from '../components/product/ProductCard';
 import FilterSidebar from '../components/product/FilterSidebar';
 import { productService } from '../services/productService';
-// ✅ FIX 1: Use 'import type'
 import type { ProductFilters } from '../services/productService';
 import type { Product } from '../types/Product';
 
@@ -38,7 +36,7 @@ const ProductListPage = () => {
     };
 
     return (
-        <Layout>
+        <>
             <div className="bg-light py-5">
                 <div className="container">
                     <div className="row">
@@ -89,7 +87,7 @@ const ProductListPage = () => {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </>
     );
 };
 
