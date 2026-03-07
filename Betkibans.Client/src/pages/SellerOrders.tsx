@@ -8,6 +8,7 @@ interface OrderItem {
     productName: string;
     quantity: number;
     unitPrice: number;
+    productImage?: string;  
 }
 
 interface Order {
@@ -241,9 +242,16 @@ const SellerOrders = () => {
                                                  className="d-flex justify-content-between align-items-center py-2"
                                                  style={{ borderBottom: i < order.orderItems.length - 1 ? '1px dashed #E5E1D8' : 'none' }}>
                                                 <div className="d-flex align-items-center gap-2">
-                                                    <div className="rounded-2 d-flex align-items-center justify-content-center"
-                                                         style={{ width: 36, height: 36, backgroundColor: '#EDEAE3', flexShrink: 0 }}>
-                                                        <i className="bi bi-box-seam text-muted" style={{ fontSize: 14 }}></i>
+                                                    <div className="rounded-2 overflow-hidden flex-shrink-0"
+                                                         style={{ width: 48, height: 48, backgroundColor: '#EDEAE3' }}>
+                                                        {item.productImage
+                                                            ? <img src={`http://localhost:5192${item.productImage}`}
+                                                                   alt={item.productName}
+                                                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : <div className="w-100 h-100 d-flex align-items-center justify-content-center">
+                                                                <i className="bi bi-box-seam text-muted" style={{ fontSize: 14 }}></i>
+                                                            </div>
+                                                        }
                                                     </div>
                                                     <div>
                                                         <p className="mb-0 fw-medium" style={{ fontSize: 14 }}>{item.productName}</p>
