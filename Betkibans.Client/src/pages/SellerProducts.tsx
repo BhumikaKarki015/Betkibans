@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
 import { productService } from '../services/productService';
 import { useAuth } from '../contexts/AuthContext';
 import type { Product } from '../types/Product';
 
 const SellerProducts = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
+        if (isLoading) return;
         if (!user || user.role !== 'Seller') {
             navigate('/login');
             return;
@@ -56,7 +56,7 @@ const SellerProducts = () => {
 
     if (loading) {
         return (
-            <Layout>
+            <>
                 <div className="container mt-5">
                     <div className="text-center">
                         <div className="spinner-border text-success" role="status">
@@ -64,12 +64,12 @@ const SellerProducts = () => {
                         </div>
                     </div>
                 </div>
-            </Layout>
+            </>
         );
     }
 
     return (
-        <Layout>
+        <>
             <div className="container py-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
@@ -182,7 +182,7 @@ const SellerProducts = () => {
                     </button>
                 </div>
             </div>
-        </Layout>
+        </>
     );
 };
 
