@@ -3,6 +3,7 @@ using System;
 using Betkibans.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Betkibans.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260306064256_AddKhaltiPaymentFields")]
+    partial class AddKhaltiPaymentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -407,10 +410,6 @@ namespace Betkibans.Server.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -746,9 +745,6 @@ namespace Betkibans.Server.Migrations
                     b.Property<string>("BusinessDescription")
                         .HasColumnType("text");
 
-                    b.Property<string>("BusinessHours")
-                        .HasColumnType("text");
-
                     b.Property<string>("BusinessName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -763,22 +759,10 @@ namespace Betkibans.Server.Migrations
                     b.Property<string>("District")
                         .HasColumnType("text");
 
-                    b.Property<string>("FacebookUrl")
-                        .HasColumnType("text");
-
-                    b.Property<string>("InstagramUrl")
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean");
 
                     b.Property<string>("KycDocumentPath")
-                        .HasColumnType("text");
-
-                    b.Property<string>("LogoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumber")
                         .HasColumnType("text");
 
                     b.Property<string>("RejectionReason")
@@ -792,9 +776,6 @@ namespace Betkibans.Server.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("VerifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Website")
                         .HasColumnType("text");
 
                     b.HasKey("SellerId");
