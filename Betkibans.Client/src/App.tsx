@@ -30,6 +30,7 @@ import CompleteProfile from './pages/CompleteProfile';
 import UploadKYC from './pages/UploadKYC';
 import CreateProduct from './pages/CreateProduct';
 import SellerProducts from './pages/SellerProducts';
+import SellerProfile from './pages/SellerProfile';
 import EditProduct from './pages/EditProduct';
 import SellerRepairDashboard from './pages/SellerRepairDashboard';
 import SellerOrders from './pages/SellerOrders';
@@ -69,6 +70,7 @@ function App() {
                                                             <Route path="/profile" element={<UserProfile />} />
                                                             <Route path="/wishlist" element={<Wishlist />} />
                                                             <Route path="/seller/dashboard" element={<SellerDashboard />} />
+                                                            <Route path="/seller/profile" element={<SellerProfile />} />
                                                             <Route path="/seller/complete-profile" element={<CompleteProfile />} />
                                                             <Route path="/seller/upload-kyc" element={<UploadKYC />} />
                                                             <Route path="/seller/create-product" element={<CreateProduct />} />

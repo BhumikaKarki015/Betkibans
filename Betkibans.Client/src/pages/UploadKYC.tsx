@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
 import { sellerService } from '../services/sellerService';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -77,7 +76,7 @@ const UploadKYC = () => {
 
     if (success) {
         return (
-            <Layout>
+            <>
                 <div className="container py-5">
                     <div className="row justify-content-center">
                         <div className="col-md-6 text-center">
@@ -98,12 +97,12 @@ const UploadKYC = () => {
                         </div>
                     </div>
                 </div>
-            </Layout>
+            </>
         );
     }
 
     return (
-        <Layout>
+        <>
             <div className="container py-5">
                 <div className="row justify-content-center">
                     <div className="col-md-8 col-lg-7">
@@ -276,7 +275,7 @@ const UploadKYC = () => {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </>
     );
 };
 
