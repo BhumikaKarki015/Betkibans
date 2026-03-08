@@ -6,6 +6,7 @@ interface User {
     email: string;
     fullName: string;
     role: string;
+    phoneNumber?: string;
 }
 
 interface AuthContextType {
@@ -14,6 +15,7 @@ interface AuthContextType {
     login: (token: string, userData: User) => void;
     logout: () => void;
     isAuthenticated: boolean;
+    isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,38 +23,45 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true); // ← INSIDE component
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Check if user is already logged in on page load
-        const savedToken = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
+        const savedToken = sessionStorage.getItem('token');
+        const savedUser = sessionStorage.getItem('user');
 
-        if (savedToken && savedUser) {
-            setToken(savedToken);
-            setUser(JSON.parse(savedUser));
+        if (savedToken && savedUser && savedUser !== 'undefined' && savedUser !== 'null') {
+            try {
+                setToken(savedToken);
+                setUser(JSON.parse(savedUser));
+            } catch {
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+            }
         }
+        setIsLoading(false);
     }, []);
 
     const login = (newToken: string, userData: User) => {
         setToken(newToken);
         setUser(userData);
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
+        sessionStorage.setItem('token', newToken);
+        sessionStorage.setItem('user', JSON.stringify(userData));
+        navigate('/');
     };
 
     const logout = () => {
         setToken(null);
         setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         navigate('/login');
     };
 
     const isAuthenticated = !!token;
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

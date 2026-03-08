@@ -7,9 +7,16 @@ const api = axios.create({
     },
 });
 
-// Automatically attach JWT token if it exists in localStorage [cite: 1181, 1203]
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+// Automatically attach JWT token if it exists in localStorage [cite: 1181, 1203]
+api.interceptors.request.use((config) => {
+    const token = sessionStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
