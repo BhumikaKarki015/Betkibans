@@ -161,6 +161,7 @@ builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<ICartService, CartService>();
 
+builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // ----------------------------
