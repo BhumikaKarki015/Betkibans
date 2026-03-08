@@ -229,19 +229,6 @@ const Login = () => {
                             Continue with Google (Coming Soon)
                         </button>
                     </form>
-
-                    {/* Quick Test Accounts (Development Only - Remove in Production!) */}
-                    <div className="mt-4 p-3 bg-light rounded">
-                        <h6 className="small fw-bold mb-2">Test Accounts (Dev Only)</h6>
-                        <div className="small text-muted">
-                            <div className="mb-1">
-                                <strong>Admin:</strong> admin@betkibans.com / Admin@123
-                            </div>
-                            <div>
-                                <strong>Seller:</strong> Create via Register page
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

@@ -4,18 +4,18 @@ import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
     const navigate = useNavigate();
-    
+
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState('Consumer'); 
-    
+    const [role, setRole] = useState('Consumer');
+
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    
+
     const brandGreen = '#2E4F3E';
     const beigeBg = '#FAF8F5';
 
@@ -43,7 +43,7 @@ const Register = () => {
 
             setMessage("✅ Account Created! Redirecting to Login...");
             setTimeout(() => {
-                navigate('/');
+                navigate('/login');
             }, 2000);
 
         } catch (err: any) {
@@ -115,7 +115,7 @@ const Register = () => {
                     <div className="d-flex mb-3 p-1 rounded-3" style={{ backgroundColor: '#EFEFEF' }}>
                         <button
                             className="btn w-50 border-0 rounded-3 text-muted small"
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('/login')} // ✅ FIXED: Now points to /login
                         >
                             Login
                         </button>
@@ -197,7 +197,7 @@ const Register = () => {
                             <span
                                 className="fw-bold cursor-pointer"
                                 style={{cursor:'pointer', color: brandGreen}}
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate('/login')}
                             >
                                 {' '}Login here
                             </span>
