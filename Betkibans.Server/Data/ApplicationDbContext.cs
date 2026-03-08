@@ -28,18 +28,17 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Review> Reviews { get; set; }
     public DbSet<RepairRequest> RepairRequests { get; set; }
     public DbSet<RepairQuote> RepairQuotes { get; set; }
+    public DbSet<Wishlist> Wishlists { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); // Keep this!
+        base.OnModelCreating(modelBuilder); 
         
-        // --- 🔴 THE CRITICAL FIX IS HERE ---
         modelBuilder.Entity<Seller>(entity =>
         {
             entity.HasKey(e => e.SellerId);
             entity.Property(e => e.BusinessName).IsRequired().HasMaxLength(200);
-
-            // FIX: Use 'e.User' explicitly instead of 'HasOne<ApplicationUser>()'
+            
             // This tells EF: "The 'User' property uses the 'UserId' column."
             entity.HasOne(e => e.User) 
                   .WithMany()
@@ -160,7 +159,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(e => e.ReviewId);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.HasOne(e => e.Product).WithMany(p => p.Reviews).HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(e => e.UserId);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId);
         });
         
         // RepairRequest Configuration
@@ -195,5 +194,17 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             new Material { MaterialId = 3, MaterialName = "Rattan", Description = "Natural rattan", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new Material { MaterialId = 4, MaterialName = "Mixed", Description = "Mixed materials", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
+        
+        modelBuilder.Entity<Wishlist>(entity =>
+        {
+            entity.HasKey(e => e.WishlistId);
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId);
+        });
     }
 }
