@@ -76,7 +76,7 @@ public class ProductController : ControllerBase
 
         return Ok(await query.ToListAsync());
     }
-
+    
     // GET: api/Product/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProduct(int id)
@@ -85,12 +85,33 @@ public class ProductController : ControllerBase
             .Include(p => p.Category)
             .Include(p => p.ProductImages)
             .Include(p => p.ProductMaterials)
-                .ThenInclude(pm => pm.Material)
+            .ThenInclude(pm => pm.Material)
             .FirstOrDefaultAsync(p => p.ProductId == id);
 
         if (product == null) return NotFound();
 
         return Ok(product);
+    }
+
+    // GET: api/Product/my-products
+    [HttpGet("seller/mine")]
+    [Authorize(Roles = "Seller")]
+    public async Task<IActionResult> GetMyProducts()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return StatusCode(403, "Seller profile not found.");
+
+        var products = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.ProductImages)
+            .Include(p => p.ProductMaterials)
+            .ThenInclude(pm => pm.Material)
+            .Where(p => p.SellerId == seller.SellerId && p.IsActive)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        return Ok(products);
     }
     
     [HttpPost]
