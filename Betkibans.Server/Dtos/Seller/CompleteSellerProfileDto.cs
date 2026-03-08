@@ -19,4 +19,11 @@ public class CompleteSellerProfileDto
 
     [Required(ErrorMessage = "District is required")]
     public string District { get; set; } = string.Empty;
+    
+    public string? PhoneNumber { get; set; }
+    public string? Website { get; set; }
+    public string? BusinessHours { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+
 }
