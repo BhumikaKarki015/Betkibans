@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
 import { useCart } from '../contexts/CartContext';
 
 const Cart = () => {
@@ -8,7 +7,7 @@ const Cart = () => {
 
     if (cartItems.length === 0) {
         return (
-            <Layout>
+            <>
                 <div className="container py-5 text-center">
                     <i className="bi bi-cart-x display-1 text-muted"></i>
                     <h2 className="mt-4">Your cart is empty</h2>
@@ -17,12 +16,12 @@ const Cart = () => {
                         Start Shopping
                     </button>
                 </div>
-            </Layout>
+            </>
         );
     }
 
     return (
-        <Layout>
+        <>
             <div className="container py-5">
                 <h2 className="fw-bold mb-4">Shopping Cart</h2>
                 <div className="row g-4">
@@ -103,7 +102,7 @@ const Cart = () => {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </>
     );
 };
 

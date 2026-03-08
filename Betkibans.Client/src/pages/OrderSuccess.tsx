@@ -1,25 +1,34 @@
-import { Link } from 'react-router-dom';
-import Layout from '../components/common/Layout';
+import { useNavigate } from 'react-router-dom'; 
 
-const OrderSuccess = () => (
-    <Layout>
+const OrderSuccess = () => {
+    const navigate = useNavigate(); 
+
+    return (
         <div className="container py-5 text-center">
             <div className="py-5">
-                <i className="bi bi-check-circle-fill display-1 text-success shadow-sm rounded-circle"></i>
-                <h1 className="mt-4 fw-bold">Order Placed Successfully!</h1>
-                <p className="lead text-muted">Thank you for supporting local bamboo artisans. We are processing your order.</p>
+                <div className="display-1 text-success mb-4">✅</div>
+                <h1 className="fw-bold mb-3">Order Placed Successfully!</h1>
+                <p className="text-muted mb-5 fs-5">
+                    Thank you for supporting local bamboo artisans. We are processing your order.
+                </p>
 
-                <div className="mt-4 d-flex justify-content-center gap-3">
-                    <Link to="/my-orders" className="btn btn-success btn-lg px-4">
-                        <i className="bi bi-bag-check me-2"></i>View My Orders
-                    </Link>
-                    <Link to="/products" className="btn btn-outline-success btn-lg px-4">
+                <div className="d-flex justify-content-center gap-3">
+                    <button
+                        className="btn btn-success btn-lg px-4 rounded-pill"
+                        onClick={() => navigate('/orders')} 
+                    >
+                        View My Orders
+                    </button>
+                    <button
+                        className="btn btn-outline-secondary btn-lg px-4 rounded-pill"
+                        onClick={() => navigate('/')}
+                    >
                         Continue Shopping
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>
-    </Layout>
-);
+    );
+};
 
 export default OrderSuccess;
