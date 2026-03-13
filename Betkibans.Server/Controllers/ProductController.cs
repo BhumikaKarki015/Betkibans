@@ -29,7 +29,8 @@ public class ProductController : ControllerBase
         [FromQuery] int[]? materialIds,
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
-        [FromQuery] string? sort
+        [FromQuery] string? sort,
+        [FromQuery] int? sellerId
     )
     {
         var query = _context.Products
@@ -41,7 +42,13 @@ public class ProductController : ControllerBase
             .AsQueryable();
 
         // --- FILTERING LOGIC ---
-        
+
+        // 0. Seller
+        if (sellerId.HasValue)
+        {
+            query = query.Where(p => p.SellerId == sellerId.Value);
+        }
+
         // 1. Search
         if (!string.IsNullOrEmpty(search))
         {
