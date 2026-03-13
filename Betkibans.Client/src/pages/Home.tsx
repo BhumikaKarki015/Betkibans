@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
+interface ProductImage {
+    productImageId: number;
+    imageUrl: string;
+    isPrimary: boolean;
+}
+
 interface Product {
     productId: number;
     name: string;
     price: number;
     discountPrice?: number;
-    primaryImageUrl?: string;
+    productImages?: ProductImage[];
     categoryName?: string;
     averageRating?: number;
     totalReviews?: number;
@@ -182,7 +188,7 @@ const Home = () => {
                                             transition: 'transform 0.15s, box-shadow 0.15s',
                                             overflow: 'hidden',
                                         }}
-                                        onClick={() => navigate(`/products/${p.productId}`)}
+                                        onClick={() => navigate(`/product/${p.productId}`)}
                                         onMouseEnter={e => {
                                             (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
                                             (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(45,106,79,0.15)';
@@ -194,11 +200,15 @@ const Home = () => {
                                     >
                                         {/* Product Image */}
                                         <div style={{ height: 180, overflow: 'hidden', backgroundColor: '#F5F5F0' }}>
-                                            {p.primaryImageUrl ? (
+                                            {p.productImages && p.productImages.length > 0 ? (
                                                 <img
-                                                    src={`http://localhost:5192${p.primaryImageUrl}`}
+                                                    src={`http://localhost:5192${p.productImages[0].imageUrl}`}
                                                     alt={p.name}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = '';
+                                                        (e.target as HTMLImageElement).style.display = 'none';
+                                                    }}
                                                 />
                                             ) : (
                                                 <div className="w-100 h-100 d-flex align-items-center justify-content-center">

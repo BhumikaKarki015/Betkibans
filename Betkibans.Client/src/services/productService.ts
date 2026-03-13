@@ -9,6 +9,7 @@ export interface ProductFilters {
     minPrice?: number;
     maxPrice?: number;
     sort?: string;
+    sellerId?: number;
 }
 
 export const productService = {
@@ -22,6 +23,7 @@ export const productService = {
             if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
             if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
             if (filters.sort) params.append('sort', filters.sort);
+            if (filters.sellerId) params.append('sellerId', filters.sellerId.toString());
 
             // Handle Arrays (e.g. categoryIds=1&categoryIds=2)
             filters.categoryIds?.forEach(id => params.append('categoryIds', id.toString()));
@@ -37,7 +39,7 @@ export const productService = {
         const response = await api.get(`/Product/${id}`);
         return response.data;
     },
-    
+
     createProduct: async (data: FormData): Promise<Product> => {
         const response = await api.post('/Product', data, {
             headers: { 'Content-Type': 'multipart/form-data' }
