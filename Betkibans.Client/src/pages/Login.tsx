@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -78,6 +79,28 @@ const Login = () => {
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse: any) => {
+        try {
+            const res = await axios.post('http://localhost:5192/api/Auth/google-signin', {
+                idToken: credentialResponse.credential
+            });
+            const { token } = res.data;
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+            const userName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || payload['FullName'] || '';
+            localStorage.setItem('token', token);
+            localStorage.setItem('role', role);
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('userName', userName);
+            login(token, { id: userId, email: userName, fullName: userName, role });
+            navigate('/');
+        } catch (err: any) {
+            setIsError(true);
+            setMessage(err.response?.data?.message || 'Google sign-in failed.');
         }
     };
 
@@ -195,7 +218,7 @@ const Login = () => {
                                     Remember me
                                 </label>
                             </div>
-                            <a href="#" className="small fw-bold text-decoration-none text-dark">Forgot Password?</a>
+                            <span className="small fw-bold text-decoration-none" style={{color: brandGreen, cursor: "pointer"}} onClick={() => navigate("/forgot-password")}>Forgot Password?</span>
                         </div>
 
                         <button
@@ -220,14 +243,15 @@ const Login = () => {
                             <hr className="flex-grow-1" />
                         </div>
 
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary w-100 p-2 mb-2 d-flex align-items-center justify-content-center gap-2"
-                            disabled
-                        >
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="20" />
-                            Continue with Google (Coming Soon)
-                        </button>
+                        <div className="d-flex justify-content-center">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => { setIsError(true); setMessage('Google sign-in failed.'); }}
+                                text="continue_with"
+                                shape="rectangular"
+                                width="400"
+                            />
+                        </div>
                     </form>
                 </div>
             </div>
