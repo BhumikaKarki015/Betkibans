@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface Category {
     categoryId: number;
@@ -16,6 +17,7 @@ interface Material {
 }
 
 const CreateProduct = () => {
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -69,7 +71,7 @@ const CreateProduct = () => {
         if (e.target.files) {
             const filesArray = Array.from(e.target.files);
             const validImages = filesArray.filter(file => file.type.startsWith('image/'));
-            if (validImages.length !== filesArray.length) alert('Some files were not images and were ignored.');
+            if (validImages.length !== filesArray.length) showToast('Some files were not images and were ignored.', 'warning');
             setSelectedImages(prev => [...prev, ...validImages]);
         }
     };

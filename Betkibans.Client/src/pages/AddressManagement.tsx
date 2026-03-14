@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface Address {
     addressId: number;
@@ -43,6 +44,8 @@ const majorCities = [
 ];
 
 const AddressManagement = () => {
+    const { showToast } = useToast();
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const { user, isLoading } = useAuth();
     const navigate = useNavigate();
     const [addresses, setAddresses] = useState<Address[]>([]);
@@ -126,12 +129,14 @@ const AddressManagement = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Delete this address?')) return;
         try {
             await api.delete(`/Address/${id}`);
             setAddresses(prev => prev.filter(a => a.addressId !== id));
+            setConfirmDeleteId(null);
+            showToast('Address deleted successfully', 'success');
         } catch {
-            alert('Failed to delete address');
+            showToast('Failed to delete address', 'error');
+            setConfirmDeleteId(null);
         }
     };
 
@@ -140,7 +145,7 @@ const AddressManagement = () => {
             await api.patch(`/Address/${id}/set-default`);
             setAddresses(prev => prev.map(a => ({ ...a, isDefault: a.addressId === id })));
         } catch {
-            alert('Failed to set default address');
+            showToast('Failed to set default address', 'error');
         }
     };
 
@@ -335,7 +340,7 @@ const AddressManagement = () => {
                                             </button>
                                         )}
                                         <button className="btn btn-sm fw-medium"
-                                                onClick={() => handleDelete(addr.addressId)}
+                                                onClick={() => setConfirmDeleteId(addr.addressId)}
                                                 style={{ borderColor: '#FFCDD2', color: '#C62828', borderRadius: 8, fontSize: 12 }}>
                                             <i className="bi bi-trash3 me-1"></i>Delete
                                         </button>
@@ -354,6 +359,39 @@ const AddressManagement = () => {
                     </button>
                 </div>
             </div>
+            {/* ── Confirm Delete Modal ── */}
+            {confirmDeleteId !== null && (
+                <div style={{
+                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', borderRadius: 14, padding: '32px 28px',
+                        maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+                        <h5 className="fw-bold mb-2">Delete Address?</h5>
+                        <p className="text-muted small mb-4">This action cannot be undone.</p>
+                        <div className="d-flex gap-3 justify-content-center">
+                            <button
+                                className="btn btn-outline-secondary rounded-pill px-4"
+                                onClick={() => setConfirmDeleteId(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn rounded-pill px-4 fw-semibold"
+                                style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
+                                onClick={() => handleDelete(confirmDeleteId)}
+                            >
+                                Yes, Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

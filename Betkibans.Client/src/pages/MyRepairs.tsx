@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface Quote {
     repairQuoteId: number;
@@ -31,6 +32,9 @@ const statusConfig: Record<string, { color: string; bg: string; label: string; i
 };
 
 const MyRepairs = () => {
+    const { showToast } = useToast();
+    const [confirmAcceptId, setConfirmAcceptId] = useState<number | null>(null);
+
     const [requests, setRequests] = useState<RepairRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState<number | null>(null);
@@ -54,7 +58,7 @@ const MyRepairs = () => {
     }, []);
 
     const handleAccept = async (quoteId: number) => {
-        if (!window.confirm('Accept this quote? Other quotes for this request will be declined.')) return;
+
         try {
             await api.post(`/Repair/accept-quote/${quoteId}`);
             const res = await api.get('/Repair/my-requests');
@@ -253,6 +257,35 @@ const MyRepairs = () => {
                     </div>
                 )}
             </div>
+            {/* ── Confirm Modal ── */}
+            {confirmAcceptId !== null && (
+                <div style={{
+                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', borderRadius: 14, padding: '32px 28px',
+                        maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+                        <h5 className="fw-bold mb-2">Accept this quote?</h5>
+                        <p className="text-muted small mb-4">Other quotes for this request will be declined.</p>
+                        <div className="d-flex gap-3 justify-content-center">
+                            <button className="btn btn-outline-secondary rounded-pill px-4"
+                                    onClick={() => setConfirmAcceptId(null)}>
+                                Cancel
+                            </button>
+                            <button className="btn rounded-pill px-4 fw-semibold"
+                                    style={{ backgroundColor: '#2D6A4F', color: 'white', border: 'none' }}
+                                    onClick={() => {handleAcceptQuote(confirmAcceptId!); setConfirmAcceptId(null);}}>
+                                Yes, Accept
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

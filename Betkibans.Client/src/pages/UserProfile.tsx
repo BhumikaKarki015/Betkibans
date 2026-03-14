@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface ProfileData {
     id: string;
@@ -19,6 +20,7 @@ interface AccountStats {
 }
 
 const UserProfile = () => {
+    const { showToast } = useToast();
     const { user, login, token, isLoading } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -29,7 +31,7 @@ const UserProfile = () => {
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({ fullName: '', phoneNumber: '' });
-    
+
     const [notifPrefs, setNotifPrefs] = useState({
         orderUpdates: true,
         paymentConfirmations: true,
@@ -81,7 +83,7 @@ const UserProfile = () => {
                 phoneNumber: formData.phoneNumber,
             });
             setProfile(prev => prev ? { ...prev, ...res.data } : res.data);
-            
+
             if (user && token) {
                 login(token, { ...user, fullName: res.data.fullName });
             }
@@ -323,7 +325,7 @@ const UserProfile = () => {
                             <small className="text-muted">Permanently delete your account and data</small>
                             <div className="mt-1">
                                 <button className="btn btn-sm fw-medium"
-                                        onClick={() => { if (confirm('Are you sure? This cannot be undone.')) alert('Please contact support to delete your account.'); }}
+                                        onClick={() => { showToast('To delete your account, please contact support@betkibans.com', 'info'); }}
                                         style={{ backgroundColor: '#C62828', color: 'white', border: 'none', borderRadius: 8, fontSize: 12 }}>
                                     <i className="bi bi-trash3 me-1"></i>Delete Account
                                 </button>

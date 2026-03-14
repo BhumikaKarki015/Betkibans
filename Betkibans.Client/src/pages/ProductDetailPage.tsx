@@ -6,6 +6,7 @@ import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import api from '../services/api';
 import type { Product } from '../types/Product';
+import { useToast } from '../contexts/ToastContext';
 
 interface Review {
     reviewId: number;
@@ -51,6 +52,7 @@ const ProductDetailPage = () => {
     const { user } = useAuth();
     const { addToCart } = useCart();
     const { isWishlisted, toggleWishlist } = useWishlist();
+    const { showToast } = useToast();
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -104,8 +106,8 @@ const ProductDetailPage = () => {
         setIsAdding(true);
         try {
             await addToCart(product.productId, quantity);
-            alert(`${product.name} added to cart!`);
-        } catch { alert('Could not add to cart. Please try again.'); }
+            showToast(`${product.name} added to cart!`, 'success');
+        } catch { showToast('Could not add to cart. Please try again.', 'error'); }
         finally { setIsAdding(false); }
     };
 
@@ -116,22 +118,22 @@ const ProductDetailPage = () => {
         try {
             await addToCart(product.productId, quantity);
             navigate('/checkout');
-        } catch { alert('Could not proceed. Please try again.'); }
+        } catch { showToast('Could not proceed. Please try again.', 'error'); }
         finally { setIsAdding(false); }
     };
 
     const handleSubmitReview = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (reviewForm.rating === 0) { alert('Please select a rating.'); return; }
+        if (reviewForm.rating === 0) { showToast('Please select a rating.', 'warning'); return; }
         setSubmittingReview(true);
         try {
             await api.post('/Review', { productId: parseInt(id!), ...reviewForm });
             setShowReviewForm(false);
             setReviewForm({ rating: 0, title: '', reviewText: '' });
             await fetchReviews(parseInt(id!));
-            alert('Review submitted!');
+            showToast('Review submitted successfully!', 'success');
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to submit review.');
+            showToast(err.response?.data?.message || 'Failed to submit review.', 'error');
         } finally { setSubmittingReview(false); }
     };
 
@@ -738,7 +740,7 @@ const ProductDetailPage = () => {
                                                 className="btn btn-sm w-100 fw-medium"
                                                 style={{ border: '1px solid #2D6A4F', color: '#2D6A4F', backgroundColor: 'transparent', fontSize: 12, borderRadius: 6 }}
                                                 onClick={(e) => { e.stopPropagation(); navigate(`/product/${rp.productId}`); }}>
-                                                Add to Cart
+                                                View Details
                                             </button>
                                         </div>
                                     </div>

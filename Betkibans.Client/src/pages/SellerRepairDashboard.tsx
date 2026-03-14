@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface RepairRequest {
     repairRequestId: number;
@@ -12,6 +13,7 @@ interface RepairRequest {
 }
 
 const SellerRepairDashboard = () => {
+    const { showToast } = useToast();
     const [requests, setRequests] = useState<RepairRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [quoteData, setQuoteData] = useState({ cost: 0, days: 0, desc: '' });
@@ -47,7 +49,7 @@ const SellerRepairDashboard = () => {
             setQuoteData({ cost: 0, days: 0, desc: '' });
             await fetchRequests();
         } catch {
-            alert('Error submitting quote. Please try again.');
+            showToast('Error submitting quote. Please try again.', 'error');
         } finally {
             setSubmitting(false);
         }

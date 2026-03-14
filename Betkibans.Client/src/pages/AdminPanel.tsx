@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs';
 
@@ -72,6 +73,7 @@ interface DashboardStats {
 }
 
 const AdminPanel = () => {
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const { user, isLoading } = useAuth();
     const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
@@ -175,9 +177,9 @@ const AdminPanel = () => {
         try {
             await api.put(`/Seller/verify/${sellerId}`, { isApproved, rejectionReason });
             await fetchDashboardData();
-            alert(isApproved ? '✅ Seller verified successfully!' : '❌ Seller rejected');
+            showToast(isApproved ? 'Seller verified successfully!' : 'Seller rejected', isApproved ? 'success' : 'error');
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to process verification');
+            showToast(err.response?.data?.message || 'Failed to process verification', 'error');
         } finally {
             setActionLoading(null);
         }
@@ -189,7 +191,7 @@ const AdminPanel = () => {
             await api.patch(`/Admin/products/${productId}/toggle`);
             setAllProducts(prev => prev.map(p => p.productId === productId ? { ...p, isActive: !isActive } : p));
         } catch {
-            alert('Failed to update product status');
+            showToast('Failed to update product status', 'error');
         } finally {
             setActionLoading(null);
         }

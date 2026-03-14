@@ -4,11 +4,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface Category { categoryId: number; categoryName: string; }
 interface Material { materialId: number; materialName: string; }
 
 const EditProduct = () => {
+    const { showToast } = useToast();
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -164,7 +168,7 @@ const EditProduct = () => {
     };
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to permanently delete this product? This cannot be undone.')) return;
+
         setDeleting(true);
         try {
             await productService.deleteProduct(parseInt(id!));
@@ -527,6 +531,32 @@ const EditProduct = () => {
                     </button>
                 </div>
             </div>
+            {showDeleteConfirm && (
+                <div style={{
+                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', borderRadius: 14, padding: '32px 28px',
+                        maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+                        <h5 className="fw-bold mb-2">Delete this product?</h5>
+                        <p className="text-muted small mb-4">This is permanent and cannot be undone.</p>
+                        <div className="d-flex gap-3 justify-content-center">
+                            <button className="btn btn-outline-secondary rounded-pill px-4"
+                                    onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+                            <button className="btn rounded-pill px-4 fw-semibold"
+                                    style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
+                                    onClick={() => { handleDeleteProduct(); setShowDeleteConfirm(false); }}>
+                                Yes, Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

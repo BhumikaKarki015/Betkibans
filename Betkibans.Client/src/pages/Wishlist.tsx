@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface WishlistItem {
     wishlistId: number;
@@ -20,6 +21,7 @@ interface WishlistItem {
 }
 
 const Wishlist = () => {
+    const { showToast } = useToast();
     const { user, isLoading } = useAuth();
     const { toggleWishlist } = useWishlist();
     const { addToCart } = useCart();
@@ -55,9 +57,9 @@ const Wishlist = () => {
         setAddingToCart(productId);
         try {
             await addToCart(productId, 1);
-            alert('Added to cart!');
+            showToast('Added to cart!', 'success');
         } catch {
-            alert('Could not add to cart.');
+            showToast('Could not add to cart.', 'error');
         } finally {
             setAddingToCart(null);
         }

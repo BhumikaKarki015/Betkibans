@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface OrderItem {
     orderItemId: number;
@@ -31,6 +32,9 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 const FILTERS = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
 const OrderHistory = () => {
+    const { showToast } = useToast();
+    const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
     const { isAuthenticated } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -63,7 +67,7 @@ const OrderHistory = () => {
     );
 
     const handleCancelOrder = async (orderId: number) => {
-        if (!confirm('Are you sure you want to cancel this order?')) return;
+
         try {
             await api.post(`/Order/cancel/${orderId}`);
             setOrders(prev =>
@@ -212,7 +216,7 @@ const OrderHistory = () => {
                                             {/* Cancel — Pending only */}
                                             {isPending && (
                                                 <button className="btn btn-sm fw-medium"
-                                                        onClick={() => handleCancelOrder(order.orderId)}
+                                                        onClick={() => setConfirmCancelId(order.orderId)}
                                                         style={{ fontSize: 12, borderRadius: 20, border: '1px solid #C62828', color: '#C62828', backgroundColor: 'transparent' }}>
                                                     <i className="bi bi-x-circle me-1"></i>Cancel Order
                                                 </button>
@@ -234,6 +238,35 @@ const OrderHistory = () => {
                     })}
                 </div>
             )}
+            {/* ── Confirm Modal ── */}
+            {confirmCancelId !== null && (
+                <div style={{
+                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', borderRadius: 14, padding: '32px 28px',
+                        maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+                        <h5 className="fw-bold mb-2">Cancel this order?</h5>
+                        <p className="text-muted small mb-4">This action cannot be undone.</p>
+                        <div className="d-flex gap-3 justify-content-center">
+                            <button className="btn btn-outline-secondary rounded-pill px-4"
+                                    onClick={() => setConfirmCancelId(null)}>
+                                Cancel
+                            </button>
+                            <button className="btn rounded-pill px-4 fw-semibold"
+                                    style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
+                                    onClick={() => {handleCancelOrder(confirmCancelId); setConfirmCancelId(null);}}>
+                                Yes, Cancel Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

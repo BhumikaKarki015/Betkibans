@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { useAuth } from '../contexts/AuthContext';
 import type { Product } from '../types/Product';
+import { useToast } from '../contexts/ToastContext';
 
 const SellerProducts = () => {
+    const { showToast } = useToast();
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
     const navigate = useNavigate();
     const { user, isLoading } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
@@ -32,9 +36,7 @@ const SellerProducts = () => {
     };
 
     const handleDelete = async (productId: number) => {
-        if (!confirm('Are you sure you want to delete this product?')) {
-            return;
-        }
+
 
         try {
             await productService.deleteProduct(productId);
@@ -162,7 +164,7 @@ const SellerProducts = () => {
 
                                                 <button
                                                     className="btn btn-sm btn-outline-danger"
-                                                    onClick={() => handleDelete(product.productId)}
+                                                    onClick={() => setConfirmDeleteId(product.productId)}
                                                 >
                                                     <i className="bi bi-trash me-1"></i>
                                                     Delete

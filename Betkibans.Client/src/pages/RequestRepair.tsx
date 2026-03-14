@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 const RequestRepair = () => {
+    const { showToast } = useToast();
     const [description, setDescription] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -28,7 +30,7 @@ const RequestRepair = () => {
             });
             navigate('/my-repairs');
         } catch {
-            alert('Error submitting request. Please try again.');
+            showToast('Error submitting request. Please try again.', 'error');
         } finally {
             setLoading(false);
         }

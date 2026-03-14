@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 // ─── Types ────────────────────────────────────────────────────────
 interface OrderItem {
@@ -8,7 +9,7 @@ interface OrderItem {
     productName: string;
     quantity: number;
     unitPrice: number;
-    productImage?: string;  
+    productImage?: string;
 }
 
 interface Order {
@@ -41,6 +42,9 @@ const formatDate = (dateStr: string) =>
 
 // ─── Main Component ───────────────────────────────────────────────
 const SellerOrders = () => {
+    const { showToast } = useToast();
+    const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All');
@@ -95,7 +99,7 @@ const SellerOrders = () => {
     };
 
     const handleCancelOrder = async (orderId: number) => {
-        if (!confirm('Are you sure you want to cancel this order?')) return;
+
         setUpdatingId(orderId);
         try {
             await api.post('/Order/update-status', { orderId, status: 'Cancelled' });
@@ -337,7 +341,7 @@ const SellerOrders = () => {
                                                     {canCancel && (
                                                         <button
                                                             className="btn btn-sm fw-medium"
-                                                            onClick={() => handleCancelOrder(order.orderId)}
+                                                            onClick={() => setConfirmCancelId(order.orderId)}
                                                             disabled={isUpdating}
                                                             style={{ fontSize: 12, borderColor: '#E57373', color: '#C62828', backgroundColor: 'transparent' }}>
                                                             Cancel
@@ -371,6 +375,35 @@ const SellerOrders = () => {
                     })}
                 </div>
             )}
+            {/* ── Confirm Modal ── */}
+            {confirmCancelId !== null && (
+                <div style={{
+                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', borderRadius: 14, padding: '32px 28px',
+                        maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+                        <h5 className="fw-bold mb-2">Cancel this order?</h5>
+                        <p className="text-muted small mb-4">This action cannot be undone.</p>
+                        <div className="d-flex gap-3 justify-content-center">
+                            <button className="btn btn-outline-secondary rounded-pill px-4"
+                                    onClick={() => setConfirmCancelId(null)}>
+                                Cancel
+                            </button>
+                            <button className="btn rounded-pill px-4 fw-semibold"
+                                    style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
+                                    onClick={() => {handleCancelOrder(confirmCancelId!); setConfirmCancelId(null);}}>
+                                Yes, Cancel Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

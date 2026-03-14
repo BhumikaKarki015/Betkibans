@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 type PaymentMethod = 'COD' | 'Khalti';
 
@@ -19,6 +20,7 @@ interface Address {
 }
 
 const Checkout = () => {
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const { cartItems, cartTotal, refreshCart } = useCart();
     const [loading, setLoading] = useState(false);
@@ -73,8 +75,8 @@ const Checkout = () => {
 
     const handlePlaceOrder = async (e: FormEvent) => {
         e.preventDefault();
-        if (!agreedToTerms) { alert('Please agree to the Terms & Conditions before placing your order.'); return; }
-        if (!useNewAddress && !selectedAddressId) { alert('Please select a delivery address.'); return; }
+        if (!agreedToTerms) { showToast('Please agree to the Terms & Conditions before placing your order.', 'warning'); return; }
+        if (!useNewAddress && !selectedAddressId) { showToast('Please select a delivery address.', 'warning'); return; }
 
         setLoading(true);
         try {
@@ -92,7 +94,7 @@ const Checkout = () => {
                         await refreshCart();
                         window.location.href = paymentRes.data.paymentUrl;
                     } catch (err: any) {
-                        alert('Failed to initiate Khalti payment. Your order was placed — you can pay on delivery.');
+                        showToast('Failed to initiate Khalti payment. Your order was placed — you can pay on delivery.', 'warning');
                         await refreshCart();
                         navigate('/order-success', { state: { orderNumber } });
                     }
@@ -102,7 +104,7 @@ const Checkout = () => {
                 }
             }
         } catch (err: any) {
-            alert(err.response?.data || 'Order failed. Please try again.');
+            showToast(err.response?.data || 'Order failed. Please try again.', 'error');
         } finally {
             setLoading(false);
         }
@@ -402,7 +404,7 @@ const Checkout = () => {
                                             <input type="text" className="form-control" placeholder="Enter a promo code"
                                                    value={promoCode} onChange={e => setPromoCode(e.target.value)} />
                                             <button type="button" className="btn btn-outline-success"
-                                                    onClick={() => alert('Promo code feature coming soon!')}>Apply</button>
+                                                    onClick={() => showToast('Promo code feature coming soon!', 'info')}>Apply</button>
                                         </div>
                                     </div>
                                 </div>
