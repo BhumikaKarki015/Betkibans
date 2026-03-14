@@ -198,6 +198,67 @@ namespace Betkibans.Server.Controllers
 
             return Ok(result);
         }
+        
+        // GET: api/Admin/settings
+        [HttpGet("settings")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetSettings()
+        {
+            var settings = await _context.PlatformSettings.FindAsync(1);
+            if (settings == null)
+            {
+                settings = new PlatformSettings { Id = 1 };
+                _context.PlatformSettings.Add(settings);
+                await _context.SaveChangesAsync();
+            }
+            return Ok(settings);
+        }
+ 
+        // PUT: api/Admin/settings
+        [HttpPut("settings")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateSettings([FromBody] PlatformSettings dto)
+        {
+            var settings = await _context.PlatformSettings.FindAsync(1);
+            if (settings == null) return NotFound();
+ 
+            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+ 
+            // Platform Info
+            settings.PlatformName = dto.PlatformName;
+            settings.Tagline = dto.Tagline;
+            settings.SupportEmail = dto.SupportEmail;
+            settings.SupportPhone = dto.SupportPhone;
+            settings.Address = dto.Address;
+ 
+            // Commission & Limits
+            settings.CommissionRate = dto.CommissionRate;
+            settings.RepairCommissionRate = dto.RepairCommissionRate;
+            settings.MinOrderAmount = dto.MinOrderAmount;
+            settings.MaxOrderAmount = dto.MaxOrderAmount;
+ 
+            // Seller Settings
+            settings.RequireSellerVerification = dto.RequireSellerVerification;
+            settings.AutoApproveVerifiedSellers = dto.AutoApproveVerifiedSellers;
+            settings.AllowDiscounts = dto.AllowDiscounts;
+            settings.EnableSellerAnalytics = dto.EnableSellerAnalytics;
+            settings.MinProductPrice = dto.MinProductPrice;
+            settings.MaxProductImages = dto.MaxProductImages;
+            settings.MinDescriptionLength = dto.MinDescriptionLength;
+ 
+            // Customer Settings
+            settings.AllowGuestCheckout = dto.AllowGuestCheckout;
+            settings.EnableWishlist = dto.EnableWishlist;
+            settings.EnableProductReviews = dto.EnableProductReviews;
+            settings.EnablePurchaseForReview = dto.EnablePurchaseForReview;
+            settings.EnableRepairRequests = dto.EnableRepairRequests;
+ 
+            settings.UpdatedAt = DateTime.UtcNow;
+            settings.UpdatedBy = adminId;
+ 
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Settings saved successfully." });
+        }
 
         // GET: api/Admin/stats
         [HttpGet("stats")]

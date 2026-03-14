@@ -29,10 +29,23 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RepairRequest> RepairRequests { get; set; }
     public DbSet<RepairQuote> RepairQuotes { get; set; }
     public DbSet<Wishlist> Wishlists { get; set; }
+    public DbSet<PlatformSettings> PlatformSettings { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); 
+        base.OnModelCreating(modelBuilder);
+        
+        // PlatformSettings — always a single row with Id = 1
+        modelBuilder.Entity<PlatformSettings>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CommissionRate).HasColumnType("decimal(5,2)");
+            entity.Property(e => e.RepairCommissionRate).HasColumnType("decimal(5,2)");
+            entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.MaxOrderAmount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.MinProductPrice).HasColumnType("decimal(10,2)");
+            entity.HasData(new PlatformSettings { Id = 1 }); // Seed default row
+        }); 
         
         modelBuilder.Entity<Seller>(entity =>
         {
