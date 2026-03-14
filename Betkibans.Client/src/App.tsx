@@ -3,6 +3,7 @@ import { CartProvider } from './contexts/CartContext';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/common/Layout';
 import { WishlistProvider } from './contexts/WishlistContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 // Public & Customer Pages
 import Home from './pages/Home';
@@ -37,7 +38,6 @@ import SellerOrders from './pages/SellerOrders';
 
 // Admin Pages
 import AdminPanel from './pages/AdminPanel';
-import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
         return (
@@ -48,6 +48,13 @@ function App() {
                                             <Routes>
                                                     {/* Admin routes - NO Layout wrapper */}
                                                     <Route path="/admin/panel" element={<AdminPanel />} />
+                                                    <Route path="/admin/users" element={<AdminPanel />} />
+                                                    <Route path="/admin/sellers" element={<AdminPanel />} />
+                                                    <Route path="/admin/verify-sellers" element={<AdminPanel />} />
+                                                    <Route path="/admin/products" element={<AdminPanel />} />
+                                                    <Route path="/admin/orders" element={<AdminPanel />} />
+                                                    <Route path="/admin/analytics" element={<AdminPanel />} />
+                                                    <Route path="/admin/settings" element={<AdminPanel />} />
 
                                                     {/* All other routes - WITH Layout wrapper */}
                                                     <Route path="/*" element={

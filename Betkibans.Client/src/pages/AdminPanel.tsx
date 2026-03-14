@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
-type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs';
+type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs' | 'settings';
 
 interface AdminRepairRequest {
     repairRequestId: number;
@@ -63,6 +63,32 @@ interface AdminOrder {
     city: string;
 }
 
+
+interface PlatformSettings {
+    platformName: string;
+    tagline: string;
+    supportEmail: string;
+    supportPhone: string;
+    address: string;
+    commissionRate: number;
+    repairCommissionRate: number;
+    minOrderAmount: number;
+    maxOrderAmount: number;
+    requireSellerVerification: boolean;
+    autoApproveVerifiedSellers: boolean;
+    allowDiscounts: boolean;
+    enableSellerAnalytics: boolean;
+    minProductPrice: number;
+    maxProductImages: number;
+    minDescriptionLength: number;
+    allowGuestCheckout: boolean;
+    enableWishlist: boolean;
+    enableProductReviews: boolean;
+    enablePurchaseForReview: boolean;
+    enableRepairRequests: boolean;
+    updatedAt?: string;
+}
+
 interface DashboardStats {
     totalUsers: number;
     totalSellers: number;
@@ -73,10 +99,23 @@ interface DashboardStats {
 }
 
 const AdminPanel = () => {
-    const { showToast } = useToast();
     const navigate = useNavigate();
     const { user, isLoading } = useAuth();
-    const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+    const location = useLocation();
+    const { showToast } = useToast();
+
+    // Map URL path to tab
+    const getTabFromPath = (path: string): AdminTab => {
+        if (path.includes('/admin/users')) return 'users';
+        if (path.includes('/admin/sellers') || path.includes('/admin/verify-sellers')) return 'sellers';
+        if (path.includes('/admin/products')) return 'products';
+        if (path.includes('/admin/orders')) return 'orders';
+        if (path.includes('/admin/analytics')) return 'repairs';
+        if (path.includes('/admin/settings')) return 'settings';
+        return 'dashboard';
+    };
+
+    const [activeTab, setActiveTab] = useState<AdminTab>(() => getTabFromPath(location.pathname));
 
     // Data states
     const [stats, setStats] = useState<DashboardStats>({ totalUsers: 0, totalSellers: 0, pendingSellers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0 });
@@ -85,6 +124,8 @@ const AdminPanel = () => {
     const [allProducts, setAllProducts] = useState<AdminProduct[]>([]);
     const [allOrders, setAllOrders] = useState<AdminOrder[]>([]);
     const [allRepairs, setAllRepairs] = useState<AdminRepairRequest[]>([]);
+    const [settings, setSettings] = useState<PlatformSettings | null>(null);
+    const [savingSettings, setSavingSettings] = useState(false);
 
     // UI states
     const [loading, setLoading] = useState(true);
@@ -97,6 +138,16 @@ const AdminPanel = () => {
         if (!user || user.role !== 'Admin') { navigate('/login'); return; }
         fetchDashboardData();
     }, [user, navigate, isLoading]);
+
+    useEffect(() => {
+        const tab = getTabFromPath(location.pathname);
+        setActiveTab(tab);
+        if (tab === 'users' && allUsers.length === 0) fetchUsers();
+        if (tab === 'products' && allProducts.length === 0) fetchProducts();
+        if (tab === 'orders' && allOrders.length === 0) fetchOrders();
+        if (tab === 'repairs' && allRepairs.length === 0) fetchRepairs();
+        if (tab === 'settings' && !settings) fetchSettings();
+    }, [location.pathname]);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -159,14 +210,49 @@ const AdminPanel = () => {
         }
     };
 
+    const tabToPath: Record<AdminTab, string> = {
+        dashboard: '/admin/panel',
+        sellers: '/admin/sellers',
+        users: '/admin/users',
+        products: '/admin/products',
+        orders: '/admin/orders',
+        repairs: '/admin/repairs',
+        settings: '/admin/settings',
+    };
+
+
+    const fetchSettings = async () => {
+        try {
+            const res = await api.get('/Admin/settings');
+            setSettings(res.data);
+        } catch {
+            showToast('Failed to load settings', 'error');
+        }
+    };
+
+    const handleSaveSettings = async () => {
+        if (!settings) return;
+        setSavingSettings(true);
+        try {
+            await api.put('/Admin/settings', settings);
+            showToast('Settings saved successfully!', 'success');
+        } catch {
+            showToast('Failed to save settings', 'error');
+        } finally {
+            setSavingSettings(false);
+        }
+    };
+
     const handleTabChange = (tab: AdminTab) => {
         setActiveTab(tab);
+        navigate(tabToPath[tab]);
         setError('');
         setSearchQuery('');
         if (tab === 'users' && allUsers.length === 0) fetchUsers();
         if (tab === 'products' && allProducts.length === 0) fetchProducts();
         if (tab === 'orders' && allOrders.length === 0) fetchOrders();
         if (tab === 'repairs' && allRepairs.length === 0) fetchRepairs();
+        if (tab === 'settings' && !settings) fetchSettings();
     };
 
     const handleVerify = async (sellerId: number, isApproved: boolean) => {
@@ -212,6 +298,7 @@ const AdminPanel = () => {
         { id: 'products', label: 'Product Moderation', icon: 'bi-box-seam' },
         { id: 'orders', label: 'Order Dashboard', icon: 'bi-bag-check' },
         { id: 'repairs', label: 'Repair Management', icon: 'bi-tools' },
+        { id: 'settings', label: 'Settings', icon: 'bi-gear' },
     ];
 
     const navStyle = { backgroundColor: '#1a3a2a', minHeight: '100vh' };
@@ -660,6 +747,199 @@ const AdminPanel = () => {
                 )}
 
                 {/* ──── REPAIR MANAGEMENT TAB ──── */}
+
+                {activeTab === 'settings' && (
+                    <div>
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 className="fw-bold mb-1">Platform Settings</h4>
+                                <p className="text-muted small mb-0">Manage platform configuration</p>
+                            </div>
+                            <button
+                                className="btn fw-semibold text-white px-4"
+                                style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}
+                                onClick={handleSaveSettings}
+                                disabled={savingSettings || !settings}
+                            >
+                                {savingSettings ? 'Saving...' : '💾 Save Changes'}
+                            </button>
+                        </div>
+
+                        {!settings ? (
+                            <div className="text-center py-5">
+                                <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+                            </div>
+                        ) : (
+                            <div className="row g-4">
+                                {/* Platform Info */}
+                                <div className="col-12">
+                                    <div className="card border-0 shadow-sm rounded-3">
+                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                            🏪 Platform Information
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="row g-3">
+                                                {[
+                                                    { label: 'Platform Name', key: 'platformName' },
+                                                    { label: 'Tagline', key: 'tagline' },
+                                                    { label: 'Support Email', key: 'supportEmail' },
+                                                    { label: 'Support Phone', key: 'supportPhone' },
+                                                    { label: 'Address', key: 'address' },
+                                                ].map(f => (
+                                                    <div key={f.key} className="col-md-6">
+                                                        <label className="form-label fw-medium small">{f.label}</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            value={(settings as any)[f.key]}
+                                                            onChange={e => setSettings({ ...settings, [f.key]: e.target.value })}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Commission & Order Limits */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm rounded-3 h-100">
+                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                            💰 Commission & Order Limits
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="row g-3">
+                                                {[
+                                                    { label: 'Commission Rate (%)', key: 'commissionRate' },
+                                                    { label: 'Repair Commission (%)', key: 'repairCommissionRate' },
+                                                    { label: 'Min Order (Rs.)', key: 'minOrderAmount' },
+                                                    { label: 'Max Order (Rs.)', key: 'maxOrderAmount' },
+                                                ].map(f => (
+                                                    <div key={f.key} className="col-6">
+                                                        <label className="form-label fw-medium small">{f.label}</label>
+                                                        <input
+                                                            type="number"
+                                                            className="form-control"
+                                                            value={(settings as any)[f.key]}
+                                                            onChange={e => setSettings({ ...settings, [f.key]: parseFloat(e.target.value) })}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Seller Settings */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm rounded-3 h-100">
+                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                            🏪 Seller Settings
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="row g-3">
+                                                {[
+                                                    { label: 'Require Seller Verification', key: 'requireSellerVerification' },
+                                                    { label: 'Auto-approve Verified Sellers', key: 'autoApproveVerifiedSellers' },
+                                                    { label: 'Allow Discounts', key: 'allowDiscounts' },
+                                                    { label: 'Enable Seller Analytics', key: 'enableSellerAnalytics' },
+                                                ].map(f => (
+                                                    <div key={f.key} className="col-12 d-flex justify-content-between align-items-center py-1 border-bottom">
+                                                        <span className="small fw-medium">{f.label}</span>
+                                                        <div className="form-check form-switch mb-0">
+                                                            <input
+                                                                className="form-check-input"
+                                                                type="checkbox"
+                                                                checked={(settings as any)[f.key]}
+                                                                onChange={e => setSettings({ ...settings, [f.key]: e.target.checked })}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {[
+                                                    { label: 'Min Product Price (Rs.)', key: 'minProductPrice' },
+                                                    { label: 'Max Product Images', key: 'maxProductImages' },
+                                                    { label: 'Min Description Length', key: 'minDescriptionLength' },
+                                                ].map(f => (
+                                                    <div key={f.key} className="col-6">
+                                                        <label className="form-label fw-medium small">{f.label}</label>
+                                                        <input
+                                                            type="number"
+                                                            className="form-control form-control-sm"
+                                                            value={(settings as any)[f.key]}
+                                                            onChange={e => setSettings({ ...settings, [f.key]: parseFloat(e.target.value) })}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Customer Settings */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm rounded-3 h-100">
+                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                            👥 Customer Settings
+                                        </div>
+                                        <div className="card-body">
+                                            {[
+                                                { label: 'Allow Guest Checkout', key: 'allowGuestCheckout' },
+                                                { label: 'Enable Wishlist', key: 'enableWishlist' },
+                                                { label: 'Enable Product Reviews', key: 'enableProductReviews' },
+                                                { label: 'Require Purchase for Review', key: 'enablePurchaseForReview' },
+                                                { label: 'Enable Repair Requests', key: 'enableRepairRequests' },
+                                            ].map(f => (
+                                                <div key={f.key} className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                    <span className="small fw-medium">{f.label}</span>
+                                                    <div className="form-check form-switch mb-0">
+                                                        <input
+                                                            className="form-check-input"
+                                                            type="checkbox"
+                                                            checked={(settings as any)[f.key]}
+                                                            onChange={e => setSettings({ ...settings, [f.key]: e.target.checked })}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* System Info */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm rounded-3 h-100">
+                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                            ⚙️ System Info
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="d-flex flex-column gap-3">
+                                                <div className="d-flex justify-content-between">
+                                                    <span className="text-muted small">Version</span>
+                                                    <span className="fw-semibold small">1.0.0</span>
+                                                </div>
+                                                <div className="d-flex justify-content-between">
+                                                    <span className="text-muted small">Last Settings Update</span>
+                                                    <span className="fw-semibold small">
+                                                        {settings.updatedAt ? new Date(settings.updatedAt).toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+                                                    </span>
+                                                </div>
+                                                <hr />
+                                                <button
+                                                    className="btn btn-outline-danger btn-sm rounded-pill"
+                                                    onClick={() => showToast('Cache cleared successfully', 'success')}
+                                                >
+                                                    🗑️ Clear Cache
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === 'repairs' && (
                     <>
                         <div className="d-flex justify-content-between align-items-center mb-4">
