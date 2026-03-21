@@ -24,17 +24,20 @@ const Header = () => {
     if (user?.role === 'Admin') {
         return (
             <nav className="navbar navbar-expand-lg navbar-dark sticky-top py-2" style={{ backgroundColor: '#1a3a2a' }}>
-                <div className="container-fluid px-4">
+                <div className="container-fluid px-3 px-lg-4">
                     {/* Brand */}
                     <Link className="navbar-brand d-flex align-items-center gap-2" to="/admin/panel">
-                        <img src="/logo.jpeg" alt="Logo" style={{ height: 40, objectFit: 'contain' }} />
-                        <span className="fw-bold fs-5">BETKIBANS</span>
+                        <img src="/logo.jpeg" alt="Logo" style={{ height: 36, objectFit: 'contain' }} />
+                        <span className="fw-bold fs-6">BETKIBANS</span>
                         <span className="badge bg-danger ms-1 small">Admin</span>
                     </Link>
 
-                    {/* Admin Nav Links */}
+                    <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
+                        <span className="navbar-toggler-icon"></span>
+                    </button>
+
                     <div className="collapse navbar-collapse" id="adminNav">
-                        <ul className="navbar-nav me-auto gap-1 small">
+                        <ul className="navbar-nav me-auto gap-1 small mt-2 mt-lg-0">
                             {[
                                 { to: '/admin/panel', label: 'Dashboard' },
                                 { to: '/admin/users', label: 'Users' },
@@ -51,16 +54,15 @@ const Header = () => {
                             ))}
                         </ul>
 
-                        {/* Admin Search + Account */}
-                        <div className="d-flex align-items-center gap-3">
-                            <form onSubmit={handleSearch} className="d-flex">
+                        <div className="d-flex align-items-center gap-3 mt-2 mt-lg-0">
+                            <form onSubmit={handleSearch} className="d-flex w-100 w-lg-auto">
                                 <input
                                     type="text"
                                     className="form-control form-control-sm bg-white bg-opacity-10 border-0 text-white"
                                     placeholder="Search users, products, orders..."
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
-                                    style={{ width: 220, '::placeholder': { color: 'rgba(255,255,255,0.5)' } } as any}
+                                    style={{ minWidth: 0, width: '100%', maxWidth: 220 } as any}
                                 />
                             </form>
                             <div className="dropdown">
@@ -92,17 +94,17 @@ const Header = () => {
                 <div className="container">
                     {/* Brand */}
                     <Link className="navbar-brand d-flex align-items-center gap-2" to="/seller/dashboard">
-                        <img src="/logo.jpeg" alt="Logo" style={{ height: 50, objectFit: 'contain' }} />
-                        <span className="fw-bold text-success fs-5 d-none d-md-block">BETKIBANS</span>
+                        <img src="/logo.jpeg" alt="Logo" style={{ height: 44, objectFit: 'contain' }} />
+                        <span className="fw-bold text-success fs-6 d-none d-sm-block">BETKIBANS</span>
                     </Link>
 
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sellerNav">
+                    <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#sellerNav">
                         <span className="navbar-toggler-icon"></span>
                     </button>
 
                     {/* Seller Nav Links */}
                     <div className="collapse navbar-collapse" id="sellerNav">
-                        <ul className="navbar-nav me-auto gap-1">
+                        <ul className="navbar-nav me-auto gap-1 mt-2 mt-lg-0">
                             <li className="nav-item">
                                 <Link className="nav-link fw-semibold" to="/seller/dashboard">
                                     <i className="bi bi-speedometer2 me-1"></i>Dashboard
@@ -131,7 +133,7 @@ const Header = () => {
                         </ul>
 
                         {/* Seller Account */}
-                        <div className="dropdown">
+                        <div className="dropdown mt-2 mt-lg-0">
                             <button
                                 className="btn btn-outline-success btn-sm rounded-pill dropdown-toggle px-3"
                                 data-bs-toggle="dropdown"
@@ -169,18 +171,40 @@ const Header = () => {
         <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-2">
             <div className="container">
                 {/* Brand */}
-                <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
-                    <img src="/logo.jpeg" alt="Betkibans Logo" style={{ height: 55, objectFit: 'contain' }} />
-                    <span className="fw-bold text-success fs-5 d-none d-md-block">BETKIBANS</span>
+                <Link className="navbar-brand d-flex align-items-center gap-2 flex-shrink-0" to="/">
+                    <img src="/logo.jpeg" alt="Betkibans Logo" style={{ height: 48, objectFit: 'contain' }} />
+                    <span className="fw-bold text-success fs-6 d-none d-sm-block">BETKIBANS</span>
                 </Link>
 
-                <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#consumerNav">
+                {/*
+                  ── Mobile-only: cart icon always visible, beside the toggler ──
+                  On large screens this is hidden; the cart inside the collapse is shown.
+                */}
+                <div className="d-flex align-items-center gap-2 ms-auto me-2 d-lg-none">
+                    <Link to="/cart" className="text-dark position-relative text-decoration-none px-1">
+                        <i className="bi bi-cart3 fs-5"></i>
+                        {cartCount > 0 && (
+                            <span
+                                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style={{ fontSize: '0.6rem', padding: '0.3em 0.5em' }}
+                            >
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
+                </div>
+
+                <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#consumerNav" aria-controls="consumerNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
                 <div className="collapse navbar-collapse" id="consumerNav">
-                    {/* Center: Search bar */}
-                    <form className="mx-auto d-flex" style={{ width: '100%', maxWidth: 400 }} onSubmit={handleSearch}>
+                    {/* Center: Search bar — full-width on mobile */}
+                    <form
+                        className="search-form-consumer mx-auto d-flex"
+                        style={{ width: '100%', maxWidth: 400 }}
+                        onSubmit={handleSearch}
+                    >
                         <div className="input-group">
                             <input
                                 type="text"
@@ -201,7 +225,7 @@ const Header = () => {
                     </form>
 
                     {/* Nav Links */}
-                    <ul className="navbar-nav mx-3">
+                    <ul className="navbar-nav nav-links-consumer mx-lg-3">
                         <li className="nav-item">
                             <Link className="nav-link fw-semibold" to="/products">Shop All</Link>
                         </li>
@@ -235,10 +259,10 @@ const Header = () => {
                         </li>
                     </ul>
 
-                    {/* Right: Cart + Account */}
-                    <div className="d-flex align-items-center gap-3">
-                        {/* Cart icon */}
-                        <Link to="/cart" className="text-dark position-relative text-decoration-none">
+                    {/* Right: Cart + Account — hidden on mobile (cart shown above toggler) */}
+                    <div className="nav-actions-consumer d-flex align-items-center gap-3">
+                        {/* Cart icon — desktop only (mobile version is above the toggler) */}
+                        <Link to="/cart" className="text-dark position-relative text-decoration-none d-none d-lg-block">
                             <i className="bi bi-cart3 fs-5"></i>
                             {cartCount > 0 && (
                                 <span
