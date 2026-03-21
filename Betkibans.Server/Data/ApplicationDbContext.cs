@@ -29,6 +29,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RepairRequest> RepairRequests { get; set; }
     public DbSet<RepairQuote> RepairQuotes { get; set; }
     public DbSet<Wishlist> Wishlists { get; set; }
+    public DbSet<PlatformSettings> PlatformSettings { get; set; }
     public DbSet<Coupon> Coupons { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
