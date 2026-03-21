@@ -134,6 +134,7 @@ const AdminPanel = () => {
     const [actionLoading, setActionLoading] = useState<number | string | null>(null);
     const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (isLoading) return;
@@ -264,6 +265,7 @@ const AdminPanel = () => {
         navigate(tabToPath[tab]);
         setError('');
         setSearchQuery('');
+        setSidebarOpen(false);
         if (tab === 'users' && allUsers.length === 0) fetchUsers();
         if (tab === 'products' && allProducts.length === 0) fetchProducts();
         if (tab === 'orders' && allOrders.length === 0) fetchOrders();
@@ -329,694 +331,806 @@ const AdminPanel = () => {
     );
 
     return (
-        <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F0F2F5' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: '#F0F2F5' }}>
 
-            {/* ── Sidebar ── */}
-            <div style={{ ...navStyle, width: 240, flexShrink: 0 }} className="py-4 px-3">
-                <div className="mb-4 px-2">
-                    <p className="text-white fw-bold mb-0" style={{ fontSize: 13 }}>ADMIN PANEL</p>
-                    <small style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{user?.email}</small>
-                </div>
-                <nav className="d-flex flex-column gap-1">
-                    {sidebarItems.map(item => (
-                        <button key={item.id}
-                                className="btn d-flex align-items-center gap-2 text-start fw-medium px-3 py-2"
-                                onClick={() => handleTabChange(item.id)}
-                                style={{
-                                    borderRadius: 8, fontSize: 14, border: 'none',
-                                    backgroundColor: activeTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent',
-                                    color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.65)',
-                                }}>
-                            <i className={`bi ${item.icon}`}></i>
-                            <span className="flex-grow-1">{item.label}</span>
-                            {item.badge !== undefined && item.badge > 0 && (
-                                <span className="badge bg-warning text-dark" style={{ fontSize: 10 }}>{item.badge}</span>
-                            )}
-                        </button>
-                    ))}
-                </nav>
-                <div className="mt-auto pt-4 px-2">
-                    <button className="btn btn-sm w-100 fw-medium"
-                            onClick={() => navigate('/')}
-                            style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, fontSize: 13 }}>
-                        <i className="bi bi-arrow-left me-2"></i>Back to Site
+            {/* ── Mobile Top Bar (hidden on lg+) ── */}
+            <div className="d-flex d-lg-none align-items-center justify-content-between px-3 py-2"
+                 style={{ backgroundColor: navStyle.backgroundColor, position: 'sticky', top: 0, zIndex: 1030 }}>
+                <div className="d-flex align-items-center gap-2">
+                    <button className="btn btn-sm border-0 p-1" onClick={() => setSidebarOpen(true)}
+                            style={{ color: 'white' }}>
+                        <i className="bi bi-list fs-4"></i>
                     </button>
+                    <span className="text-white fw-bold" style={{ fontSize: 14 }}>Admin Panel</span>
                 </div>
+                <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 11 }}>
+                    {sidebarItems.find(i => i.id === activeTab)?.label}
+                </span>
             </div>
 
-            {/* ── Main Content ── */}
-            <div className="flex-grow-1 p-4" style={{ overflowY: 'auto' }}>
-
-                {error && (
-                    <div className="alert alert-warning d-flex align-items-center gap-2 mb-3" style={{ fontSize: 14 }}>
-                        <i className="bi bi-exclamation-triangle-fill"></i>{error}
-                    </div>
-                )}
-
-                {/* ──── DASHBOARD TAB ──── */}
-                {activeTab === 'dashboard' && (
-                    <>
-                        <div className="mb-4">
-                            <h4 className="fw-bold mb-0">Admin Dashboard</h4>
-                            <small className="text-muted">Welcome back, {user?.email}</small>
-                        </div>
-
-                        {/* Stat Cards — using ?? so 0 shows correctly instead of '—' */}
-                        <div className="row g-3 mb-4">
-                            {[
-                                { label: 'Total Users',          value: stats.totalUsers ?? '—',    icon: 'bi-people-fill',     color: '#1565C0', bg: '#E3F2FD' },
-                                { label: 'Total Sellers',        value: stats.totalSellers ?? '—',  icon: 'bi-shop',            color: '#2D6A4F', bg: '#E8F5E9' },
-                                { label: 'Pending Verification', value: pendingSellers.length,       icon: 'bi-hourglass-split', color: '#E65100', bg: '#FFF3E0' },
-                                { label: 'Total Products',       value: stats.totalProducts ?? '—', icon: 'bi-box-seam',        color: '#6A1B9A', bg: '#F3E5F5' },
-                                { label: 'Total Orders',         value: stats.totalOrders ?? '—',   icon: 'bi-bag-check',       color: '#00695C', bg: '#E0F2F1' },
-                                { label: 'Total Revenue',        value: stats.totalRevenue != null ? `Rs. ${stats.totalRevenue.toLocaleString()}` : '—', icon: 'bi-currency-rupee', color: '#C62828', bg: '#FFEBEE' },
-                            ].map(s => (
-                                <div key={s.label} className="col-6 col-md-4 col-lg-2">
-                                    <div className="p-3 rounded-3 text-center h-100" style={{ backgroundColor: s.bg }}>
-                                        <i className={`bi ${s.icon} d-block mb-1`} style={{ color: s.color, fontSize: 24 }}></i>
-                                        <div className="fw-bold" style={{ fontSize: 20, color: s.color }}>{s.value}</div>
-                                        <small className="text-muted" style={{ fontSize: 11 }}>{s.label}</small>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="p-4 mb-4" style={cardStyle}>
-                            <h6 className="fw-bold mb-3">Quick Actions</h6>
-                            <div className="row g-2">
-                                {sidebarItems.filter(i => i.id !== 'dashboard').map(item => (
-                                    <div key={item.id} className="col-6 col-md-3">
-                                        <button className="btn w-100 py-3 d-flex flex-column align-items-center gap-1"
-                                                onClick={() => handleTabChange(item.id)}
-                                                style={{ backgroundColor: '#F0EBE1', border: '1px solid #DDD9D2', borderRadius: 8 }}>
-                                            <i className={`bi ${item.icon}`} style={{ fontSize: 20, color: '#2D6A4F' }}></i>
-                                            <small className="fw-medium" style={{ fontSize: 12 }}>{item.label}</small>
-                                            {item.badge !== undefined && item.badge > 0 && (
-                                                <span className="badge bg-warning text-dark" style={{ fontSize: 10 }}>{item.badge} pending</span>
-                                            )}
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Recent Pending Sellers Preview */}
-                        {pendingSellers.length > 0 && (
-                            <div className="p-4" style={cardStyle}>
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 className="fw-bold mb-0">⚠️ Pending Seller Verifications</h6>
-                                    <button className="btn btn-sm fw-medium"
-                                            onClick={() => handleTabChange('sellers')}
-                                            style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8, fontSize: 13 }}>
-                                        View All ({pendingSellers.length})
-                                    </button>
-                                </div>
-                                {pendingSellers.slice(0, 3).map(s => (
-                                    <div key={s.sellerId} className="d-flex align-items-center gap-3 py-2 border-bottom">
-                                        <div className="rounded-circle d-flex align-items-center justify-content-center"
-                                             style={{ width: 36, height: 36, backgroundColor: '#E8F5E9', flexShrink: 0 }}>
-                                            <i className="bi bi-shop" style={{ color: '#2D6A4F' }}></i>
-                                        </div>
-                                        <div className="flex-grow-1">
-                                            <p className="mb-0 fw-semibold" style={{ fontSize: 14 }}>{s.businessName}</p>
-                                            <small className="text-muted">{s.email} — {s.city}</small>
-                                        </div>
-                                        <small className="text-muted">{new Date(s.createdAt).toLocaleDateString()}</small>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* ──── SELLER VERIFICATION TAB ──── */}
-                {activeTab === 'sellers' && (
-                    <>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-0">Seller Verification</h4>
-                                <small className="text-muted">Review and approve seller applications</small>
-                            </div>
-                            <span className="badge bg-warning text-dark px-3 py-2" style={{ fontSize: 13 }}>
-                                {pendingSellers.length} Pending
-                            </span>
-                        </div>
-
-                        {pendingSellers.length === 0 ? (
-                            <div className="p-5 text-center" style={cardStyle}>
-                                <i className="bi bi-check-circle" style={{ fontSize: 48, color: '#2D6A4F' }}></i>
-                                <h5 className="mt-3 fw-bold">All Caught Up!</h5>
-                                <p className="text-muted">No pending seller verifications.</p>
-                            </div>
-                        ) : (
-                            <div className="d-flex flex-column gap-3">
-                                {pendingSellers.map(seller => (
-                                    <div key={seller.sellerId} className="p-4" style={cardStyle}>
-                                        <div className="row">
-                                            <div className="col-md-8">
-                                                <div className="d-flex align-items-start gap-3 mb-3">
-                                                    <div className="rounded-circle d-flex align-items-center justify-content-center"
-                                                         style={{ width: 52, height: 52, backgroundColor: '#E8F5E9', flexShrink: 0 }}>
-                                                        <i className="bi bi-shop" style={{ color: '#2D6A4F', fontSize: 20 }}></i>
-                                                    </div>
-                                                    <div>
-                                                        <h5 className="fw-bold mb-1">{seller.businessName}</h5>
-                                                        <p className="text-muted small mb-0">
-                                                            <i className="bi bi-person me-1"></i>{seller.fullName}
-                                                            <span className="mx-2">·</span>
-                                                            <i className="bi bi-envelope me-1"></i>{seller.email}
-                                                        </p>
-                                                        <p className="text-muted small mb-0">
-                                                            <i className="bi bi-geo-alt me-1"></i>{seller.city}, {seller.district}
-                                                            <span className="mx-2">·</span>
-                                                            <i className="bi bi-calendar me-1"></i>Applied {new Date(seller.createdAt).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <p className="mb-2" style={{ fontSize: 14 }}>{seller.businessDescription}</p>
-                                                {seller.kycDocumentPath && (
-                                                    <span className="badge" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
-                                                        <i className="bi bi-file-earmark-check me-1"></i>KYC Documents Uploaded
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="col-md-4 d-flex flex-column gap-2 mt-3 mt-md-0">
-                                                <button className="btn fw-semibold text-white"
-                                                        onClick={() => handleVerify(seller.sellerId, true)}
-                                                        disabled={actionLoading === seller.sellerId}
-                                                        style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}>
-                                                    {actionLoading === seller.sellerId
-                                                        ? <><span className="spinner-border spinner-border-sm me-2"></span>Processing...</>
-                                                        : <><i className="bi bi-check-circle me-2"></i>Approve</>}
-                                                </button>
-                                                <button className="btn btn-danger fw-semibold"
-                                                        onClick={() => handleVerify(seller.sellerId, false)}
-                                                        disabled={actionLoading === seller.sellerId}
-                                                        style={{ borderRadius: 8 }}>
-                                                    <i className="bi bi-x-circle me-2"></i>Reject
-                                                </button>
-                                                {seller.kycDocumentPath && (
-                                                    <a href={`http://localhost:5192${seller.kycDocumentPath}`}
-                                                       target="_blank" rel="noopener noreferrer"
-                                                       className="btn fw-medium"
-                                                       style={{ borderColor: '#CCC', color: '#555', borderRadius: 8 }}>
-                                                        <i className="bi bi-folder2-open me-2"></i>View Documents
-                                                    </a>
-                                                )}
-                                                <div className="alert alert-warning py-2 mb-0 small">
-                                                    <i className="bi bi-exclamation-triangle me-1"></i>
-                                                    Once approved, seller can list products.
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* ──── USER MANAGEMENT TAB ──── */}
-                {activeTab === 'users' && (
-                    <>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-0">User Management</h4>
-                                <small className="text-muted">View all registered users</small>
-                            </div>
-                        </div>
-
-                        <div className="p-4" style={cardStyle}>
-                            <div className="mb-3">
-                                <input type="text" className="form-control" placeholder="Search by name or email..."
-                                       value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                       style={{ maxWidth: 360, fontSize: 14 }} />
-                            </div>
-
-                            {allUsers.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <i className="bi bi-people" style={{ fontSize: 48, color: '#CCC' }}></i>
-                                    <p className="text-muted mt-2">No users loaded.</p>
-                                    <button className="btn btn-sm fw-medium"
-                                            onClick={fetchUsers}
-                                            style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
-                                        <i className="bi bi-arrow-clockwise me-1"></i>Retry
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="table-responsive">
-                                    <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
-                                        <thead className="table-light">
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Phone</th>
-                                            <th>Role</th>
-                                            <th>Joined</th>
-                                            <th>Status</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {allUsers
-                                            .filter(u => !searchQuery ||
-                                                u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
-                                            .map(u => (
-                                                <tr key={u.id}>
-                                                    <td className="fw-medium">{u.fullName || '—'}</td>
-                                                    <td className="text-muted">{u.email}</td>
-                                                    <td className="text-muted">{u.phoneNumber || '—'}</td>
-                                                    <td>
-                                                        <span className={`badge ${u.role === 'Admin' ? 'bg-danger' : u.role === 'Seller' ? 'bg-success' : 'bg-primary'}`}>
-                                                            {u.role}
-                                                        </span>
-                                                    </td>
-                                                    <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
-                                                    <td>
-                                                        <span className={`badge ${u.isActive !== false ? 'bg-success' : 'bg-secondary'}`}>
-                                                            {u.isActive !== false ? 'Active' : 'Inactive'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {/* ──── PRODUCT MODERATION TAB ──── */}
-                {activeTab === 'products' && (
-                    <>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-0">Product Moderation</h4>
-                                <small className="text-muted">Review and manage all products</small>
-                            </div>
-                        </div>
-
-                        <div className="p-4" style={cardStyle}>
-                            <div className="mb-3">
-                                <input type="text" className="form-control" placeholder="Search products..."
-                                       value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                       style={{ maxWidth: 360, fontSize: 14 }} />
-                            </div>
-
-                            {allProducts.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <i className="bi bi-box-seam" style={{ fontSize: 48, color: '#CCC' }}></i>
-                                    <p className="text-muted mt-2">No products loaded.</p>
-                                    <button className="btn btn-sm fw-medium" onClick={fetchProducts}
-                                            style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
-                                        <i className="bi bi-arrow-clockwise me-1"></i>Retry
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="table-responsive">
-                                    <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
-                                        <thead className="table-light">
-                                        <tr>
-                                            <th>Product</th>
-                                            <th>Seller</th>
-                                            <th>Category</th>
-                                            <th>Price</th>
-                                            <th>Stock</th>
-                                            <th>Rating</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {allProducts
-                                            .filter(p => !searchQuery || p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-                                            .map(p => (
-                                                <tr key={p.productId}>
-                                                    <td className="fw-medium" style={{ maxWidth: 160 }}>
-                                                        <span className="d-block text-truncate">{p.name}</span>
-                                                    </td>
-                                                    <td className="text-muted">{p.sellerBusinessName || '—'}</td>
-                                                    <td><span className="badge bg-light text-dark">{p.categoryName || '—'}</span></td>
-                                                    <td>Rs. {p.price?.toLocaleString()}</td>
-                                                    <td>
-                                                        <span className={p.stockQuantity === 0 ? 'text-danger fw-medium' : ''}>
-                                                            {p.stockQuantity}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <span style={{ color: '#E8A000' }}>★</span> {p.averageRating?.toFixed(1) ?? '0.0'}
-                                                    </td>
-                                                    <td>
-                                                        <span className={`badge ${p.isActive ? 'bg-success' : 'bg-secondary'}`}>
-                                                            {p.isActive ? 'Active' : 'Hidden'}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div className="d-flex gap-1">
-                                                            <button className="btn btn-sm fw-medium"
-                                                                    onClick={() => navigate(`/product/${p.productId}`)}
-                                                                    style={{ borderColor: '#DDD', color: '#555', borderRadius: 6, fontSize: 12 }}>
-                                                                View
-                                                            </button>
-                                                            <button className="btn btn-sm fw-medium"
-                                                                    onClick={() => handleToggleProduct(p.productId, p.isActive)}
-                                                                    disabled={actionLoading === p.productId}
-                                                                    style={{
-                                                                        borderRadius: 6, fontSize: 12, border: 'none',
-                                                                        backgroundColor: p.isActive ? '#FFEBEE' : '#E8F5E9',
-                                                                        color: p.isActive ? '#C62828' : '#2E7D32',
-                                                                    }}>
-                                                                {p.isActive ? 'Hide' : 'Show'}
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {/* ──── ORDER DASHBOARD TAB ──── */}
-                {activeTab === 'orders' && (
-                    <>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-0">Order Dashboard</h4>
-                                <small className="text-muted">View and manage all orders</small>
-                            </div>
-                        </div>
-
-                        <div className="p-4" style={cardStyle}>
-                            <div className="mb-3">
-                                <input type="text" className="form-control" placeholder="Search by order number or customer..."
-                                       value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                       style={{ maxWidth: 360, fontSize: 14 }} />
-                            </div>
-
-                            {allOrders.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <i className="bi bi-bag-check" style={{ fontSize: 48, color: '#CCC' }}></i>
-                                    <p className="text-muted mt-2">No orders loaded.</p>
-                                    <button className="btn btn-sm fw-medium" onClick={fetchOrders}
-                                            style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
-                                        <i className="bi bi-arrow-clockwise me-1"></i>Retry
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="table-responsive">
-                                    <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
-                                        <thead className="table-light">
-                                        <tr>
-                                            <th>Order #</th>
-                                            <th>Customer</th>
-                                            <th>City</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {allOrders
-                                            .filter(o => !searchQuery ||
-                                                o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                o.userName?.toLowerCase().includes(searchQuery.toLowerCase()))
-                                            .map(o => (
-                                                <tr key={o.orderId}>
-                                                    <td className="fw-medium" style={{ color: '#2D6A4F' }}>#{o.orderNumber?.slice(0, 8).toUpperCase()}</td>
-                                                    <td>{o.userName || '—'}</td>
-                                                    <td className="text-muted">{o.city || '—'}</td>
-                                                    <td className="fw-medium">Rs. {o.totalAmount?.toLocaleString()}</td>
-                                                    <td><span className={getStatusBadge(o.status)}>{o.status}</span></td>
-                                                    <td className="text-muted">{new Date(o.createdAt).toLocaleDateString()}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {/* ──── REPAIR MANAGEMENT TAB ──── */}
-
-
-                {activeTab === 'analytics' && (
-                    <div>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-1">Analytics & Reports</h4>
-                                <p className="text-muted small mb-0">Platform performance overview</p>
-                            </div>
-                            <button
-                                className="btn btn-sm fw-medium"
-                                onClick={fetchAnalytics}
-                                style={{ border: '1px solid #2D6A4F', color: '#2D6A4F', borderRadius: 8, backgroundColor: 'white' }}
-                            >
-                                <i className="bi bi-arrow-clockwise me-1"></i>Refresh
+            {/* ── Mobile Offcanvas Sidebar ── */}
+            {sidebarOpen && (
+                <>
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1040 }}
+                         onClick={() => setSidebarOpen(false)} />
+                    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: 260,
+                        backgroundColor: navStyle.backgroundColor, zIndex: 1050,
+                        display: 'flex', flexDirection: 'column', padding: '16px 12px' }}>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <span className="text-white fw-bold" style={{ fontSize: 13 }}>ADMIN PANEL</span>
+                            <button className="btn btn-sm border-0 p-1" onClick={() => setSidebarOpen(false)}
+                                    style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                <i className="bi bi-x-lg"></i>
                             </button>
                         </div>
+                        <small className="d-block mb-3" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                            {user?.email}
+                        </small>
+                        <nav className="d-flex flex-column gap-1 flex-grow-1">
+                            {sidebarItems.map(item => (
+                                <button key={item.id}
+                                        className="btn d-flex align-items-center gap-2 text-start fw-medium px-3 py-2"
+                                        onClick={() => handleTabChange(item.id)}
+                                        style={{ borderRadius: 8, fontSize: 14, border: 'none',
+                                            backgroundColor: activeTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                                            color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.65)' }}>
+                                    <i className={`bi ${item.icon}`}></i>
+                                    <span className="flex-grow-1">{item.label}</span>
+                                    {item.badge !== undefined && item.badge > 0 && (
+                                        <span className="badge bg-warning text-dark" style={{ fontSize: 10 }}>
+                                            {item.badge}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="pt-3">
+                            <button className="btn btn-sm w-100 fw-medium" onClick={() => navigate('/')}
+                                    style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)',
+                                        borderRadius: 8, fontSize: 13 }}>
+                                <i className="bi bi-arrow-left me-2"></i>Back to Site
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
 
-                        {loadingAnalytics || !analytics ? (
-                            <div className="text-center py-5">
-                                <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+            {/* ── Main layout row ── */}
+            <div className="d-flex" style={{ minHeight: '100vh' }}>
+
+                {/* ── Desktop Sidebar (hidden on mobile) ── */}
+                <div className="d-none d-lg-flex flex-column py-4 px-3"
+                     style={{ ...navStyle, width: 240, flexShrink: 0 }}>
+                    <div className="mb-4 px-2">
+                        <p className="text-white fw-bold mb-0" style={{ fontSize: 13 }}>ADMIN PANEL</p>
+                        <small style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{user?.email}</small>
+                    </div>
+                    <nav className="d-flex flex-column gap-1">
+                        {sidebarItems.map(item => (
+                            <button key={item.id}
+                                    className="btn d-flex align-items-center gap-2 text-start fw-medium px-3 py-2"
+                                    onClick={() => handleTabChange(item.id)}
+                                    style={{
+                                        borderRadius: 8, fontSize: 14, border: 'none',
+                                        backgroundColor: activeTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                                        color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.65)',
+                                    }}>
+                                <i className={`bi ${item.icon}`}></i>
+                                <span className="flex-grow-1">{item.label}</span>
+                                {item.badge !== undefined && item.badge > 0 && (
+                                    <span className="badge bg-warning text-dark" style={{ fontSize: 10 }}>{item.badge}</span>
+                                )}
+                            </button>
+                        ))}
+                    </nav>
+                    <div className="mt-auto pt-4 px-2">
+                        <button className="btn btn-sm w-100 fw-medium"
+                                onClick={() => navigate('/')}
+                                style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, fontSize: 13 }}>
+                            <i className="bi bi-arrow-left me-2"></i>Back to Site
+                        </button>
+                    </div>
+                </div>
+
+                {/* ── Main Content ── */}
+                <div className="flex-grow-1 p-2 p-md-4" style={{ overflowY: 'auto', minWidth: 0 }}>
+
+                    {error && (
+                        <div className="alert alert-warning d-flex align-items-center gap-2 mb-3" style={{ fontSize: 14 }}>
+                            <i className="bi bi-exclamation-triangle-fill"></i>{error}
+                        </div>
+                    )}
+
+                    {/* ──── DASHBOARD TAB ──── */}
+                    {activeTab === 'dashboard' && (
+                        <>
+                            <div className="mb-4">
+                                <h4 className="fw-bold mb-0">Admin Dashboard</h4>
+                                <small className="text-muted">Welcome back, {user?.email}</small>
                             </div>
-                        ) : (
-                            <>
-                                {/* Summary Cards */}
-                                <div className="row g-3 mb-4">
-                                    {[
-                                        { icon: 'bi-currency-rupee', label: 'Total Revenue', value: `NPR ${analytics.totalRevenue.toLocaleString()}`, sub: `NPR ${analytics.monthlyRevenue.toLocaleString()} this month`, color: '#2D6A4F' },
-                                        { icon: 'bi-bag-check', label: 'Total Orders', value: analytics.totalOrders.toLocaleString(), sub: `${analytics.ordersByStatus.find((s: any) => s.status === 'Pending')?.count || 0} pending`, color: '#1565C0' },
-                                        { icon: 'bi-people', label: 'Total Users', value: analytics.totalUsers.toLocaleString(), sub: `${analytics.totalSellers} verified sellers`, color: '#6A1B9A' },
-                                        { icon: 'bi-shop', label: 'Pending Sellers', value: analytics.pendingSellers.toLocaleString(), sub: `${analytics.totalProducts} active products`, color: '#E65100' },
-                                    ].map(s => (
-                                        <div key={s.label} className="col-6 col-md-3">
-                                            <div className="rounded-3 p-3" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                                                <div className="d-flex align-items-center gap-2 mb-2">
-                                                    <div className="rounded-2 d-flex align-items-center justify-content-center"
-                                                         style={{ width: 36, height: 36, backgroundColor: s.color + '20' }}>
-                                                        <i className={`bi ${s.icon}`} style={{ color: s.color, fontSize: 16 }}></i>
+
+                            {/* Stat Cards — using ?? so 0 shows correctly instead of '—' */}
+                            <div className="row g-3 mb-4">
+                                {[
+                                    { label: 'Total Users',          value: stats.totalUsers ?? '—',    icon: 'bi-people-fill',     color: '#1565C0', bg: '#E3F2FD' },
+                                    { label: 'Total Sellers',        value: stats.totalSellers ?? '—',  icon: 'bi-shop',            color: '#2D6A4F', bg: '#E8F5E9' },
+                                    { label: 'Pending Verification', value: pendingSellers.length,       icon: 'bi-hourglass-split', color: '#E65100', bg: '#FFF3E0' },
+                                    { label: 'Total Products',       value: stats.totalProducts ?? '—', icon: 'bi-box-seam',        color: '#6A1B9A', bg: '#F3E5F5' },
+                                    { label: 'Total Orders',         value: stats.totalOrders ?? '—',   icon: 'bi-bag-check',       color: '#00695C', bg: '#E0F2F1' },
+                                    { label: 'Total Revenue',        value: stats.totalRevenue != null ? `Rs. ${stats.totalRevenue.toLocaleString()}` : '—', icon: 'bi-currency-rupee', color: '#C62828', bg: '#FFEBEE' },
+                                ].map(s => (
+                                    <div key={s.label} className="col-6 col-md-4 col-lg-2">
+                                        <div className="p-3 rounded-3 text-center h-100" style={{ backgroundColor: s.bg }}>
+                                            <i className={`bi ${s.icon} d-block mb-1`} style={{ color: s.color, fontSize: 24 }}></i>
+                                            <div className="fw-bold" style={{ fontSize: 20, color: s.color }}>{s.value}</div>
+                                            <small className="text-muted" style={{ fontSize: 11 }}>{s.label}</small>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Quick Actions */}
+                            <div className="p-4 mb-4" style={cardStyle}>
+                                <h6 className="fw-bold mb-3">Quick Actions</h6>
+                                <div className="row g-2">
+                                    {sidebarItems.filter(i => i.id !== 'dashboard').map(item => (
+                                        <div key={item.id} className="col-6 col-md-3">
+                                            <button className="btn w-100 py-3 d-flex flex-column align-items-center gap-1"
+                                                    onClick={() => handleTabChange(item.id)}
+                                                    style={{ backgroundColor: '#F0EBE1', border: '1px solid #DDD9D2', borderRadius: 8 }}>
+                                                <i className={`bi ${item.icon}`} style={{ fontSize: 20, color: '#2D6A4F' }}></i>
+                                                <small className="fw-medium" style={{ fontSize: 12 }}>{item.label}</small>
+                                                {item.badge !== undefined && item.badge > 0 && (
+                                                    <span className="badge bg-warning text-dark" style={{ fontSize: 10 }}>{item.badge} pending</span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Recent Pending Sellers Preview */}
+                            {pendingSellers.length > 0 && (
+                                <div className="p-4" style={cardStyle}>
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 className="fw-bold mb-0">⚠️ Pending Seller Verifications</h6>
+                                        <button className="btn btn-sm fw-medium"
+                                                onClick={() => handleTabChange('sellers')}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8, fontSize: 13 }}>
+                                            View All ({pendingSellers.length})
+                                        </button>
+                                    </div>
+                                    {pendingSellers.slice(0, 3).map(s => (
+                                        <div key={s.sellerId} className="d-flex align-items-center gap-3 py-2 border-bottom">
+                                            <div className="rounded-circle d-flex align-items-center justify-content-center"
+                                                 style={{ width: 36, height: 36, backgroundColor: '#E8F5E9', flexShrink: 0 }}>
+                                                <i className="bi bi-shop" style={{ color: '#2D6A4F' }}></i>
+                                            </div>
+                                            <div className="flex-grow-1">
+                                                <p className="mb-0 fw-semibold" style={{ fontSize: 14 }}>{s.businessName}</p>
+                                                <small className="text-muted">{s.email} — {s.city}</small>
+                                            </div>
+                                            <small className="text-muted">{new Date(s.createdAt).toLocaleDateString()}</small>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* ──── SELLER VERIFICATION TAB ──── */}
+                    {activeTab === 'sellers' && (
+                        <>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-0">Seller Verification</h4>
+                                    <small className="text-muted">Review and approve seller applications</small>
+                                </div>
+                                <span className="badge bg-warning text-dark px-3 py-2" style={{ fontSize: 13 }}>
+                                {pendingSellers.length} Pending
+                            </span>
+                            </div>
+
+                            {pendingSellers.length === 0 ? (
+                                <div className="p-5 text-center" style={cardStyle}>
+                                    <i className="bi bi-check-circle" style={{ fontSize: 48, color: '#2D6A4F' }}></i>
+                                    <h5 className="mt-3 fw-bold">All Caught Up!</h5>
+                                    <p className="text-muted">No pending seller verifications.</p>
+                                </div>
+                            ) : (
+                                <div className="d-flex flex-column gap-3">
+                                    {pendingSellers.map(seller => (
+                                        <div key={seller.sellerId} className="p-4" style={cardStyle}>
+                                            <div className="row">
+                                                <div className="col-md-8">
+                                                    <div className="d-flex align-items-start gap-3 mb-3">
+                                                        <div className="rounded-circle d-flex align-items-center justify-content-center"
+                                                             style={{ width: 52, height: 52, backgroundColor: '#E8F5E9', flexShrink: 0 }}>
+                                                            <i className="bi bi-shop" style={{ color: '#2D6A4F', fontSize: 20 }}></i>
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="fw-bold mb-1">{seller.businessName}</h5>
+                                                            <p className="text-muted small mb-0">
+                                                                <i className="bi bi-person me-1"></i>{seller.fullName}
+                                                                <span className="mx-2">·</span>
+                                                                <i className="bi bi-envelope me-1"></i>{seller.email}
+                                                            </p>
+                                                            <p className="text-muted small mb-0">
+                                                                <i className="bi bi-geo-alt me-1"></i>{seller.city}, {seller.district}
+                                                                <span className="mx-2">·</span>
+                                                                <i className="bi bi-calendar me-1"></i>Applied {new Date(seller.createdAt).toLocaleDateString()}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <small className="text-muted fw-medium">{s.label}</small>
+                                                    <p className="mb-2" style={{ fontSize: 14 }}>{seller.businessDescription}</p>
+                                                    {seller.kycDocumentPath && (
+                                                        <span className="badge" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
+                                                        <i className="bi bi-file-earmark-check me-1"></i>KYC Documents Uploaded
+                                                    </span>
+                                                    )}
                                                 </div>
-                                                <div className="fw-bold mb-1" style={{ fontSize: 20 }}>{s.value}</div>
-                                                <small className="text-muted">{s.sub}</small>
+                                                <div className="col-md-4 d-flex flex-column gap-2 mt-3 mt-md-0">
+                                                    <button className="btn fw-semibold text-white"
+                                                            onClick={() => handleVerify(seller.sellerId, true)}
+                                                            disabled={actionLoading === seller.sellerId}
+                                                            style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}>
+                                                        {actionLoading === seller.sellerId
+                                                            ? <><span className="spinner-border spinner-border-sm me-2"></span>Processing...</>
+                                                            : <><i className="bi bi-check-circle me-2"></i>Approve</>}
+                                                    </button>
+                                                    <button className="btn btn-danger fw-semibold"
+                                                            onClick={() => handleVerify(seller.sellerId, false)}
+                                                            disabled={actionLoading === seller.sellerId}
+                                                            style={{ borderRadius: 8 }}>
+                                                        <i className="bi bi-x-circle me-2"></i>Reject
+                                                    </button>
+                                                    {seller.kycDocumentPath && (
+                                                        <a href={`http://localhost:5192${seller.kycDocumentPath}`}
+                                                           target="_blank" rel="noopener noreferrer"
+                                                           className="btn fw-medium"
+                                                           style={{ borderColor: '#CCC', color: '#555', borderRadius: 8 }}>
+                                                            <i className="bi bi-folder2-open me-2"></i>View Documents
+                                                        </a>
+                                                    )}
+                                                    <div className="alert alert-warning py-2 mb-0 small">
+                                                        <i className="bi bi-exclamation-triangle me-1"></i>
+                                                        Once approved, seller can list products.
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+                            )}
+                        </>
+                    )}
 
-                                <div className="row g-3 mb-4">
-                                    {/* Revenue Chart */}
-                                    <div className="col-lg-8">
-                                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                                            <h6 className="fw-bold mb-4">Revenue — Last 6 Months</h6>
-                                            {(() => {
-                                                const maxRev = Math.max(...analytics.monthlyData.map((m: any) => m.revenue), 1);
-                                                return (
-                                                    <div className="d-flex align-items-end gap-2" style={{ height: 160 }}>
-                                                        {analytics.monthlyData.map((m: any, i: number) => {
-                                                            const h = maxRev > 0 ? Math.max((m.revenue / maxRev) * 140, m.revenue > 0 ? 8 : 4) : 4;
-                                                            return (
-                                                                <div key={i} className="d-flex flex-column align-items-center flex-grow-1 gap-1">
-                                                                    <small className="text-muted" style={{ fontSize: 10 }}>
-                                                                        {m.revenue > 0 ? `${(m.revenue / 1000).toFixed(0)}k` : '0'}
-                                                                    </small>
-                                                                    <div className="rounded-top w-100"
-                                                                         title={`${m.month}: NPR ${m.revenue.toLocaleString()}`}
-                                                                         style={{ height: h, backgroundColor: i === analytics.monthlyData.length - 1 ? '#2D6A4F' : '#A5D6A7', minHeight: 4 }} />
-                                                                    <small className="text-muted" style={{ fontSize: 9 }}>{m.month.split(' ')[0]}</small>
+                    {/* ──── USER MANAGEMENT TAB ──── */}
+                    {activeTab === 'users' && (
+                        <>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-0">User Management</h4>
+                                    <small className="text-muted">View all registered users</small>
+                                </div>
+                            </div>
+
+                            <div className="p-4" style={cardStyle}>
+                                <div className="mb-3">
+                                    <input type="text" className="form-control" placeholder="Search by name or email..."
+                                           value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                           style={{ maxWidth: 360, fontSize: 14 }} />
+                                </div>
+
+                                {allUsers.length === 0 ? (
+                                    <div className="text-center py-5">
+                                        <i className="bi bi-people" style={{ fontSize: 48, color: '#CCC' }}></i>
+                                        <p className="text-muted mt-2">No users loaded.</p>
+                                        <button className="btn btn-sm fw-medium"
+                                                onClick={fetchUsers}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
+                                            <i className="bi bi-arrow-clockwise me-1"></i>Retry
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
+                                            <thead className="table-light">
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Phone</th>
+                                                <th>Role</th>
+                                                <th>Joined</th>
+                                                <th>Status</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {allUsers
+                                                .filter(u => !searchQuery ||
+                                                    u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(u => (
+                                                    <tr key={u.id}>
+                                                        <td className="fw-medium">{u.fullName || '—'}</td>
+                                                        <td className="text-muted">{u.email}</td>
+                                                        <td className="text-muted">{u.phoneNumber || '—'}</td>
+                                                        <td>
+                                                        <span className={`badge ${u.role === 'Admin' ? 'bg-danger' : u.role === 'Seller' ? 'bg-success' : 'bg-primary'}`}>
+                                                            {u.role}
+                                                        </span>
+                                                        </td>
+                                                        <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+                                                        <td>
+                                                        <span className={`badge ${u.isActive !== false ? 'bg-success' : 'bg-secondary'}`}>
+                                                            {u.isActive !== false ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* ──── PRODUCT MODERATION TAB ──── */}
+                    {activeTab === 'products' && (
+                        <>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-0">Product Moderation</h4>
+                                    <small className="text-muted">Review and manage all products</small>
+                                </div>
+                            </div>
+
+                            <div className="p-4" style={cardStyle}>
+                                <div className="mb-3">
+                                    <input type="text" className="form-control" placeholder="Search products..."
+                                           value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                           style={{ maxWidth: 360, fontSize: 14 }} />
+                                </div>
+
+                                {allProducts.length === 0 ? (
+                                    <div className="text-center py-5">
+                                        <i className="bi bi-box-seam" style={{ fontSize: 48, color: '#CCC' }}></i>
+                                        <p className="text-muted mt-2">No products loaded.</p>
+                                        <button className="btn btn-sm fw-medium" onClick={fetchProducts}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
+                                            <i className="bi bi-arrow-clockwise me-1"></i>Retry
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
+                                            <thead className="table-light">
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Seller</th>
+                                                <th>Category</th>
+                                                <th>Price</th>
+                                                <th>Stock</th>
+                                                <th>Rating</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {allProducts
+                                                .filter(p => !searchQuery || p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(p => (
+                                                    <tr key={p.productId}>
+                                                        <td className="fw-medium" style={{ maxWidth: 160 }}>
+                                                            <span className="d-block text-truncate">{p.name}</span>
+                                                        </td>
+                                                        <td className="text-muted">{p.sellerBusinessName || '—'}</td>
+                                                        <td><span className="badge bg-light text-dark">{p.categoryName || '—'}</span></td>
+                                                        <td>Rs. {p.price?.toLocaleString()}</td>
+                                                        <td>
+                                                        <span className={p.stockQuantity === 0 ? 'text-danger fw-medium' : ''}>
+                                                            {p.stockQuantity}
+                                                        </span>
+                                                        </td>
+                                                        <td>
+                                                            <span style={{ color: '#E8A000' }}>★</span> {p.averageRating?.toFixed(1) ?? '0.0'}
+                                                        </td>
+                                                        <td>
+                                                        <span className={`badge ${p.isActive ? 'bg-success' : 'bg-secondary'}`}>
+                                                            {p.isActive ? 'Active' : 'Hidden'}
+                                                        </span>
+                                                        </td>
+                                                        <td>
+                                                            <div className="d-flex gap-1">
+                                                                <button className="btn btn-sm fw-medium"
+                                                                        onClick={() => navigate(`/product/${p.productId}`)}
+                                                                        style={{ borderColor: '#DDD', color: '#555', borderRadius: 6, fontSize: 12 }}>
+                                                                    View
+                                                                </button>
+                                                                <button className="btn btn-sm fw-medium"
+                                                                        onClick={() => handleToggleProduct(p.productId, p.isActive)}
+                                                                        disabled={actionLoading === p.productId}
+                                                                        style={{
+                                                                            borderRadius: 6, fontSize: 12, border: 'none',
+                                                                            backgroundColor: p.isActive ? '#FFEBEE' : '#E8F5E9',
+                                                                            color: p.isActive ? '#C62828' : '#2E7D32',
+                                                                        }}>
+                                                                    {p.isActive ? 'Hide' : 'Show'}
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* ──── ORDER DASHBOARD TAB ──── */}
+                    {activeTab === 'orders' && (
+                        <>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-0">Order Dashboard</h4>
+                                    <small className="text-muted">View and manage all orders</small>
+                                </div>
+                            </div>
+
+                            <div className="p-4" style={cardStyle}>
+                                <div className="mb-3">
+                                    <input type="text" className="form-control" placeholder="Search by order number or customer..."
+                                           value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                           style={{ maxWidth: 360, fontSize: 14 }} />
+                                </div>
+
+                                {allOrders.length === 0 ? (
+                                    <div className="text-center py-5">
+                                        <i className="bi bi-bag-check" style={{ fontSize: 48, color: '#CCC' }}></i>
+                                        <p className="text-muted mt-2">No orders loaded.</p>
+                                        <button className="btn btn-sm fw-medium" onClick={fetchOrders}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
+                                            <i className="bi bi-arrow-clockwise me-1"></i>Retry
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
+                                            <thead className="table-light">
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Customer</th>
+                                                <th>City</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Date</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {allOrders
+                                                .filter(o => !searchQuery ||
+                                                    o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    o.userName?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(o => (
+                                                    <tr key={o.orderId}>
+                                                        <td className="fw-medium" style={{ color: '#2D6A4F' }}>#{o.orderNumber?.slice(0, 8).toUpperCase()}</td>
+                                                        <td>{o.userName || '—'}</td>
+                                                        <td className="text-muted">{o.city || '—'}</td>
+                                                        <td className="fw-medium">Rs. {o.totalAmount?.toLocaleString()}</td>
+                                                        <td><span className={getStatusBadge(o.status)}>{o.status}</span></td>
+                                                        <td className="text-muted">{new Date(o.createdAt).toLocaleDateString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* ──── REPAIR MANAGEMENT TAB ──── */}
+
+
+                    {activeTab === 'analytics' && (
+                        <div>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-1">Analytics & Reports</h4>
+                                    <p className="text-muted small mb-0">Platform performance overview</p>
+                                </div>
+                                <button
+                                    className="btn btn-sm fw-medium"
+                                    onClick={fetchAnalytics}
+                                    style={{ border: '1px solid #2D6A4F', color: '#2D6A4F', borderRadius: 8, backgroundColor: 'white' }}
+                                >
+                                    <i className="bi bi-arrow-clockwise me-1"></i>Refresh
+                                </button>
+                            </div>
+
+                            {loadingAnalytics || !analytics ? (
+                                <div className="text-center py-5">
+                                    <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Summary Cards */}
+                                    <div className="row g-3 mb-4">
+                                        {[
+                                            { icon: 'bi-currency-rupee', label: 'Total Revenue', value: `NPR ${analytics.totalRevenue.toLocaleString()}`, sub: `NPR ${analytics.monthlyRevenue.toLocaleString()} this month`, color: '#2D6A4F' },
+                                            { icon: 'bi-bag-check', label: 'Total Orders', value: analytics.totalOrders.toLocaleString(), sub: `${analytics.ordersByStatus.find((s: any) => s.status === 'Pending')?.count || 0} pending`, color: '#1565C0' },
+                                            { icon: 'bi-people', label: 'Total Users', value: analytics.totalUsers.toLocaleString(), sub: `${analytics.totalSellers} verified sellers`, color: '#6A1B9A' },
+                                            { icon: 'bi-shop', label: 'Pending Sellers', value: analytics.pendingSellers.toLocaleString(), sub: `${analytics.totalProducts} active products`, color: '#E65100' },
+                                        ].map(s => (
+                                            <div key={s.label} className="col-6 col-md-3">
+                                                <div className="rounded-3 p-3" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                                    <div className="d-flex align-items-center gap-2 mb-2">
+                                                        <div className="rounded-2 d-flex align-items-center justify-content-center"
+                                                             style={{ width: 36, height: 36, backgroundColor: s.color + '20' }}>
+                                                            <i className={`bi ${s.icon}`} style={{ color: s.color, fontSize: 16 }}></i>
+                                                        </div>
+                                                        <small className="text-muted fw-medium">{s.label}</small>
+                                                    </div>
+                                                    <div className="fw-bold mb-1" style={{ fontSize: 20 }}>{s.value}</div>
+                                                    <small className="text-muted">{s.sub}</small>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="row g-3 mb-4">
+                                        {/* Revenue Chart */}
+                                        <div className="col-lg-8">
+                                            <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                                <h6 className="fw-bold mb-4">Revenue — Last 6 Months</h6>
+                                                {(() => {
+                                                    const maxRev = Math.max(...analytics.monthlyData.map((m: any) => m.revenue), 1);
+                                                    return (
+                                                        <div className="d-flex align-items-end gap-2" style={{ height: 160 }}>
+                                                            {analytics.monthlyData.map((m: any, i: number) => {
+                                                                const h = maxRev > 0 ? Math.max((m.revenue / maxRev) * 140, m.revenue > 0 ? 8 : 4) : 4;
+                                                                return (
+                                                                    <div key={i} className="d-flex flex-column align-items-center flex-grow-1 gap-1">
+                                                                        <small className="text-muted" style={{ fontSize: 10 }}>
+                                                                            {m.revenue > 0 ? `${(m.revenue / 1000).toFixed(0)}k` : '0'}
+                                                                        </small>
+                                                                        <div className="rounded-top w-100"
+                                                                             title={`${m.month}: NPR ${m.revenue.toLocaleString()}`}
+                                                                             style={{ height: h, backgroundColor: i === analytics.monthlyData.length - 1 ? '#2D6A4F' : '#A5D6A7', minHeight: 4 }} />
+                                                                        <small className="text-muted" style={{ fontSize: 9 }}>{m.month.split(' ')[0]}</small>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </div>
+
+                                        {/* Orders by Status */}
+                                        <div className="col-lg-4">
+                                            <div className="rounded-3 p-4 h-100" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                                <h6 className="fw-bold mb-4">Orders by Status</h6>
+                                                <div className="d-flex flex-column gap-3">
+                                                    {analytics.ordersByStatus.map((s: any) => {
+                                                        const colors: Record<string, string> = { Pending: '#E65100', Processing: '#1565C0', Shipped: '#6A1B9A', Delivered: '#2E7D32', Cancelled: '#C62828' };
+                                                        const color = colors[s.status] || '#999';
+                                                        const pct = analytics.totalOrders > 0 ? Math.round((s.count / analytics.totalOrders) * 100) : 0;
+                                                        return (
+                                                            <div key={s.status}>
+                                                                <div className="d-flex justify-content-between mb-1">
+                                                                    <small className="fw-medium" style={{ color }}>{s.status}</small>
+                                                                    <small className="text-muted">{s.count} ({pct}%)</small>
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    </div>
-
-                                    {/* Orders by Status */}
-                                    <div className="col-lg-4">
-                                        <div className="rounded-3 p-4 h-100" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                                            <h6 className="fw-bold mb-4">Orders by Status</h6>
-                                            <div className="d-flex flex-column gap-3">
-                                                {analytics.ordersByStatus.map((s: any) => {
-                                                    const colors: Record<string, string> = { Pending: '#E65100', Processing: '#1565C0', Shipped: '#6A1B9A', Delivered: '#2E7D32', Cancelled: '#C62828' };
-                                                    const color = colors[s.status] || '#999';
-                                                    const pct = analytics.totalOrders > 0 ? Math.round((s.count / analytics.totalOrders) * 100) : 0;
-                                                    return (
-                                                        <div key={s.status}>
-                                                            <div className="d-flex justify-content-between mb-1">
-                                                                <small className="fw-medium" style={{ color }}>{s.status}</small>
-                                                                <small className="text-muted">{s.count} ({pct}%)</small>
+                                                                <div className="rounded-pill" style={{ height: 6, backgroundColor: '#EEE' }}>
+                                                                    <div className="rounded-pill" style={{ width: `${pct}%`, height: '100%', backgroundColor: color }} />
+                                                                </div>
                                                             </div>
-                                                            <div className="rounded-pill" style={{ height: 6, backgroundColor: '#EEE' }}>
-                                                                <div className="rounded-pill" style={{ width: `${pct}%`, height: '100%', backgroundColor: color }} />
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="row g-3">
-                                    {/* Top Sellers */}
-                                    <div className="col-lg-6">
-                                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                                            <h6 className="fw-bold mb-3">Top Sellers by Revenue</h6>
-                                            <div className="d-flex flex-column gap-2">
-                                                {analytics.topSellers.map((s: any, i: number) => (
-                                                    <div key={s.sellerId} className="d-flex align-items-center gap-3 py-2"
-                                                         style={{ borderBottom: i < analytics.topSellers.length - 1 ? '1px dashed #E5E1D8' : 'none' }}>
-                                                        <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
-                                                             style={{ width: 28, height: 28, backgroundColor: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : '#CD7C32', fontSize: 12 }}>
-                                                            {i + 1}
-                                                        </div>
-                                                        <div className="flex-grow-1">
-                                                            <p className="fw-semibold mb-0" style={{ fontSize: 13 }}>{s.businessName || '—'}</p>
-                                                            <small className="text-muted">{s.city} · {s.totalProducts} products</small>
-                                                        </div>
-                                                        <span className="fw-bold" style={{ fontSize: 13, color: '#2D6A4F' }}>NPR {s.revenue.toLocaleString()}</span>
-                                                    </div>
-                                                ))}
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Category Breakdown */}
-                                    <div className="col-lg-6">
-                                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
-                                            <h6 className="fw-bold mb-3">Products by Category</h6>
-                                            <div className="d-flex flex-column gap-3">
-                                                {analytics.categoryBreakdown.map((c: any) => {
-                                                    const pct = analytics.totalProducts > 0 ? Math.round((c.count / analytics.totalProducts) * 100) : 0;
-                                                    return (
-                                                        <div key={c.category}>
-                                                            <div className="d-flex justify-content-between mb-1">
-                                                                <small className="fw-medium">{c.category}</small>
-                                                                <small className="text-muted">{c.count} ({pct}%)</small>
+                                    <div className="row g-3">
+                                        {/* Top Sellers */}
+                                        <div className="col-lg-6">
+                                            <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                                <h6 className="fw-bold mb-3">Top Sellers by Revenue</h6>
+                                                <div className="d-flex flex-column gap-2">
+                                                    {analytics.topSellers.map((s: any, i: number) => (
+                                                        <div key={s.sellerId} className="d-flex align-items-center gap-3 py-2"
+                                                             style={{ borderBottom: i < analytics.topSellers.length - 1 ? '1px dashed #E5E1D8' : 'none' }}>
+                                                            <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                                                                 style={{ width: 28, height: 28, backgroundColor: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : '#CD7C32', fontSize: 12 }}>
+                                                                {i + 1}
                                                             </div>
-                                                            <div className="rounded-pill" style={{ height: 6, backgroundColor: '#EEE' }}>
-                                                                <div className="rounded-pill" style={{ width: `${pct}%`, height: '100%', backgroundColor: '#2D6A4F' }} />
+                                                            <div className="flex-grow-1">
+                                                                <p className="fw-semibold mb-0" style={{ fontSize: 13 }}>{s.businessName || '—'}</p>
+                                                                <small className="text-muted">{s.city} · {s.totalProducts} products</small>
                                                             </div>
+                                                            <span className="fw-bold" style={{ fontSize: 13, color: '#2D6A4F' }}>NPR {s.revenue.toLocaleString()}</span>
                                                         </div>
-                                                    );
-                                                })}
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Category Breakdown */}
+                                        <div className="col-lg-6">
+                                            <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                                <h6 className="fw-bold mb-3">Products by Category</h6>
+                                                <div className="d-flex flex-column gap-3">
+                                                    {analytics.categoryBreakdown.map((c: any) => {
+                                                        const pct = analytics.totalProducts > 0 ? Math.round((c.count / analytics.totalProducts) * 100) : 0;
+                                                        return (
+                                                            <div key={c.category}>
+                                                                <div className="d-flex justify-content-between mb-1">
+                                                                    <small className="fw-medium">{c.category}</small>
+                                                                    <small className="text-muted">{c.count} ({pct}%)</small>
+                                                                </div>
+                                                                <div className="rounded-pill" style={{ height: 6, backgroundColor: '#EEE' }}>
+                                                                    <div className="rounded-pill" style={{ width: `${pct}%`, height: '100%', backgroundColor: '#2D6A4F' }} />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'settings' && (
-                    <div>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-1">Platform Settings</h4>
-                                <p className="text-muted small mb-0">Manage platform configuration</p>
-                            </div>
-                            <button
-                                className="btn fw-semibold text-white px-4"
-                                style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}
-                                onClick={handleSaveSettings}
-                                disabled={savingSettings || !settings}
-                            >
-                                {savingSettings ? 'Saving...' : '💾 Save Changes'}
-                            </button>
+                                </>
+                            )}
                         </div>
+                    )}
 
-                        {!settings ? (
-                            <div className="text-center py-5">
-                                <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+                    {activeTab === 'settings' && (
+                        <div>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-1">Platform Settings</h4>
+                                    <p className="text-muted small mb-0">Manage platform configuration</p>
+                                </div>
+                                <button
+                                    className="btn fw-semibold text-white px-4"
+                                    style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}
+                                    onClick={handleSaveSettings}
+                                    disabled={savingSettings || !settings}
+                                >
+                                    {savingSettings ? 'Saving...' : '💾 Save Changes'}
+                                </button>
                             </div>
-                        ) : (
-                            <div className="row g-4">
-                                {/* Platform Info */}
-                                <div className="col-12">
-                                    <div className="card border-0 shadow-sm rounded-3">
-                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
-                                            🏪 Platform Information
-                                        </div>
-                                        <div className="card-body">
-                                            <div className="row g-3">
-                                                {[
-                                                    { label: 'Platform Name', key: 'platformName' },
-                                                    { label: 'Tagline', key: 'tagline' },
-                                                    { label: 'Support Email', key: 'supportEmail' },
-                                                    { label: 'Support Phone', key: 'supportPhone' },
-                                                    { label: 'Address', key: 'address' },
-                                                ].map(f => (
-                                                    <div key={f.key} className="col-md-6">
-                                                        <label className="form-label fw-medium small">{f.label}</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            value={(settings as any)[f.key]}
-                                                            onChange={e => setSettings({ ...settings, [f.key]: e.target.value })}
-                                                        />
-                                                    </div>
-                                                ))}
+
+                            {!settings ? (
+                                <div className="text-center py-5">
+                                    <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+                                </div>
+                            ) : (
+                                <div className="row g-4">
+                                    {/* Platform Info */}
+                                    <div className="col-12">
+                                        <div className="card border-0 shadow-sm rounded-3">
+                                            <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                                🏪 Platform Information
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="row g-3">
+                                                    {[
+                                                        { label: 'Platform Name', key: 'platformName' },
+                                                        { label: 'Tagline', key: 'tagline' },
+                                                        { label: 'Support Email', key: 'supportEmail' },
+                                                        { label: 'Support Phone', key: 'supportPhone' },
+                                                        { label: 'Address', key: 'address' },
+                                                    ].map(f => (
+                                                        <div key={f.key} className="col-md-6">
+                                                            <label className="form-label fw-medium small">{f.label}</label>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control"
+                                                                value={(settings as any)[f.key]}
+                                                                onChange={e => setSettings({ ...settings, [f.key]: e.target.value })}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Commission & Order Limits */}
-                                <div className="col-md-6">
-                                    <div className="card border-0 shadow-sm rounded-3 h-100">
-                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
-                                            💰 Commission & Order Limits
-                                        </div>
-                                        <div className="card-body">
-                                            <div className="row g-3">
-                                                {[
-                                                    { label: 'Commission Rate (%)', key: 'commissionRate' },
-                                                    { label: 'Repair Commission (%)', key: 'repairCommissionRate' },
-                                                    { label: 'Min Order (Rs.)', key: 'minOrderAmount' },
-                                                    { label: 'Max Order (Rs.)', key: 'maxOrderAmount' },
-                                                ].map(f => (
-                                                    <div key={f.key} className="col-6">
-                                                        <label className="form-label fw-medium small">{f.label}</label>
-                                                        <input
-                                                            type="number"
-                                                            className="form-control"
-                                                            value={(settings as any)[f.key]}
-                                                            onChange={e => setSettings({ ...settings, [f.key]: parseFloat(e.target.value) })}
-                                                        />
-                                                    </div>
-                                                ))}
+                                    {/* Commission & Order Limits */}
+                                    <div className="col-md-6">
+                                        <div className="card border-0 shadow-sm rounded-3 h-100">
+                                            <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                                💰 Commission & Order Limits
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="row g-3">
+                                                    {[
+                                                        { label: 'Commission Rate (%)', key: 'commissionRate' },
+                                                        { label: 'Repair Commission (%)', key: 'repairCommissionRate' },
+                                                        { label: 'Min Order (Rs.)', key: 'minOrderAmount' },
+                                                        { label: 'Max Order (Rs.)', key: 'maxOrderAmount' },
+                                                    ].map(f => (
+                                                        <div key={f.key} className="col-6">
+                                                            <label className="form-label fw-medium small">{f.label}</label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control"
+                                                                value={(settings as any)[f.key]}
+                                                                onChange={e => setSettings({ ...settings, [f.key]: parseFloat(e.target.value) })}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Seller Settings */}
-                                <div className="col-md-6">
-                                    <div className="card border-0 shadow-sm rounded-3 h-100">
-                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
-                                            🏪 Seller Settings
+                                    {/* Seller Settings */}
+                                    <div className="col-md-6">
+                                        <div className="card border-0 shadow-sm rounded-3 h-100">
+                                            <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                                🏪 Seller Settings
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="row g-3">
+                                                    {[
+                                                        { label: 'Require Seller Verification', key: 'requireSellerVerification' },
+                                                        { label: 'Auto-approve Verified Sellers', key: 'autoApproveVerifiedSellers' },
+                                                        { label: 'Allow Discounts', key: 'allowDiscounts' },
+                                                        { label: 'Enable Seller Analytics', key: 'enableSellerAnalytics' },
+                                                    ].map(f => (
+                                                        <div key={f.key} className="col-12 d-flex justify-content-between align-items-center py-1 border-bottom">
+                                                            <span className="small fw-medium">{f.label}</span>
+                                                            <div className="form-check form-switch mb-0">
+                                                                <input
+                                                                    className="form-check-input"
+                                                                    type="checkbox"
+                                                                    checked={(settings as any)[f.key]}
+                                                                    onChange={e => setSettings({ ...settings, [f.key]: e.target.checked })}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {[
+                                                        { label: 'Min Product Price (Rs.)', key: 'minProductPrice' },
+                                                        { label: 'Max Product Images', key: 'maxProductImages' },
+                                                        { label: 'Min Description Length', key: 'minDescriptionLength' },
+                                                    ].map(f => (
+                                                        <div key={f.key} className="col-6">
+                                                            <label className="form-label fw-medium small">{f.label}</label>
+                                                            <input
+                                                                type="number"
+                                                                className="form-control form-control-sm"
+                                                                value={(settings as any)[f.key]}
+                                                                onChange={e => setSettings({ ...settings, [f.key]: parseFloat(e.target.value) })}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="card-body">
-                                            <div className="row g-3">
+                                    </div>
+
+                                    {/* Customer Settings */}
+                                    <div className="col-md-6">
+                                        <div className="card border-0 shadow-sm rounded-3 h-100">
+                                            <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                                👥 Customer Settings
+                                            </div>
+                                            <div className="card-body">
                                                 {[
-                                                    { label: 'Require Seller Verification', key: 'requireSellerVerification' },
-                                                    { label: 'Auto-approve Verified Sellers', key: 'autoApproveVerifiedSellers' },
-                                                    { label: 'Allow Discounts', key: 'allowDiscounts' },
-                                                    { label: 'Enable Seller Analytics', key: 'enableSellerAnalytics' },
+                                                    { label: 'Allow Guest Checkout', key: 'allowGuestCheckout' },
+                                                    { label: 'Enable Wishlist', key: 'enableWishlist' },
+                                                    { label: 'Enable Product Reviews', key: 'enableProductReviews' },
+                                                    { label: 'Require Purchase for Review', key: 'enablePurchaseForReview' },
+                                                    { label: 'Enable Repair Requests', key: 'enableRepairRequests' },
                                                 ].map(f => (
-                                                    <div key={f.key} className="col-12 d-flex justify-content-between align-items-center py-1 border-bottom">
+                                                    <div key={f.key} className="d-flex justify-content-between align-items-center py-2 border-bottom">
                                                         <span className="small fw-medium">{f.label}</span>
                                                         <div className="form-check form-switch mb-0">
                                                             <input
@@ -1028,176 +1142,131 @@ const AdminPanel = () => {
                                                         </div>
                                                     </div>
                                                 ))}
-                                                {[
-                                                    { label: 'Min Product Price (Rs.)', key: 'minProductPrice' },
-                                                    { label: 'Max Product Images', key: 'maxProductImages' },
-                                                    { label: 'Min Description Length', key: 'minDescriptionLength' },
-                                                ].map(f => (
-                                                    <div key={f.key} className="col-6">
-                                                        <label className="form-label fw-medium small">{f.label}</label>
-                                                        <input
-                                                            type="number"
-                                                            className="form-control form-control-sm"
-                                                            value={(settings as any)[f.key]}
-                                                            onChange={e => setSettings({ ...settings, [f.key]: parseFloat(e.target.value) })}
-                                                        />
-                                                    </div>
-                                                ))}
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Customer Settings */}
-                                <div className="col-md-6">
-                                    <div className="card border-0 shadow-sm rounded-3 h-100">
-                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
-                                            👥 Customer Settings
-                                        </div>
-                                        <div className="card-body">
-                                            {[
-                                                { label: 'Allow Guest Checkout', key: 'allowGuestCheckout' },
-                                                { label: 'Enable Wishlist', key: 'enableWishlist' },
-                                                { label: 'Enable Product Reviews', key: 'enableProductReviews' },
-                                                { label: 'Require Purchase for Review', key: 'enablePurchaseForReview' },
-                                                { label: 'Enable Repair Requests', key: 'enableRepairRequests' },
-                                            ].map(f => (
-                                                <div key={f.key} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                                    <span className="small fw-medium">{f.label}</span>
-                                                    <div className="form-check form-switch mb-0">
-                                                        <input
-                                                            className="form-check-input"
-                                                            type="checkbox"
-                                                            checked={(settings as any)[f.key]}
-                                                            onChange={e => setSettings({ ...settings, [f.key]: e.target.checked })}
-                                                        />
+                                    {/* System Info */}
+                                    <div className="col-md-6">
+                                        <div className="card border-0 shadow-sm rounded-3 h-100">
+                                            <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
+                                                ⚙️ System Info
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="d-flex flex-column gap-3">
+                                                    <div className="d-flex justify-content-between">
+                                                        <span className="text-muted small">Version</span>
+                                                        <span className="fw-semibold small">1.0.0</span>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* System Info */}
-                                <div className="col-md-6">
-                                    <div className="card border-0 shadow-sm rounded-3 h-100">
-                                        <div className="card-header fw-bold" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F' }}>
-                                            ⚙️ System Info
-                                        </div>
-                                        <div className="card-body">
-                                            <div className="d-flex flex-column gap-3">
-                                                <div className="d-flex justify-content-between">
-                                                    <span className="text-muted small">Version</span>
-                                                    <span className="fw-semibold small">1.0.0</span>
-                                                </div>
-                                                <div className="d-flex justify-content-between">
-                                                    <span className="text-muted small">Last Settings Update</span>
-                                                    <span className="fw-semibold small">
+                                                    <div className="d-flex justify-content-between">
+                                                        <span className="text-muted small">Last Settings Update</span>
+                                                        <span className="fw-semibold small">
                                                         {settings.updatedAt ? new Date(settings.updatedAt).toLocaleDateString('en-NP', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
                                                     </span>
+                                                    </div>
+                                                    <hr />
+                                                    <button
+                                                        className="btn btn-outline-danger btn-sm rounded-pill"
+                                                        onClick={() => showToast('Cache cleared successfully', 'success')}
+                                                    >
+                                                        🗑️ Clear Cache
+                                                    </button>
                                                 </div>
-                                                <hr />
-                                                <button
-                                                    className="btn btn-outline-danger btn-sm rounded-pill"
-                                                    onClick={() => showToast('Cache cleared successfully', 'success')}
-                                                >
-                                                    🗑️ Clear Cache
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'repairs' && (
-                    <>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <div>
-                                <h4 className="fw-bold mb-0">Repair Management</h4>
-                                <small className="text-muted">Overview of all customer repair requests</small>
-                            </div>
+                            )}
                         </div>
+                    )}
 
-                        <div className="p-4" style={cardStyle}>
-                            <div className="mb-3">
-                                <input type="text" className="form-control" placeholder="Search by customer or product..."
-                                       value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                       style={{ maxWidth: 360, fontSize: 14 }} />
+                    {activeTab === 'repairs' && (
+                        <>
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 className="fw-bold mb-0">Repair Management</h4>
+                                    <small className="text-muted">Overview of all customer repair requests</small>
+                                </div>
                             </div>
 
-                            {allRepairs.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <i className="bi bi-tools" style={{ fontSize: 48, color: '#CCC' }}></i>
-                                    <p className="text-muted mt-2">No repairs loaded.</p>
-                                    <button className="btn btn-sm fw-medium" onClick={fetchRepairs}
-                                            style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
-                                        <i className="bi bi-arrow-clockwise me-1"></i>Retry
-                                    </button>
+                            <div className="p-4" style={cardStyle}>
+                                <div className="mb-3">
+                                    <input type="text" className="form-control" placeholder="Search by customer or product..."
+                                           value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                           style={{ maxWidth: 360, fontSize: 14 }} />
                                 </div>
-                            ) : (
-                                <div className="table-responsive">
-                                    <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
-                                        <thead className="table-light">
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Customer</th>
-                                            <th>Item</th>
-                                            <th>Description</th>
-                                            <th>Quotes</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {allRepairs
-                                            .filter(r => !searchQuery ||
-                                                r.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                r.productName?.toLowerCase().includes(searchQuery.toLowerCase()))
-                                            .map(r => {
-                                                const statusColors: Record<string, { bg: string; color: string }> = {
-                                                    Pending:        { bg: '#FEF3C7', color: '#B45309' },
-                                                    QuotesReceived: { bg: '#E3F2FD', color: '#1565C0' },
-                                                    Accepted:       { bg: '#E8F5E9', color: '#2E7D32' },
-                                                    Completed:      { bg: '#E8F5E9', color: '#2D6A4F' },
-                                                    Cancelled:      { bg: '#FFEBEE', color: '#C62828' },
-                                                };
-                                                const sc = statusColors[r.status] || { bg: '#F5F5F5', color: '#666' };
-                                                return (
-                                                    <tr key={r.repairRequestId}>
-                                                        <td className="text-muted">#{r.repairRequestId}</td>
-                                                        <td className="fw-medium">{r.userName || '—'}</td>
-                                                        <td>{r.productName || 'General Item'}</td>
-                                                        <td style={{ maxWidth: 200 }}>
+
+                                {allRepairs.length === 0 ? (
+                                    <div className="text-center py-5">
+                                        <i className="bi bi-tools" style={{ fontSize: 48, color: '#CCC' }}></i>
+                                        <p className="text-muted mt-2">No repairs loaded.</p>
+                                        <button className="btn btn-sm fw-medium" onClick={fetchRepairs}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8 }}>
+                                            <i className="bi bi-arrow-clockwise me-1"></i>Retry
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
+                                            <thead className="table-light">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Customer</th>
+                                                <th>Item</th>
+                                                <th>Description</th>
+                                                <th>Quotes</th>
+                                                <th>Status</th>
+                                                <th>Date</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {allRepairs
+                                                .filter(r => !searchQuery ||
+                                                    r.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    r.productName?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(r => {
+                                                    const statusColors: Record<string, { bg: string; color: string }> = {
+                                                        Pending:        { bg: '#FEF3C7', color: '#B45309' },
+                                                        QuotesReceived: { bg: '#E3F2FD', color: '#1565C0' },
+                                                        Accepted:       { bg: '#E8F5E9', color: '#2E7D32' },
+                                                        Completed:      { bg: '#E8F5E9', color: '#2D6A4F' },
+                                                        Cancelled:      { bg: '#FFEBEE', color: '#C62828' },
+                                                    };
+                                                    const sc = statusColors[r.status] || { bg: '#F5F5F5', color: '#666' };
+                                                    return (
+                                                        <tr key={r.repairRequestId}>
+                                                            <td className="text-muted">#{r.repairRequestId}</td>
+                                                            <td className="fw-medium">{r.userName || '—'}</td>
+                                                            <td>{r.productName || 'General Item'}</td>
+                                                            <td style={{ maxWidth: 200 }}>
                                                             <span className="d-block text-truncate text-muted" style={{ maxWidth: 180 }}>
                                                                 {r.description}
                                                             </span>
-                                                        </td>
-                                                        <td>
+                                                            </td>
+                                                            <td>
                                                             <span className="badge" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
                                                                 {r.quotesCount ?? 0} quotes
                                                             </span>
-                                                        </td>
-                                                        <td>
+                                                            </td>
+                                                            <td>
                                                             <span className="badge px-2 py-1"
                                                                   style={{ backgroundColor: sc.bg, color: sc.color, fontSize: 12 }}>
                                                                 {r.status}
                                                             </span>
-                                                        </td>
-                                                        <td className="text-muted">{new Date(r.createdAt).toLocaleDateString()}</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
+                                                            </td>
+                                                            <td className="text-muted">{new Date(r.createdAt).toLocaleDateString()}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>{/* end main layout row */}
         </div>
     );
 };
