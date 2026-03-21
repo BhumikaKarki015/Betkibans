@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
-type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs' | 'settings';
+type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs' | 'analytics' | 'settings';
 
 interface AdminRepairRequest {
     repairRequestId: number;
@@ -110,7 +110,7 @@ const AdminPanel = () => {
         if (path.includes('/admin/sellers') || path.includes('/admin/verify-sellers')) return 'sellers';
         if (path.includes('/admin/products')) return 'products';
         if (path.includes('/admin/orders')) return 'orders';
-        if (path.includes('/admin/analytics')) return 'repairs';
+        if (path.includes('/admin/analytics')) return 'analytics';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
     };
@@ -126,6 +126,8 @@ const AdminPanel = () => {
     const [allRepairs, setAllRepairs] = useState<AdminRepairRequest[]>([]);
     const [settings, setSettings] = useState<PlatformSettings | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
+    const [analytics, setAnalytics] = useState<any>(null);
+    const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
     // UI states
     const [loading, setLoading] = useState(true);
@@ -147,6 +149,7 @@ const AdminPanel = () => {
         if (tab === 'orders' && allOrders.length === 0) fetchOrders();
         if (tab === 'repairs' && allRepairs.length === 0) fetchRepairs();
         if (tab === 'settings' && !settings) fetchSettings();
+        if (tab === 'analytics' && !analytics) fetchAnalytics();
     }, [location.pathname]);
 
     const fetchDashboardData = async () => {
@@ -217,9 +220,22 @@ const AdminPanel = () => {
         products: '/admin/products',
         orders: '/admin/orders',
         repairs: '/admin/repairs',
+        analytics: '/admin/analytics',
         settings: '/admin/settings',
     };
 
+
+    const fetchAnalytics = async () => {
+        setLoadingAnalytics(true);
+        try {
+            const res = await api.get('/Admin/analytics');
+            setAnalytics(res.data);
+        } catch {
+            showToast('Failed to load analytics', 'error');
+        } finally {
+            setLoadingAnalytics(false);
+        }
+    };
 
     const fetchSettings = async () => {
         try {
@@ -253,6 +269,7 @@ const AdminPanel = () => {
         if (tab === 'orders' && allOrders.length === 0) fetchOrders();
         if (tab === 'repairs' && allRepairs.length === 0) fetchRepairs();
         if (tab === 'settings' && !settings) fetchSettings();
+        if (tab === 'analytics' && !analytics) fetchAnalytics();
     };
 
     const handleVerify = async (sellerId: number, isApproved: boolean) => {
@@ -298,6 +315,7 @@ const AdminPanel = () => {
         { id: 'products', label: 'Product Moderation', icon: 'bi-box-seam' },
         { id: 'orders', label: 'Order Dashboard', icon: 'bi-bag-check' },
         { id: 'repairs', label: 'Repair Management', icon: 'bi-tools' },
+        { id: 'analytics', label: 'Analytics & Reports', icon: 'bi-graph-up' },
         { id: 'settings', label: 'Settings', icon: 'bi-gear' },
     ];
 
@@ -747,6 +765,160 @@ const AdminPanel = () => {
                 )}
 
                 {/* ──── REPAIR MANAGEMENT TAB ──── */}
+
+
+                {activeTab === 'analytics' && (
+                    <div>
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 className="fw-bold mb-1">Analytics & Reports</h4>
+                                <p className="text-muted small mb-0">Platform performance overview</p>
+                            </div>
+                            <button
+                                className="btn btn-sm fw-medium"
+                                onClick={fetchAnalytics}
+                                style={{ border: '1px solid #2D6A4F', color: '#2D6A4F', borderRadius: 8, backgroundColor: 'white' }}
+                            >
+                                <i className="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
+                        </div>
+
+                        {loadingAnalytics || !analytics ? (
+                            <div className="text-center py-5">
+                                <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+                            </div>
+                        ) : (
+                            <>
+                                {/* Summary Cards */}
+                                <div className="row g-3 mb-4">
+                                    {[
+                                        { icon: 'bi-currency-rupee', label: 'Total Revenue', value: `NPR ${analytics.totalRevenue.toLocaleString()}`, sub: `NPR ${analytics.monthlyRevenue.toLocaleString()} this month`, color: '#2D6A4F' },
+                                        { icon: 'bi-bag-check', label: 'Total Orders', value: analytics.totalOrders.toLocaleString(), sub: `${analytics.ordersByStatus.find((s: any) => s.status === 'Pending')?.count || 0} pending`, color: '#1565C0' },
+                                        { icon: 'bi-people', label: 'Total Users', value: analytics.totalUsers.toLocaleString(), sub: `${analytics.totalSellers} verified sellers`, color: '#6A1B9A' },
+                                        { icon: 'bi-shop', label: 'Pending Sellers', value: analytics.pendingSellers.toLocaleString(), sub: `${analytics.totalProducts} active products`, color: '#E65100' },
+                                    ].map(s => (
+                                        <div key={s.label} className="col-6 col-md-3">
+                                            <div className="rounded-3 p-3" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                                <div className="d-flex align-items-center gap-2 mb-2">
+                                                    <div className="rounded-2 d-flex align-items-center justify-content-center"
+                                                         style={{ width: 36, height: 36, backgroundColor: s.color + '20' }}>
+                                                        <i className={`bi ${s.icon}`} style={{ color: s.color, fontSize: 16 }}></i>
+                                                    </div>
+                                                    <small className="text-muted fw-medium">{s.label}</small>
+                                                </div>
+                                                <div className="fw-bold mb-1" style={{ fontSize: 20 }}>{s.value}</div>
+                                                <small className="text-muted">{s.sub}</small>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="row g-3 mb-4">
+                                    {/* Revenue Chart */}
+                                    <div className="col-lg-8">
+                                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                            <h6 className="fw-bold mb-4">Revenue — Last 6 Months</h6>
+                                            {(() => {
+                                                const maxRev = Math.max(...analytics.monthlyData.map((m: any) => m.revenue), 1);
+                                                return (
+                                                    <div className="d-flex align-items-end gap-2" style={{ height: 160 }}>
+                                                        {analytics.monthlyData.map((m: any, i: number) => {
+                                                            const h = maxRev > 0 ? Math.max((m.revenue / maxRev) * 140, m.revenue > 0 ? 8 : 4) : 4;
+                                                            return (
+                                                                <div key={i} className="d-flex flex-column align-items-center flex-grow-1 gap-1">
+                                                                    <small className="text-muted" style={{ fontSize: 10 }}>
+                                                                        {m.revenue > 0 ? `${(m.revenue / 1000).toFixed(0)}k` : '0'}
+                                                                    </small>
+                                                                    <div className="rounded-top w-100"
+                                                                         title={`${m.month}: NPR ${m.revenue.toLocaleString()}`}
+                                                                         style={{ height: h, backgroundColor: i === analytics.monthlyData.length - 1 ? '#2D6A4F' : '#A5D6A7', minHeight: 4 }} />
+                                                                    <small className="text-muted" style={{ fontSize: 9 }}>{m.month.split(' ')[0]}</small>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+
+                                    {/* Orders by Status */}
+                                    <div className="col-lg-4">
+                                        <div className="rounded-3 p-4 h-100" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                            <h6 className="fw-bold mb-4">Orders by Status</h6>
+                                            <div className="d-flex flex-column gap-3">
+                                                {analytics.ordersByStatus.map((s: any) => {
+                                                    const colors: Record<string, string> = { Pending: '#E65100', Processing: '#1565C0', Shipped: '#6A1B9A', Delivered: '#2E7D32', Cancelled: '#C62828' };
+                                                    const color = colors[s.status] || '#999';
+                                                    const pct = analytics.totalOrders > 0 ? Math.round((s.count / analytics.totalOrders) * 100) : 0;
+                                                    return (
+                                                        <div key={s.status}>
+                                                            <div className="d-flex justify-content-between mb-1">
+                                                                <small className="fw-medium" style={{ color }}>{s.status}</small>
+                                                                <small className="text-muted">{s.count} ({pct}%)</small>
+                                                            </div>
+                                                            <div className="rounded-pill" style={{ height: 6, backgroundColor: '#EEE' }}>
+                                                                <div className="rounded-pill" style={{ width: `${pct}%`, height: '100%', backgroundColor: color }} />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="row g-3">
+                                    {/* Top Sellers */}
+                                    <div className="col-lg-6">
+                                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                            <h6 className="fw-bold mb-3">Top Sellers by Revenue</h6>
+                                            <div className="d-flex flex-column gap-2">
+                                                {analytics.topSellers.map((s: any, i: number) => (
+                                                    <div key={s.sellerId} className="d-flex align-items-center gap-3 py-2"
+                                                         style={{ borderBottom: i < analytics.topSellers.length - 1 ? '1px dashed #E5E1D8' : 'none' }}>
+                                                        <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+                                                             style={{ width: 28, height: 28, backgroundColor: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : '#CD7C32', fontSize: 12 }}>
+                                                            {i + 1}
+                                                        </div>
+                                                        <div className="flex-grow-1">
+                                                            <p className="fw-semibold mb-0" style={{ fontSize: 13 }}>{s.businessName || '—'}</p>
+                                                            <small className="text-muted">{s.city} · {s.totalProducts} products</small>
+                                                        </div>
+                                                        <span className="fw-bold" style={{ fontSize: 13, color: '#2D6A4F' }}>NPR {s.revenue.toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Category Breakdown */}
+                                    <div className="col-lg-6">
+                                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                                            <h6 className="fw-bold mb-3">Products by Category</h6>
+                                            <div className="d-flex flex-column gap-3">
+                                                {analytics.categoryBreakdown.map((c: any) => {
+                                                    const pct = analytics.totalProducts > 0 ? Math.round((c.count / analytics.totalProducts) * 100) : 0;
+                                                    return (
+                                                        <div key={c.category}>
+                                                            <div className="d-flex justify-content-between mb-1">
+                                                                <small className="fw-medium">{c.category}</small>
+                                                                <small className="text-muted">{c.count} ({pct}%)</small>
+                                                            </div>
+                                                            <div className="rounded-pill" style={{ height: 6, backgroundColor: '#EEE' }}>
+                                                                <div className="rounded-pill" style={{ width: `${pct}%`, height: '100%', backgroundColor: '#2D6A4F' }} />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 {activeTab === 'settings' && (
                     <div>
