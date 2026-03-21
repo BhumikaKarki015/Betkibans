@@ -56,9 +56,9 @@ const Cart = () => {
         return (
             <div className="container py-5 text-center">
                 <i className="bi bi-cart-x display-1 text-muted"></i>
-                <h2 className="mt-4">Your cart is empty</h2>
+                <h2 className="mt-4" style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)' }}>Your cart is empty</h2>
                 <p className="text-muted">Looks like you haven't added any bamboo treasures yet.</p>
-                <button className="btn btn-success mt-3" onClick={() => navigate('/products')}>
+                <button className="btn btn-success mt-3 px-4 rounded-pill" onClick={() => navigate('/products')}>
                     Start Shopping
                 </button>
             </div>
@@ -66,40 +66,62 @@ const Cart = () => {
     }
 
     return (
-        <div className="container py-5">
-            <h2 className="fw-bold mb-4">Shopping Cart</h2>
-            <div className="row g-4">
+        <div className="container py-4 py-md-5">
+            <h2 className="cart-page-title fw-bold mb-3 mb-md-4">Shopping Cart</h2>
+            <div className="row g-3 g-md-4">
 
                 {/* Cart Items */}
                 <div className="col-lg-8">
                     {cartItems.map((item) => (
                         <div key={item.cartItemId} className="card border-0 shadow-sm mb-3">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col-3 col-md-2">
+                            <div className="card-body p-2 p-md-3">
+                                <div className="row align-items-center g-0">
+                                    {/* Image */}
+                                    <div className="cart-item-img-col col-3 col-md-2">
                                         <img
                                             src={`http://localhost:5192${item.product.productImages[0]?.imageUrl}`}
                                             alt={item.product.name}
                                             className="img-fluid rounded"
+                                            style={{ aspectRatio: '1', objectFit: 'cover' }}
                                         />
                                     </div>
-                                    <div className="col-9 col-md-5">
-                                        <h5 className="mb-1">{item.product.name}</h5>
-                                        <p className="text-success fw-bold mb-0">NPR {item.product.price.toLocaleString()}</p>
+
+                                    {/* Name + Price */}
+                                    <div className="cart-item-product-col col-9 col-md-5 ps-2 ps-md-3">
+                                        <h6 className="cart-item-name mb-1 fw-semibold lh-sm"
+                                            style={{ fontSize: '0.9rem' }}>
+                                            {item.product.name}
+                                        </h6>
+                                        <p className="text-success fw-bold mb-0 small">
+                                            NPR {item.product.price.toLocaleString()}
+                                        </p>
                                     </div>
-                                    <div className="col-6 col-md-3 mt-3 mt-md-0">
-                                        <div className="input-group input-group-sm w-75">
-                                            <button className="btn btn-outline-secondary"
-                                                    onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}>−</button>
-                                            <span className="input-group-text bg-white px-3">{item.quantity}</span>
-                                            <button className="btn btn-outline-secondary"
-                                                    onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}>+</button>
+
+                                    {/* Qty Controls */}
+                                    <div className="cart-item-qty-col col-7 col-md-3 mt-2 mt-md-0 ps-2 ps-md-0">
+                                        <div className="input-group input-group-sm" style={{ maxWidth: 120 }}>
+                                            <button
+                                                className="btn btn-outline-secondary"
+                                                onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
+                                            >−</button>
+                                            <span className="input-group-text bg-white px-2 px-md-3 fw-semibold">
+                                                {item.quantity}
+                                            </span>
+                                            <button
+                                                className="btn btn-outline-secondary"
+                                                onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
+                                            >+</button>
                                         </div>
                                     </div>
-                                    <div className="col-6 col-md-2 text-end mt-3 mt-md-0">
-                                        <button className="btn btn-link text-danger p-0"
-                                                onClick={() => removeFromCart(item.cartItemId)}>
-                                            <i className="bi bi-trash"></i>
+
+                                    {/* Delete */}
+                                    <div className="cart-item-delete-col col-5 col-md-2 text-end mt-2 mt-md-0 pe-1">
+                                        <button
+                                            className="btn btn-link text-danger p-0"
+                                            onClick={() => removeFromCart(item.cartItemId)}
+                                            title="Remove item"
+                                        >
+                                            <i className="bi bi-trash fs-5"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -110,16 +132,15 @@ const Cart = () => {
 
                 {/* Order Summary */}
                 <div className="col-lg-4">
-                    <div className="card border-0 shadow-sm">
-                        <div className="card-body p-4">
-                            <h5 className="fw-bold mb-4">Order Summary</h5>
+                    <div className="card border-0 shadow-sm order-summary-card">
+                        <div className="card-body p-3 p-md-4">
+                            <h5 className="fw-bold mb-3 mb-md-4">Order Summary</h5>
 
                             <div className="d-flex justify-content-between mb-2">
                                 <span>Subtotal</span>
                                 <span>NPR {cartTotal.toLocaleString()}</span>
                             </div>
 
-                            {/* Discount row */}
                             {appliedCoupon && (
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="text-success small">
@@ -137,13 +158,13 @@ const Cart = () => {
                                 <span className="text-success">Free</span>
                             </div>
                             <hr />
-                            <div className="d-flex justify-content-between mb-4">
+                            <div className="d-flex justify-content-between mb-3 mb-md-4">
                                 <span className="fw-bold fs-5">Total</span>
                                 <span className="fw-bold fs-5 text-success">NPR {finalTotal.toLocaleString()}</span>
                             </div>
 
                             {/* Promo Code */}
-                            <div className="mb-4">
+                            <div className="mb-3 mb-md-4">
                                 <h6 className="fw-bold mb-2 text-uppercase small" style={{ letterSpacing: 1 }}>Promo Code</h6>
                                 {appliedCoupon ? (
                                     <div className="d-flex align-items-center justify-content-between p-2 rounded-2"
@@ -188,7 +209,8 @@ const Cart = () => {
                             </div>
 
                             <button
-                                className="btn btn-success w-100 py-3 fw-bold"
+                                className="btn btn-success w-100 py-2 py-md-3 fw-bold rounded-pill"
+                                style={{ backgroundColor: '#2D6A4F', borderColor: '#2D6A4F' }}
                                 onClick={() => navigate('/checkout', {
                                     state: {
                                         discountAmount: discount,
