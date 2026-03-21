@@ -43,8 +43,6 @@ const formatDate = (dateStr: string) =>
 // ─── Main Component ───────────────────────────────────────────────
 const SellerOrders = () => {
     const { showToast } = useToast();
-    const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
-
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All');
@@ -73,7 +71,7 @@ const SellerOrders = () => {
     const handleUpdateStatus = async (order: Order) => {
         const newStatus = statusSelections[order.orderId];
         if (!newStatus || newStatus === order.status) {
-            alert('Please select a different status.');
+            showToast('Please select a different status.', 'warning');
             return;
         }
         setUpdatingId(order.orderId);
@@ -81,25 +79,22 @@ const SellerOrders = () => {
             await api.post('/Order/update-status', {
                 orderId: order.orderId,
                 status: newStatus,
+                trackingNumber: trackingInputs[order.orderId] || undefined,
             });
             setOrders(prev =>
                 prev.map(o => o.orderId === order.orderId ? { ...o, status: newStatus } : o)
             );
-            // Clear selection after update
-            setStatusSelections(prev => {
-                const copy = { ...prev };
-                delete copy[order.orderId];
-                return copy;
-            });
+            setStatusSelections(prev => { const copy = { ...prev }; delete copy[order.orderId]; return copy; });
+            setTrackingInputs(prev => { const copy = { ...prev }; delete copy[order.orderId]; return copy; });
+            showToast('Order status updated successfully', 'success');
         } catch {
-            alert('Failed to update status. Please try again.');
+            showToast('Failed to update status. Please try again.', 'error');
         } finally {
             setUpdatingId(null);
         }
     };
 
     const handleCancelOrder = async (orderId: number) => {
-
         setUpdatingId(orderId);
         try {
             await api.post('/Order/update-status', { orderId, status: 'Cancelled' });
@@ -107,7 +102,7 @@ const SellerOrders = () => {
                 prev.map(o => o.orderId === orderId ? { ...o, status: 'Cancelled' } : o)
             );
         } catch {
-            alert('Failed to cancel order.');
+            showToast('Failed to cancel order.', 'error');
         } finally {
             setUpdatingId(null);
         }
@@ -341,7 +336,7 @@ const SellerOrders = () => {
                                                     {canCancel && (
                                                         <button
                                                             className="btn btn-sm fw-medium"
-                                                            onClick={() => setConfirmCancelId(order.orderId)}
+                                                            onClick={() => handleCancelOrder(order.orderId)}
                                                             disabled={isUpdating}
                                                             style={{ fontSize: 12, borderColor: '#E57373', color: '#C62828', backgroundColor: 'transparent' }}>
                                                             Cancel
@@ -375,35 +370,6 @@ const SellerOrders = () => {
                     })}
                 </div>
             )}
-            {/* ── Confirm Modal ── */}
-            {confirmCancelId !== null && (
-                <div style={{
-                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
-                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <div style={{
-                        backgroundColor: '#fff', borderRadius: 14, padding: '32px 28px',
-                        maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-                        textAlign: 'center'
-                    }}>
-                        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-                        <h5 className="fw-bold mb-2">Cancel this order?</h5>
-                        <p className="text-muted small mb-4">This action cannot be undone.</p>
-                        <div className="d-flex gap-3 justify-content-center">
-                            <button className="btn btn-outline-secondary rounded-pill px-4"
-                                    onClick={() => setConfirmCancelId(null)}>
-                                Cancel
-                            </button>
-                            <button className="btn rounded-pill px-4 fw-semibold"
-                                    style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
-                                    onClick={() => {handleCancelOrder(confirmCancelId!); setConfirmCancelId(null);}}>
-                                Yes, Cancel Order
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
         </div>
     );
 };

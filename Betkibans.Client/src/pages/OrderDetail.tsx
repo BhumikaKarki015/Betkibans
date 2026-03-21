@@ -22,6 +22,7 @@ interface Order {
     shippingCost: number;
     taxAmount: number;
     notes?: string;
+    trackingNumber?: string;
     createdAt: string;
     shippingAddress: string;
     city: string;
@@ -162,6 +163,47 @@ const OrderDetail = () => {
                                     <i className="bi bi-chat-left-text me-2" style={{ color: '#2D6A4F' }}></i>Order Notes
                                 </h6>
                                 <p className="text-muted mb-0" style={{ fontSize: 13 }}>{order.notes}</p>
+                            </div>
+                        )}
+
+                        {/* Tracking Info */}
+                        {(order.status === 'Shipped' || order.status === 'Delivered') && (
+                            <div className="p-4 mb-3" style={cardStyle}>
+                                <h6 className="fw-bold mb-3 text-uppercase" style={{ fontSize: 13, letterSpacing: 1 }}>
+                                    <i className="bi bi-truck me-2" style={{ color: '#2D6A4F' }}></i>Order Tracking
+                                </h6>
+                                {order.trackingNumber && (
+                                    <div className="rounded-3 p-3 mb-3 d-flex align-items-center gap-3"
+                                         style={{ backgroundColor: '#E8F5E9', border: '1px solid #A5D6A7' }}>
+                                        <div>
+                                            <small className="text-muted d-block" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Tracking Number</small>
+                                            <span className="fw-bold" style={{ color: '#2D6A4F', fontSize: 15, letterSpacing: 1 }}>
+                                                {order.trackingNumber}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                                {/* Status Timeline */}
+                                {['Pending', 'Processing', 'Shipped', 'Delivered'].map((step, i) => {
+                                    const currentIdx = ['Pending', 'Processing', 'Shipped', 'Delivered'].indexOf(order.status);
+                                    const isDone = i <= currentIdx;
+                                    const isCurrent = i === currentIdx;
+                                    const ICONS = ['bi-clock', 'bi-gear', 'bi-truck', 'bi-house-check'];
+                                    const LABELS = ['Order Placed', 'Processing', 'Shipped', 'Delivered'];
+                                    return (
+                                        <div key={step} className="d-flex align-items-center gap-3 mb-2">
+                                            <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                 style={{ width: 36, height: 36, backgroundColor: isDone ? '#2D6A4F' : '#F0F0F0' }}>
+                                                <i className={"bi " + ICONS[i]} style={{ color: isDone ? 'white' : '#BBBBBB', fontSize: 14 }}></i>
+                                            </div>
+                                            <p className="mb-0 fw-semibold" style={{ fontSize: 13, color: isDone ? '#1a1a1a' : '#AAAAAA' }}>
+                                                {LABELS[i]}
+                                                {isCurrent && <span className="ms-2 badge rounded-pill" style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F', fontSize: 10 }}>Current</span>}
+                                            </p>
+                                            {isDone && !isCurrent && <i className="bi bi-check-circle-fill ms-auto" style={{ color: '#2D6A4F' }}></i>}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

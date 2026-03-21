@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import api from '../services/api';
 
 interface OrderItem {
     orderItemId: number;
@@ -18,6 +18,7 @@ interface Order {
     status: string;
     totalAmount: number;
     createdAt: string;
+    trackingNumber?: string;
     orderItems: OrderItem[];
 }
 
@@ -29,16 +30,18 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
     Cancelled:  { bg: '#FFEBEE', color: '#C62828' },
 };
 
+const STATUS_FLOW = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+
 const FILTERS = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
 const OrderHistory = () => {
-    const { showToast } = useToast();
-    const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
-
     const { isAuthenticated } = useAuth();
+    const { showToast } = useToast();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All');
+    const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
+    const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -60,23 +63,25 @@ const OrderHistory = () => {
         ? orders
         : orders.filter(o => o.status === activeFilter);
 
-    if (loading) return (
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 400 }}>
-            <div className="spinner-border" style={{ color: '#2D6A4F' }} role="status" />
-        </div>
-    );
-
     const handleCancelOrder = async (orderId: number) => {
-
         try {
             await api.post(`/Order/cancel/${orderId}`);
             setOrders(prev =>
                 prev.map(o => o.orderId === orderId ? { ...o, status: 'Cancelled' } : o)
             );
+            setConfirmCancelId(null);
+            showToast('Order cancelled successfully', 'success');
         } catch {
-            alert('Failed to cancel order. Please try again.');
+            showToast('Failed to cancel order. Please try again.', 'error');
+            setConfirmCancelId(null);
         }
     };
+
+    if (loading) return (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 400 }}>
+            <div className="spinner-border" style={{ color: '#2D6A4F' }} role="status" />
+        </div>
+    );
 
     return (
         <div className="container py-5" style={{ maxWidth: 860 }}>
@@ -94,8 +99,7 @@ const OrderHistory = () => {
                             className="btn btn-sm fw-medium px-3"
                             onClick={() => setActiveFilter(f)}
                             style={{
-                                borderRadius: 20,
-                                fontSize: 13,
+                                borderRadius: 20, fontSize: 13,
                                 backgroundColor: activeFilter === f ? '#2D6A4F' : '#EDEAE3',
                                 color: activeFilter === f ? 'white' : '#555',
                                 border: 'none',
@@ -104,8 +108,7 @@ const OrderHistory = () => {
                         <span className="ms-1 badge rounded-pill"
                               style={{
                                   backgroundColor: activeFilter === f ? 'rgba(255,255,255,0.25)' : '#CCC',
-                                  color: activeFilter === f ? 'white' : '#666',
-                                  fontSize: 10,
+                                  color: activeFilter === f ? 'white' : '#666', fontSize: 10,
                               }}>
                             {f === 'All' ? orders.length : orders.filter(o => o.status === f).length}
                         </span>
@@ -169,18 +172,13 @@ const OrderHistory = () => {
                                                     Quantity: {item.quantity} · NPR {(item.unitPrice * item.quantity).toLocaleString()}
                                                 </small>
                                             </div>
-
-                                            {/* Per-item action buttons */}
                                             <div className="d-flex gap-2 flex-wrap justify-content-end">
-                                                {/* Care Guide — always visible */}
                                                 <button
                                                     className="btn btn-sm fw-medium"
                                                     onClick={() => navigate('/care-guide')}
                                                     style={{ fontSize: 12, borderRadius: 20, border: '1px solid #2D6A4F', color: '#2D6A4F', backgroundColor: 'transparent' }}>
                                                     <i className="bi bi-leaf me-1"></i>Care Guide
                                                 </button>
-
-                                                {/* Write Review — only for Delivered */}
                                                 {isDelivered && (
                                                     <button
                                                         className="btn btn-sm fw-medium text-white"
@@ -189,8 +187,6 @@ const OrderHistory = () => {
                                                         <i className="bi bi-pencil me-1"></i>Write Review
                                                     </button>
                                                 )}
-
-                                                {/* Request Repair — only for Delivered */}
                                                 {isDelivered && (
                                                     <button
                                                         className="btn btn-sm fw-medium"
@@ -206,14 +202,14 @@ const OrderHistory = () => {
                                     {/* Order Footer */}
                                     <div className="d-flex justify-content-between align-items-center pt-3 mt-1">
                                         <div className="d-flex gap-2">
-                                            {/* Track Order — Shipped */}
-                                            {isShipped && (
-                                                <button className="btn btn-sm fw-medium"
-                                                        style={{ fontSize: 12, borderRadius: 20, border: '1px solid #6A1B9A', color: '#6A1B9A', backgroundColor: 'transparent' }}>
+                                            {/* Track Order — Shipped or Delivered */}
+                                            {(isShipped || isDelivered) && (
+                                                <button className="btn btn-sm fw-medium text-white"
+                                                        onClick={() => setTrackingOrder(order)}
+                                                        style={{ fontSize: 12, borderRadius: 20, backgroundColor: '#6A1B9A', border: 'none' }}>
                                                     <i className="bi bi-truck me-1"></i>Track Order
                                                 </button>
                                             )}
-                                            {/* Cancel — Pending only */}
                                             {isPending && (
                                                 <button className="btn btn-sm fw-medium"
                                                         onClick={() => setConfirmCancelId(order.orderId)}
@@ -221,7 +217,6 @@ const OrderHistory = () => {
                                                     <i className="bi bi-x-circle me-1"></i>Cancel Order
                                                 </button>
                                             )}
-                                            {/* View Details */}
                                             <button className="btn btn-sm fw-medium"
                                                     onClick={() => navigate(`/orders/${order.orderId}`)}
                                                     style={{ fontSize: 12, borderRadius: 20, border: '1px solid #999', color: '#666', backgroundColor: 'transparent' }}>
@@ -238,7 +233,123 @@ const OrderHistory = () => {
                     })}
                 </div>
             )}
-            {/* ── Confirm Modal ── */}
+
+            {/* ── Tracking Modal ── */}
+            {trackingOrder && (
+                <div style={{
+                    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '16px'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', borderRadius: 16, padding: '32px 28px',
+                        maxWidth: 480, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                    }}>
+                        {/* Modal Header */}
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h5 className="fw-bold mb-0">Order Tracking</h5>
+                                <small className="text-muted">#{trackingOrder.orderNumber}</small>
+                            </div>
+                            <button onClick={() => setTrackingOrder(null)}
+                                    style={{ background: 'none', border: 'none', fontSize: 22, color: '#999', cursor: 'pointer', lineHeight: 1 }}>
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Tracking Number */}
+                        {trackingOrder.trackingNumber ? (
+                            <div className="rounded-3 p-3 mb-4 d-flex align-items-center gap-3"
+                                 style={{ backgroundColor: '#E8F5E9', border: '1px solid #A5D6A7' }}>
+                                <i className="bi bi-truck fs-4" style={{ color: '#2D6A4F' }}></i>
+                                <div>
+                                    <small className="text-muted d-block" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Tracking Number</small>
+                                    <span className="fw-bold" style={{ color: '#2D6A4F', fontSize: 15, letterSpacing: 1 }}>
+                                        {trackingOrder.trackingNumber}
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="rounded-3 p-3 mb-4 text-muted text-center"
+                                 style={{ backgroundColor: '#F5F5F5', fontSize: 13 }}>
+                                <i className="bi bi-info-circle me-2"></i>
+                                Tracking number will be provided by the seller shortly.
+                            </div>
+                        )}
+
+                        {/* Status Timeline */}
+                        <div className="mb-4">
+                            <small className="fw-bold text-muted d-block mb-3" style={{ textTransform: 'uppercase', letterSpacing: 1, fontSize: 11 }}>
+                                Order Progress
+                            </small>
+                            {STATUS_FLOW.map((step, i) => {
+                                const currentIdx = STATUS_FLOW.indexOf(trackingOrder.status);
+                                const isCancelled = trackingOrder.status === 'Cancelled';
+                                const isDone = !isCancelled && i <= currentIdx;
+                                const isCurrent = !isCancelled && i === currentIdx;
+
+                                const STEP_ICONS = ['bi-clock', 'bi-gear', 'bi-truck', 'bi-house-check'];
+                                const STEP_LABELS = ['Order Placed', 'Processing', 'Shipped', 'Delivered'];
+
+                                return (
+                                    <div key={step} className="d-flex align-items-center gap-3 mb-3">
+                                        {/* Icon */}
+                                        <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                             style={{
+                                                 width: 40, height: 40,
+                                                 backgroundColor: isDone ? '#2D6A4F' : '#F0F0F0',
+                                                 border: isCurrent ? '2px solid #2D6A4F' : 'none',
+                                             }}>
+                                            <i className={`bi ${STEP_ICONS[i]}`}
+                                               style={{ color: isDone ? 'white' : '#BBBBBB', fontSize: 16 }}></i>
+                                        </div>
+                                        {/* Label */}
+                                        <div className="flex-grow-1">
+                                            <p className="mb-0 fw-semibold" style={{
+                                                fontSize: 13,
+                                                color: isDone ? '#1a1a1a' : '#AAAAAA'
+                                            }}>
+                                                {STEP_LABELS[i]}
+                                                {isCurrent && (
+                                                    <span className="ms-2 badge rounded-pill"
+                                                          style={{ backgroundColor: '#E8F5E9', color: '#2D6A4F', fontSize: 10 }}>
+                                                        Current
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                        {/* Check */}
+                                        {isDone && !isCurrent && (
+                                            <i className="bi bi-check-circle-fill" style={{ color: '#2D6A4F', fontSize: 18 }}></i>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Cancelled state */}
+                            {trackingOrder.status === 'Cancelled' && (
+                                <div className="d-flex align-items-center gap-3 mt-2">
+                                    <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style={{ width: 40, height: 40, backgroundColor: '#FFEBEE' }}>
+                                        <i className="bi bi-x-circle-fill" style={{ color: '#C62828', fontSize: 18 }}></i>
+                                    </div>
+                                    <p className="mb-0 fw-semibold" style={{ fontSize: 13, color: '#C62828' }}>
+                                        Order Cancelled
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <button className="btn w-100 fw-semibold"
+                                onClick={() => { setTrackingOrder(null); navigate(`/orders/${trackingOrder.orderId}`); }}
+                                style={{ backgroundColor: '#2D6A4F', color: 'white', borderRadius: 8, border: 'none' }}>
+                            View Full Order Details
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Cancel Confirm Modal ── */}
             {confirmCancelId !== null && (
                 <div style={{
                     position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
@@ -254,19 +365,16 @@ const OrderHistory = () => {
                         <p className="text-muted small mb-4">This action cannot be undone.</p>
                         <div className="d-flex gap-3 justify-content-center">
                             <button className="btn btn-outline-secondary rounded-pill px-4"
-                                    onClick={() => setConfirmCancelId(null)}>
-                                Cancel
-                            </button>
+                                    onClick={() => setConfirmCancelId(null)}>Cancel</button>
                             <button className="btn rounded-pill px-4 fw-semibold"
                                     style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
-                                    onClick={() => {handleCancelOrder(confirmCancelId); setConfirmCancelId(null);}}>
+                                    onClick={() => handleCancelOrder(confirmCancelId)}>
                                 Yes, Cancel Order
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };
