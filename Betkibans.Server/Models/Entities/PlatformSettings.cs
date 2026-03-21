@@ -33,6 +33,6 @@ public class PlatformSettings
     public bool EnablePurchaseForReview { get; set; } = true;
     public bool EnableRepairRequests { get; set; } = true;
  
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
     public string? UpdatedBy { get; set; }
 }
