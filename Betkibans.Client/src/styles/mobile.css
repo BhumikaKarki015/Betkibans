@@ -1,0 +1,814 @@
+/* ═══════════════════════════════════════════════════════════════
+   BETKIBANS — MOBILE RESPONSIVENESS OVERRIDES
+   Targets: xs (< 576px) and sm (576–767px) viewports
+   All rules are additive — desktop layout is untouched.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Global helpers ────────────────────────────────────────── */
+@media (max-width: 767px) {
+    .container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* Tighten vertical rhythm on small screens */
+    .py-5 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+    .py-4 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+    .mb-4 { margin-bottom: 1rem !important; }
+    .mb-5 { margin-bottom: 1.5rem !important; }
+}
+
+/* ─── HEADER (Consumer) ─────────────────────────────────────── */
+
+/* Search bar: full-width pill on mobile when menu is open */
+@media (max-width: 991px) {
+    .navbar-collapse .search-form-consumer {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 10px 0 !important;
+        order: 1;
+    }
+
+    .navbar-collapse .nav-links-consumer {
+        order: 2;
+    }
+
+    .navbar-collapse .nav-actions-consumer {
+        order: 3;
+        padding: 8px 0;
+        border-top: 1px solid #eee;
+        margin-top: 6px;
+        justify-content: flex-start !important;
+    }
+
+    /* Search input rounded correctly on mobile */
+    .navbar-collapse .search-form-consumer .input-group {
+        border-radius: 24px;
+        overflow: hidden;
+    }
+}
+
+/* Cart badge — always visible icon beside toggler */
+.navbar-cart-mobile {
+    display: flex;
+    align-items: center;
+}
+
+/* ─── HERO SECTION ───────────────────────────────────────────── */
+@media (max-width: 575px) {
+    .hero-section {
+        min-height: 340px !important;
+        padding: 48px 0 40px !important;
+    }
+    .hero-section h1 {
+        font-size: 2rem !important;
+    }
+    .hero-section .hero-sub {
+        font-size: 12px !important;
+    }
+    .hero-section .hero-desc {
+        font-size: 13px !important;
+        margin-bottom: 1rem !important;
+    }
+    .hero-section .btn-lg {
+        padding: 0.55rem 1.4rem !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+    .hero-section {
+        min-height: 400px !important;
+    }
+    .hero-section h1 {
+        font-size: 2.5rem !important;
+    }
+}
+
+/* ─── CATEGORY GRID ──────────────────────────────────────────── */
+@media (max-width: 575px) {
+    .category-card {
+        min-height: 80px !important;
+        padding: 10px 6px !important;
+    }
+    .category-card .category-icon {
+        font-size: 24px !important;
+    }
+    .category-card p {
+        font-size: 10px !important;
+    }
+}
+
+/* ─── PRODUCT CARDS (Home + List pages) ─────────────────────── */
+@media (max-width: 575px) {
+    .product-card-img {
+        height: 140px !important;
+    }
+    .product-card-img-home {
+        height: 140px !important;
+    }
+    .card-body {
+        padding: 0.6rem !important;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+    .product-card-img-home {
+        height: 160px !important;
+    }
+}
+
+/* ─── WHY CHOOSE / TESTIMONIALS SECTIONS ────────────────────── */
+@media (max-width: 767px) {
+    .feature-card {
+        padding: 1.25rem !important;
+    }
+    .feature-card .feature-icon {
+        font-size: 32px !important;
+    }
+}
+
+/* ─── SELLER CARDS ───────────────────────────────────────────── */
+@media (max-width: 767px) {
+    .artisan-section .col-md-4:not(:last-child) {
+        margin-bottom: 0;
+    }
+}
+
+/* ─── CTA BANNER ─────────────────────────────────────────────── */
+@media (max-width: 575px) {
+    .cta-banner {
+        padding: 36px 16px !important;
+    }
+    .cta-banner h3 {
+        font-size: 1.2rem !important;
+    }
+    .cta-banner .btn-lg {
+        width: 100%;
+        font-size: 0.9rem !important;
+        padding: 0.65rem 1rem !important;
+    }
+    .cta-banner .d-flex {
+        flex-direction: column;
+        gap: 0.6rem !important;
+    }
+}
+
+/* ─── PRODUCT LIST PAGE ──────────────────────────────────────── */
+
+/* Hide sidebar, show filter toggle on mobile */
+@media (max-width: 991px) {
+    .filter-sidebar-desktop {
+        display: none !important;
+    }
+    .filter-mobile-bar {
+        display: flex !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .filter-mobile-bar {
+        display: none !important;
+    }
+}
+
+/* Product list header — stack sort select below heading on mobile */
+@media (max-width: 575px) {
+    .product-list-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+    .product-list-header h2 {
+        font-size: 1.3rem !important;
+        margin-bottom: 0 !important;
+    }
+    .product-list-header .form-select {
+        width: 100% !important;
+    }
+}
+
+/* ─── PRODUCT DETAIL PAGE ────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Main image: shorter on mobile */
+    .product-detail-main-img {
+        height: 280px !important;
+    }
+    /* Thumbnail strip: smaller thumbs */
+    .product-thumb-btn {
+        width: 56px !important;
+        height: 56px !important;
+    }
+    /* Price: smaller on mobile */
+    .product-detail-price {
+        font-size: 1.4rem !important;
+    }
+    /* CTA buttons: full-width stack */
+    .product-cta-row {
+        flex-direction: column !important;
+    }
+    .product-cta-row .btn {
+        width: 100% !important;
+    }
+    /* Tab labels: smaller */
+    .product-tabs .nav-link {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 12px !important;
+    }
+    /* Seller card: compact */
+    .seller-info-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    .seller-info-card .text-end {
+        text-align: left !important;
+    }
+}
+
+@media (max-width: 575px) {
+    .product-detail-main-img {
+        height: 240px !important;
+    }
+    .product-thumb-btn {
+        width: 48px !important;
+        height: 48px !important;
+    }
+}
+
+/* ─── CART PAGE ──────────────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Cart item row: make it a proper 2-row layout */
+    .cart-item-product-col {
+        width: 75% !important;
+        flex: 0 0 75% !important;
+        max-width: 75% !important;
+    }
+    .cart-item-img-col {
+        width: 25% !important;
+        flex: 0 0 25% !important;
+        max-width: 25% !important;
+    }
+    .cart-item-qty-col {
+        width: 60% !important;
+        flex: 0 0 60% !important;
+    }
+    .cart-item-delete-col {
+        width: 40% !important;
+        flex: 0 0 40% !important;
+    }
+    .cart-item-qty-col .input-group {
+        width: 100% !important;
+    }
+    .cart-item-name {
+        font-size: 0.9rem !important;
+    }
+}
+
+@media (max-width: 575px) {
+    .cart-page-title {
+        font-size: 1.4rem !important;
+    }
+    .order-summary-card .card-body {
+        padding: 1rem !important;
+    }
+}
+
+/* ─── CHECKOUT PAGE ──────────────────────────────────────────── */
+
+/* Progress stepper — responsive connector width */
+@media (max-width: 575px) {
+    .checkout-stepper-connector {
+        width: 32px !important;
+        margin: 0 2px 20px !important;
+    }
+    .checkout-stepper-circle {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+    }
+    .checkout-stepper-label {
+        font-size: 10px !important;
+    }
+    .checkout-title {
+        font-size: 1.3rem !important;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+    .checkout-stepper-connector {
+        width: 52px !important;
+    }
+}
+
+/* Saved address cards: compact on mobile */
+@media (max-width: 575px) {
+    .saved-address-card {
+        padding: 0.75rem !important;
+    }
+    .saved-address-card .fw-semibold {
+        font-size: 13px !important;
+    }
+}
+
+/* Payment method buttons: stack on mobile */
+@media (max-width: 575px) {
+    .payment-method-group {
+        flex-direction: column !important;
+    }
+    .payment-method-btn {
+        width: 100% !important;
+    }
+}
+
+/* ─── ORDER HISTORY PAGE ─────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Order header: wrap order number and status badge */
+    .order-header-row {
+        flex-wrap: wrap !important;
+        gap: 0.5rem;
+        align-items: flex-start !important;
+    }
+    /* Order item action buttons: wrap to next line */
+    .order-item-actions {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.4rem !important;
+        margin-top: 0.5rem !important;
+        width: 100% !important;
+    }
+    .order-item-actions .btn {
+        font-size: 11px !important;
+        padding: 0.3rem 0.7rem !important;
+    }
+    /* Order item row: stack product info and buttons */
+    .order-item-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    /* Tracking timeline: tighter spacing */
+    .tracking-step {
+        font-size: 12px !important;
+    }
+    /* Filter tabs: scrollable row */
+    .order-filter-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .order-filter-tabs::-webkit-scrollbar { display: none; }
+    .order-filter-tabs .btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 575px) {
+    .order-history-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+    .order-card-px {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
+
+/* ─── OFFCANVAS FILTER (mobile product list) ─────────────────── */
+.offcanvas-filter .offcanvas-header {
+    background-color: #2D6A4F;
+    color: white;
+}
+.offcanvas-filter .btn-close {
+    filter: invert(1);
+}
+
+/* ─── FOOTER ─────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+    footer .col-md-3,
+    footer .col-md-4 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* ─── FORMS (Login, Register, etc.) ─────────────────────────── */
+@media (max-width: 575px) {
+    .auth-card {
+        border-radius: 12px !important;
+        padding: 1.25rem !important;
+    }
+}
+
+/* ─── Utility: full-width btn on xs only ─────────────────────── */
+@media (max-width: 399px) {
+    .btn-xs-full {
+        width: 100% !important;
+        margin-bottom: 0.4rem;
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PART 2 — REMAINING PAGES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── AUTH FORMS (Login, Register, ForgotPassword, Reset, Change) ─ */
+@media (max-width: 575px) {
+    /* Fix hardcoded width panels inside auth columns.
+       Login uses 450px, Register uses 500px — both overflow on phones.
+       This CSS override works because the element has no Bootstrap
+       col class that would win specificity. */
+    .auth-form-panel {
+        max-width: 100% !important;
+        padding: 1.25rem !important;
+    }
+    /* Fallback for Register (same structure, add class via CSS if TSX not replaced) */
+    .col-12.col-lg-6 > div[style] {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .auth-form-panel .btn,
+    .auth-form-panel form .btn {
+        font-size: 0.95rem;
+    }
+}
+
+/* ─── REGISTER PAGE ──────────────────────────────────────────── */
+/* Register has same split layout as Login — handled by auth styles above.
+   Additional: the name field row col-6 becomes tight on xs. */
+@media (max-width: 399px) {
+    .register-name-row .col-6 {
+        width: 100% !important;
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* ─── PRODUCT DETAIL PAGE ────────────────────────────────────── */
+@media (max-width: 767px) {
+    .product-detail-main-img {
+        height: 280px !important;
+    }
+    .product-thumb-btn {
+        width: 54px !important;
+        height: 54px !important;
+    }
+    .product-detail-price {
+        font-size: 1.4rem !important;
+    }
+}
+@media (max-width: 575px) {
+    .product-detail-main-img {
+        height: 240px !important;
+    }
+    .product-thumb-btn {
+        width: 46px !important;
+        height: 46px !important;
+    }
+    /* Tab labels scroll horizontally — handled inline in TSX with overflow-x */
+    .product-tabs::-webkit-scrollbar { display: none; }
+    /* Seller info card stacks on xs */
+    .seller-info-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    /* CTA buttons full width */
+    .product-cta-row {
+        flex-direction: column !important;
+    }
+    .product-cta-row .btn {
+        width: 100% !important;
+    }
+    .product-cta-row .btn:last-child {
+        min-width: unset !important;
+    }
+}
+
+/* ─── ADMIN PANEL ────────────────────────────────────────────── */
+/* The admin panel has a 240px fixed sidebar + main content flex row.
+   On mobile we collapse the sidebar to a horizontal top bar. */
+@media (max-width: 767px) {
+    /* Outer flex wrapper */
+    .admin-layout-wrapper,
+    div[style*="minHeight: '100vh'"][class*="d-flex"] {
+        flex-direction: column !important;
+    }
+
+    /* Sidebar becomes a horizontal scrollable top strip */
+    .admin-sidebar,
+    div[style*="width: 240"][class*="py-4"] {
+        width: 100% !important;
+        flex-shrink: unset !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        overflow-x: auto !important;
+        padding: 8px 12px !important;
+        gap: 4px !important;
+    }
+
+    /* Sidebar nav becomes horizontal */
+    .admin-sidebar nav,
+    div[style*="width: 240"] nav {
+        flex-direction: row !important;
+        gap: 4px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+        width: 100%;
+    }
+    div[style*="width: 240"] nav::-webkit-scrollbar { display: none; }
+
+    /* Sidebar nav buttons compact */
+    div[style*="width: 240"] nav button {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+    }
+
+    /* Hide the brand text + back-to-site button in horizontal mode */
+    div[style*="width: 240"] .mb-4.px-2,
+    div[style*="width: 240"] .mt-auto {
+        display: none !important;
+    }
+
+    /* Main content: full width, reduce padding */
+    div[style*="overflowY: 'auto'"].flex-grow-1 {
+        padding: 12px !important;
+    }
+}
+
+/* ─── SELLER SETTINGS (sidebar tabs + content cols) ─────────── */
+/* Bootstrap col-md-3 / col-md-9 already stacks below 768px.
+   Just tighten the stacked sidebar appearance. */
+@media (max-width: 767px) {
+    /* Settings sidebar tabs become a horizontal scroll strip */
+    .col-md-3 .rounded-3 {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        gap: 4px !important;
+        scrollbar-width: none !important;
+        padding: 8px !important;
+    }
+    .col-md-3 .rounded-3::-webkit-scrollbar { display: none; }
+    .col-md-3 .rounded-3 .btn {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        font-size: 12px !important;
+        padding: 7px 12px !important;
+        width: auto !important;
+    }
+}
+
+/* ─── SELLER DASHBOARD ───────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Stat cards already col-6 col-md-3 — fine.
+       The setup guide section col-md-4 / col-md-8 stacks at 768. */
+    .table-responsive {
+        font-size: 12px !important;
+    }
+}
+@media (max-width: 575px) {
+    /* Quick action buttons — 2-column grid */
+    .quick-actions-grid .col-6 {
+        padding: 4px !important;
+    }
+    .quick-actions-grid .btn {
+        font-size: 11px !important;
+        padding: 0.5rem !important;
+    }
+}
+
+/* ─── SELLER ORDERS ──────────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Order item expand form: col-md-5 / col-md-4 / col-md-3 stacks */
+    /* Shipping update form items stack natively — just add padding fix */
+    .seller-order-form .col-md-5,
+    .seller-order-form .col-md-4,
+    .seller-order-form .col-md-3 {
+        margin-bottom: 8px;
+    }
+}
+
+/* ─── SELLER ANALYTICS ───────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Stat row: col-6 col-md-3 — already 2-col on mobile, fine.
+       Chart col-lg-8 / col-lg-4 stacks at 992. On 768-991 they're full width.
+       No extra fix needed. */
+}
+
+/* ─── SELLER REPAIR DASHBOARD ────────────────────────────────── */
+@media (max-width: 575px) {
+    /* Stat cards are col-4 — three across is cramped on small phones */
+    .repair-stats-row .col-4 {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+    .repair-stats-row .col-4 p {
+        font-size: 11px !important;
+    }
+    .repair-stats-row .col-4 h5 {
+        font-size: 1rem !important;
+    }
+}
+
+/* ─── MY REPAIRS ─────────────────────────────────────────────── */
+@media (max-width: 575px) {
+    /* Repair card header: product name + badge can wrap */
+    .repair-card-header {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    /* Quote cards: price + action button row wraps */
+    .quote-action-row {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+}
+
+/* ─── ORDER DETAIL PAGE ──────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* col-lg-8 / col-lg-4 stacks at 992.
+       Header back button + title row: wrap */
+    .order-detail-header {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    .order-detail-header .btn {
+        font-size: 13px !important;
+    }
+}
+@media (max-width: 575px) {
+    /* Order item image: slightly smaller */
+    .order-detail-item-img {
+        width: 44px !important;
+        height: 44px !important;
+    }
+    /* Status timeline circles: slightly smaller */
+    .order-status-circle {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* ─── USER PROFILE ───────────────────────────────────────────── */
+/* col-md-6 form fields already stack — fine.
+   Quick link grid: col-6 col-md-4 — two-col on mobile, fine.
+   Stat row: col-6 col-md-3 — two-col on mobile, fine. */
+@media (max-width: 575px) {
+    /* Avatar + name row — tighten spacing */
+    .user-avatar-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+    .user-quick-links .btn {
+        font-size: 12px !important;
+        padding: 8px 6px !important;
+    }
+}
+
+/* ─── ADDRESS MANAGEMENT ─────────────────────────────────────── */
+/* col-md-6 form fields already stack below 768. Just improve spacing. */
+@media (max-width: 575px) {
+    .address-card-actions {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+    .address-card-actions .btn {
+        font-size: 11px !important;
+    }
+}
+
+/* ─── WISHLIST ───────────────────────────────────────────────── */
+/* col-12 col-md-6 — fine. The internal d-flex gap-3 with 100px image
+   can get tight on 320px phones. */
+@media (max-width: 399px) {
+    .wishlist-item-image {
+        width: 72px !important;
+        height: 72px !important;
+    }
+    .wishlist-item-title {
+        font-size: 13px !important;
+    }
+    .wishlist-item-actions .btn {
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+    }
+}
+
+/* ─── FOOTER (Consumer) ──────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* The main footer already has col-6 on many items.
+       Newsletter col-lg-2 becomes full-width at < lg — fine.
+       Just ensure the bottom copyright row wraps properly. */
+    footer .d-flex.justify-content-between {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+    footer .input-group {
+        max-width: 320px;
+    }
+}
+
+/* ─── ABOUT US / CARE GUIDE / PRIVACY POLICY ─────────────────── */
+/* These are content pages — Bootstrap container + typography.
+   They are already mobile-safe. No additional CSS needed. */
+
+/* ─── SIMPLE FORM PAGES (ForgotPw, ResetPw, ChangePw, etc.) ─── */
+/* All use centered containers with maxWidth — already responsive.
+   Just ensure touch target sizes. */
+@media (max-width: 575px) {
+    .forgot-pw-card,
+    .reset-pw-card,
+    .change-pw-card {
+        margin: 0 8px;
+        padding: 1.25rem !important;
+    }
+}
+
+/* ─── CREATE PRODUCT / EDIT PRODUCT ──────────────────────────── */
+/* Large seller forms — col-md-6 fields stack fine.
+   Image upload preview area may overflow. */
+@media (max-width: 575px) {
+    .product-form-image-preview {
+        flex-wrap: wrap !important;
+    }
+    .product-form-image-preview img,
+    .product-form-image-thumb {
+        width: 72px !important;
+        height: 72px !important;
+    }
+}
+
+/* ─── UPLOAD KYC ─────────────────────────────────────────────── */
+@media (max-width: 575px) {
+    .kyc-upload-zone {
+        padding: 1.5rem 1rem !important;
+    }
+}
+
+/* ─── ORDER SUCCESS / PAYMENT SUCCESS ────────────────────────── */
+/* Simple centred success pages — no fixes needed. */
+
+/* ─── COMPLETE PROFILE ───────────────────────────────────────── */
+/* Simple form, Bootstrap-responsive — no fixes needed. */
+
+/* ─── REQUEST REPAIR ─────────────────────────────────────────── */
+@media (max-width: 575px) {
+    .request-repair-container {
+        padding: 1rem !important;
+    }
+}
+
+/* ─── PRODUCT CARD (list page grid) ─────────────────────────── */
+/* ProductCard uses a 75% padding-top aspect ratio trick and Bootstrap
+   col — already works on mobile. Text-truncation keeps it tidy. */
+@media (max-width: 399px) {
+    .card .card-title {
+        font-size: 0.85rem !important;
+    }
+    .card .card-text {
+        font-size: 0.75rem !important;
+    }
+    .card .fs-5 {
+        font-size: 0.9rem !important;
+    }
+}
+
+/* ─── GLOBAL TOUCH IMPROVEMENTS ─────────────────────────────── */
+@media (max-width: 767px) {
+    /* Prevent horizontal scrollbar from tables */
+    .container, .container-fluid {
+        overflow-x: hidden;
+    }
+    /* All tables get overflow-x scroll */
+    table {
+        min-width: unset !important;
+    }
+    .table-responsive table {
+        min-width: 480px;
+    }
+    /* Ensure select elements don't overflow */
+    select.form-select {
+        max-width: 100%;
+    }
+    /* Badge overflow fix */
+    .badge {
+        word-break: break-word;
+        white-space: normal;
+    }
+    /* Dropdown menus full-width on small screens */
+    .dropdown-menu {
+        min-width: unset;
+        width: max-content;
+        max-width: 92vw;
+    }
+}
