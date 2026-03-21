@@ -38,6 +38,8 @@ import SellerProfile from './pages/SellerProfile';
 import EditProduct from './pages/EditProduct';
 import SellerRepairDashboard from './pages/SellerRepairDashboard';
 import SellerOrders from './pages/SellerOrders';
+import SellerAnalytics from './pages/SellerAnalytics';
+import SellerSettings from './pages/SellerSettings';
 
 // Admin Pages
 import AdminPanel from './pages/AdminPanel';
@@ -93,6 +95,8 @@ function App() {
                                                                                     <Route path="/seller/edit-product/:id" element={<EditProduct />} />
                                                                                     <Route path="/seller/repairs" element={<SellerRepairDashboard />} />
                                                                                     <Route path="/seller/orders" element={<SellerOrders />} />
+                                                                                    <Route path="/seller/analytics" element={<SellerAnalytics />} />
+                                                                                    <Route path="/seller/settings" element={<SellerSettings />} />
                                                                                     <Route path="*" element={<div className="p-5 text-center"><h1>404 - Page Not Found</h1></div>} />
                                                                             </Routes>
                                                                     </Layout>
