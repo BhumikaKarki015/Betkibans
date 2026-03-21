@@ -173,6 +173,104 @@ public class SellerController : ControllerBase
         return Ok(new { message = "KYC Uploaded", profile = seller });
     }
 
+
+    // GET: api/Seller/analytics
+    [HttpGet("analytics")]
+    [Authorize(Roles = "Seller")]
+    public async Task<IActionResult> GetAnalytics()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var seller = await _context.Sellers
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return NotFound();
+
+        // All orders for this seller
+        var orders = await _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == seller.SellerId))
+            .ToListAsync();
+
+        // All products
+        var products = await _context.Products
+            .Include(p => p.Reviews)
+            .Include(p => p.OrderItems)
+            .Where(p => p.SellerId == seller.SellerId && p.IsActive)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        // Revenue calculations
+        var totalRevenue = orders
+            .Where(o => o.Status != "Cancelled")
+            .SelectMany(o => o.OrderItems.Where(oi => oi.Product.SellerId == seller.SellerId))
+            .Sum(oi => oi.UnitPrice * oi.Quantity);
+
+        var thisMonth = DateTime.UtcNow.Month;
+        var thisYear = DateTime.UtcNow.Year;
+        var monthlyRevenue = orders
+            .Where(o => o.Status != "Cancelled" && o.CreatedAt.Month == thisMonth && o.CreatedAt.Year == thisYear)
+            .SelectMany(o => o.OrderItems.Where(oi => oi.Product.SellerId == seller.SellerId))
+            .Sum(oi => oi.UnitPrice * oi.Quantity);
+
+        // Orders by status
+        var ordersByStatus = orders
+            .GroupBy(o => o.Status)
+            .Select(g => new { status = g.Key, count = g.Count() })
+            .ToList();
+
+        // Monthly revenue for last 6 months
+        var monthlyData = Enumerable.Range(0, 6)
+            .Select(i => {
+                var date = DateTime.UtcNow.AddMonths(-i);
+                var rev = orders
+                    .Where(o => o.Status != "Cancelled" && o.CreatedAt.Month == date.Month && o.CreatedAt.Year == date.Year)
+                    .SelectMany(o => o.OrderItems.Where(oi => oi.Product.SellerId == seller.SellerId))
+                    .Sum(oi => oi.UnitPrice * oi.Quantity);
+                return new { month = date.ToString("MMM yyyy"), revenue = rev };
+            })
+            .Reverse()
+            .ToList();
+
+        // Top products by revenue
+        var topProducts = products
+            .Select(p => new {
+                p.ProductId,
+                p.Name,
+                p.Price,
+                p.StockQuantity,
+                TotalSold = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
+                Revenue = p.OrderItems?.Sum(oi => oi.UnitPrice * oi.Quantity) ?? 0,
+                AverageRating = p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 0,
+                TotalReviews = p.Reviews.Count
+            })
+            .OrderByDescending(p => p.Revenue)
+            .Take(5)
+            .ToList();
+
+        // Low stock products
+        var lowStock = products
+            .Where(p => p.StockQuantity <= 5)
+            .Select(p => new { p.ProductId, p.Name, p.StockQuantity, p.Price })
+            .ToList();
+
+        return Ok(new {
+            totalRevenue,
+            monthlyRevenue,
+            totalOrders = orders.Count,
+            totalProducts = products.Count,
+            averageRating = products.Any(p => p.Reviews.Any()) 
+                ? products.SelectMany(p => p.Reviews).Average(r => (double)r.Rating) 
+                : 0,
+            totalReviews = products.Sum(p => p.Reviews.Count),
+            ordersByStatus,
+            monthlyData,
+            topProducts,
+            lowStock
+        });
+    }
+
     // ===========================
     // ADMIN ACTIONS
     // ===========================
