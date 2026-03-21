@@ -116,6 +116,13 @@ const Checkout = () => {
     const nepalProvinces = ['Koshi', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'];
     const majorCities = ['Kathmandu', 'Pokhara', 'Lalitpur', 'Bhaktapur', 'Biratnagar', 'Birgunj', 'Dharan', 'Butwal', 'Hetauda', 'Itahari'];
 
+    const STEPS = [
+        { label: 'Cart', done: true },
+        { label: 'Shipping', active: true },
+        { label: 'Payment', active: false },
+        { label: 'Confirmation', active: false },
+    ];
+
     return (
         <>
             <div className="bg-light border-bottom py-2">
@@ -130,47 +137,59 @@ const Checkout = () => {
                 </div>
             </div>
 
-            <div className="container py-4">
-                <h3 className="fw-bold mb-4">Checkout</h3>
+            <div className="container py-3 py-md-4">
+                <h3 className="checkout-title fw-bold mb-3 mb-md-4">Checkout</h3>
 
-                {/* Progress Stepper */}
-                <div className="mb-5">
+                {/* ── Progress Stepper (responsive) ── */}
+                <div className="mb-4 mb-md-5">
                     <div className="d-flex align-items-center justify-content-center gap-0">
-                        {[
-                            { label: 'Cart', done: true },
-                            { label: 'Shipping', active: true },
-                            { label: 'Payment', active: false },
-                            { label: 'Confirmation', active: false },
-                        ].map((step, i) => (
+                        {STEPS.map((step, i) => (
                             <div key={step.label} className="d-flex align-items-center">
                                 <div className="d-flex flex-column align-items-center">
-                                    <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                                         style={{
-                                             width: 36, height: 36, fontSize: 14,
-                                             backgroundColor: step.done ? '#2D6A4F' : 'transparent',
-                                             color: step.done ? 'white' : step.active ? '#2D6A4F' : '#999',
-                                             border: step.done ? 'none' : `3px solid ${step.active ? '#2D6A4F' : '#dee2e6'}`,
-                                         }}>
+                                    <div
+                                        className="checkout-stepper-circle rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                        style={{
+                                            width: 36, height: 36, fontSize: 14,
+                                            backgroundColor: step.done ? '#2D6A4F' : 'transparent',
+                                            color: step.done ? 'white' : step.active ? '#2D6A4F' : '#999',
+                                            border: step.done ? 'none' : `3px solid ${step.active ? '#2D6A4F' : '#dee2e6'}`,
+                                        }}
+                                    >
                                         {step.done ? <i className="bi bi-check-lg"></i> : i + 1}
                                     </div>
-                                    <small className="mt-1 fw-semibold" style={{ color: step.done || step.active ? '#2D6A4F' : '#999' }}>
+                                    <small
+                                        className="checkout-stepper-label mt-1 fw-semibold"
+                                        style={{ color: step.done || step.active ? '#2D6A4F' : '#999' }}
+                                    >
                                         {step.label}
                                     </small>
                                 </div>
-                                {i < 3 && <div style={{ height: 3, width: 80, backgroundColor: step.done ? '#2D6A4F' : '#dee2e6', margin: '0 4px 20px' }}></div>}
+                                {i < 3 && (
+                                    <div
+                                        className="checkout-stepper-connector"
+                                        style={{
+                                            height: 3,
+                                            width: 80,
+                                            backgroundColor: step.done ? '#2D6A4F' : '#dee2e6',
+                                            margin: '0 4px 20px',
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
 
                 <form onSubmit={handlePlaceOrder}>
-                    <div className="row g-4">
+                    <div className="row g-3 g-md-4">
+                        {/* ── LEFT: Shipping + Payment + Notes ── */}
                         <div className="col-lg-7">
 
                             {/* Shipping Address */}
-                            <div className="card border-0 shadow-sm mb-4">
-                                <div className="card-body p-4">
-                                    <div className="d-flex align-items-center justify-content-between mb-3">
+                            <div className="card border-0 shadow-sm mb-3 mb-md-4">
+                                <div className="card-body p-3 p-md-4">
+                                    <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                         <div className="d-flex align-items-center">
                                             <i className="bi bi-geo-alt-fill text-success me-2 fs-5"></i>
                                             <h5 className="fw-bold mb-0 text-uppercase" style={{ letterSpacing: 1, fontSize: 14 }}>Shipping Address</h5>
@@ -184,18 +203,20 @@ const Checkout = () => {
                                         <div className="mb-3">
                                             <div className="d-flex flex-column gap-2 mb-2">
                                                 {savedAddresses.map(addr => (
-                                                    <div key={addr.addressId}
-                                                         className="p-3 rounded-2 d-flex align-items-start gap-2"
-                                                         style={{
-                                                             border: selectedAddressId === addr.addressId ? '2px solid #2D6A4F' : '1px solid #DDD9D2',
-                                                             cursor: 'pointer',
-                                                             backgroundColor: selectedAddressId === addr.addressId ? '#F0F7F4' : '#FDFAF5',
-                                                         }}
-                                                         onClick={() => setSelectedAddressId(addr.addressId)}>
-                                                        <input type="radio" className="form-check-input mt-1" readOnly
+                                                    <div
+                                                        key={addr.addressId}
+                                                        className="saved-address-card p-3 rounded-2 d-flex align-items-start gap-2"
+                                                        style={{
+                                                            border: selectedAddressId === addr.addressId ? '2px solid #2D6A4F' : '1px solid #DDD9D2',
+                                                            cursor: 'pointer',
+                                                            backgroundColor: selectedAddressId === addr.addressId ? '#F0F7F4' : '#FDFAF5',
+                                                        }}
+                                                        onClick={() => setSelectedAddressId(addr.addressId)}
+                                                    >
+                                                        <input type="radio" className="form-check-input mt-1 flex-shrink-0" readOnly
                                                                checked={selectedAddressId === addr.addressId} />
-                                                        <div className="flex-grow-1">
-                                                            <div className="d-flex align-items-center gap-2">
+                                                        <div className="flex-grow-1 min-w-0">
+                                                            <div className="d-flex align-items-center gap-2 flex-wrap">
                                                                 <span className="fw-semibold" style={{ fontSize: 14 }}>{addr.fullName}</span>
                                                                 {addr.isDefault && (
                                                                     <span className="badge" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32', fontSize: 10 }}>Default</span>
@@ -249,13 +270,13 @@ const Checkout = () => {
                                                            value={formData.shippingAddress}
                                                            onChange={handleChange} required={useNewAddress} />
                                                 </div>
-                                                <div className="col-md-6">
+                                                <div className="col-6">
                                                     <label className="form-label fw-medium small">City *</label>
                                                     <select name="city" className="form-select" value={formData.city} onChange={handleChange}>
                                                         {majorCities.map(c => <option key={c} value={c}>{c}</option>)}
                                                     </select>
                                                 </div>
-                                                <div className="col-md-6">
+                                                <div className="col-6">
                                                     <label className="form-label fw-medium small">Province *</label>
                                                     <select name="province" className="form-select" value={formData.province} onChange={handleChange}>
                                                         {nepalProvinces.map(p => <option key={p} value={p}>{p}</option>)}
@@ -268,8 +289,8 @@ const Checkout = () => {
                             </div>
 
                             {/* Payment Method */}
-                            <div className="card border-0 shadow-sm mb-4">
-                                <div className="card-body p-4">
+                            <div className="card border-0 shadow-sm mb-3 mb-md-4">
+                                <div className="card-body p-3 p-md-4">
                                     <div className="d-flex align-items-center mb-3">
                                         <i className="bi bi-credit-card-fill text-success me-2 fs-5"></i>
                                         <h5 className="fw-bold mb-0 text-uppercase" style={{ letterSpacing: 1, fontSize: 14 }}>Payment Method</h5>
@@ -280,25 +301,25 @@ const Checkout = () => {
                                             { id: 'COD', label: 'COD', desc: 'Cash on Delivery — pay when your order arrives', color: '#6c757d' },
                                         ].map(pm => (
                                             <div key={pm.id}
-                                                 className={`border rounded p-3 d-flex align-items-center gap-3 ${paymentMethod === pm.id ? 'border-success bg-success bg-opacity-10' : 'border-light-subtle'}`}
+                                                 className={`payment-method-btn border rounded p-3 d-flex align-items-center gap-3 ${paymentMethod === pm.id ? 'border-success bg-success bg-opacity-10' : 'border-light-subtle'}`}
                                                  style={{ cursor: 'pointer' }}
                                                  onClick={() => setPaymentMethod(pm.id as PaymentMethod)}>
-                                                <input type="radio" className="form-check-input mt-0"
+                                                <input type="radio" className="form-check-input mt-0 flex-shrink-0"
                                                        checked={paymentMethod === pm.id}
                                                        onChange={() => setPaymentMethod(pm.id as PaymentMethod)} />
-                                                <div className="d-flex align-items-center gap-2 flex-grow-1">
-                                                    <div className="rounded px-2 py-1 fw-bold text-white small"
+                                                <div className="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
+                                                    <div className="rounded px-2 py-1 fw-bold text-white small flex-shrink-0"
                                                          style={{ backgroundColor: pm.color, fontSize: 12 }}>{pm.label}</div>
                                                     <span className="small">{pm.desc}</span>
                                                 </div>
-                                                {paymentMethod === pm.id && <i className="bi bi-check-circle-fill text-success"></i>}
+                                                {paymentMethod === pm.id && <i className="bi bi-check-circle-fill text-success flex-shrink-0"></i>}
                                             </div>
                                         ))}
                                     </div>
                                     {paymentMethod === 'Khalti' && (
                                         <div className="rounded-3 p-3 mt-3 d-flex align-items-center gap-2"
                                              style={{ backgroundColor: '#F3E5F5', fontSize: 13 }}>
-                                            <i className="bi bi-shield-check" style={{ color: '#5C2D91' }}></i>
+                                            <i className="bi bi-shield-check flex-shrink-0" style={{ color: '#5C2D91' }}></i>
                                             <span style={{ color: '#4A148C' }}>
                                                 You'll be redirected to Khalti's secure payment page after placing your order.
                                             </span>
@@ -308,8 +329,8 @@ const Checkout = () => {
                             </div>
 
                             {/* Order Notes */}
-                            <div className="card border-0 shadow-sm mb-4">
-                                <div className="card-body p-4">
+                            <div className="card border-0 shadow-sm mb-3 mb-md-4">
+                                <div className="card-body p-3 p-md-4">
                                     <div className="d-flex align-items-center mb-3">
                                         <i className="bi bi-chat-left-text-fill text-success me-2 fs-5"></i>
                                         <h5 className="fw-bold mb-0 text-uppercase" style={{ letterSpacing: 1, fontSize: 14 }}>
@@ -322,7 +343,7 @@ const Checkout = () => {
                                 </div>
                             </div>
 
-                            <div className="mb-4">
+                            <div className="mb-3 mb-md-4">
                                 <div className="form-check">
                                     <input className="form-check-input" type="checkbox" id="agreeTerms"
                                            checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} />
@@ -332,46 +353,52 @@ const Checkout = () => {
                                 </div>
                             </div>
 
-                            <div className="d-flex gap-3">
-                                <button type="button" className="btn btn-outline-secondary px-4" onClick={() => navigate('/cart')}>
-                                    <i className="bi bi-arrow-left me-2"></i>Back to Cart
+                            {/* Action Buttons */}
+                            <div className="d-flex gap-2 gap-md-3 flex-wrap">
+                                <button type="button" className="btn btn-outline-secondary px-3 px-md-4" onClick={() => navigate('/cart')}>
+                                    <i className="bi bi-arrow-left me-1 me-md-2"></i>Back
                                 </button>
-                                <button type="submit" className="btn btn-success btn-lg flex-grow-1"
-                                        disabled={loading || cartItems.length === 0 || !agreedToTerms}
-                                        style={{ backgroundColor: '#2D6A4F', borderColor: '#2D6A4F' }}>
+                                <button
+                                    type="submit"
+                                    className="btn btn-success btn-lg flex-grow-1"
+                                    disabled={loading || cartItems.length === 0 || !agreedToTerms}
+                                    style={{ backgroundColor: '#2D6A4F', borderColor: '#2D6A4F' }}
+                                >
                                     {loading
                                         ? <><span className="spinner-border spinner-border-sm me-2"></span>
-                                            {paymentMethod === 'Khalti' ? 'Redirecting to Khalti...' : 'Processing...'}</>
+                                            {paymentMethod === 'Khalti' ? 'Redirecting...' : 'Processing...'}</>
                                         : paymentMethod === 'Khalti'
-                                            ? <><i className="bi bi-lock-fill me-2"></i>Place Order & Pay with Khalti</>
+                                            ? <><i className="bi bi-lock-fill me-2"></i><span className="d-none d-sm-inline">Place Order &amp; Pay with </span>Khalti</>
                                             : <><i className="bi bi-lock-fill me-2"></i>Place Order</>}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Order Summary */}
+                        {/* ── RIGHT: Order Summary ── */}
                         <div className="col-lg-5">
                             <div className="sticky-top" style={{ top: 80 }}>
                                 <div className="card border-0 shadow-sm mb-3">
-                                    <div className="card-body p-4">
+                                    <div className="card-body p-3 p-md-4">
                                         <h5 className="fw-bold mb-3 text-uppercase" style={{ letterSpacing: 1, fontSize: 14 }}>Order Summary</h5>
                                         {cartItems.length === 0 ? (
                                             <p className="text-muted small">Your cart is empty.</p>
                                         ) : (
                                             <>
                                                 {cartItems.map(item => (
-                                                    <div key={item.cartItemId} className="d-flex align-items-center gap-3 mb-3">
+                                                    <div key={item.cartItemId} className="d-flex align-items-center gap-2 gap-md-3 mb-3">
                                                         <img
                                                             src={item.product.productImages?.[0]?.imageUrl
                                                                 ? `http://localhost:5192${item.product.productImages[0].imageUrl}`
-                                                                : 'https://via.placeholder.com/60?text=Item'}
-                                                            alt={item.product.name} className="rounded"
-                                                            style={{ width: 56, height: 56, objectFit: 'cover' }} />
-                                                        <div className="flex-grow-1">
-                                                            <p className="mb-0 small fw-medium">{item.product.name}</p>
+                                                                : 'https://via.placeholder.com/56?text=Item'}
+                                                            alt={item.product.name} className="rounded flex-shrink-0"
+                                                            style={{ width: 48, height: 48, objectFit: 'cover' }} />
+                                                        <div className="flex-grow-1 min-w-0">
+                                                            <p className="mb-0 small fw-medium text-truncate">{item.product.name}</p>
                                                             <small className="text-muted">Qty: {item.quantity}</small>
                                                         </div>
-                                                        <span className="fw-bold small">Rs. {(item.product.price * item.quantity).toLocaleString()}</span>
+                                                        <span className="fw-bold small flex-shrink-0">
+                                                            Rs. {(item.product.price * item.quantity).toLocaleString()}
+                                                        </span>
                                                     </div>
                                                 ))}
                                                 <hr />
@@ -396,24 +423,27 @@ const Checkout = () => {
                                                     <span>Rs. {taxAmount.toLocaleString()}</span>
                                                 </div>
                                                 <hr />
-                                                <div className="d-flex justify-content-between fw-bold fs-5">
+                                                <div className="d-flex justify-content-between fw-bold fs-6">
                                                     <span>Total</span>
                                                     <span className="text-success">Rs. {totalAmount.toLocaleString()}</span>
                                                 </div>
                                             </>
                                         )}
-                                        <button type="submit" className="btn btn-success w-100 mt-3 py-2 fw-semibold"
-                                                disabled={loading || cartItems.length === 0 || !agreedToTerms}
-                                                style={{ backgroundColor: '#2D6A4F', borderColor: '#2D6A4F' }}
-                                                onClick={handlePlaceOrder}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-success w-100 mt-3 py-2 fw-semibold"
+                                            disabled={loading || cartItems.length === 0 || !agreedToTerms}
+                                            style={{ backgroundColor: '#2D6A4F', borderColor: '#2D6A4F' }}
+                                            onClick={handlePlaceOrder as any}
+                                        >
                                             {loading ? 'Processing...' : 'Place Order'}
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="card border-0 shadow-sm">
-                                    <div className="card-body p-4">
-                                        <p className="text-muted small mb-3 text-center fw-medium">We accept</p>
+                                    <div className="card-body p-3 p-md-4">
+                                        <p className="text-muted small mb-2 text-center fw-medium">We accept</p>
                                         <div className="d-flex justify-content-center gap-2 mb-3">
                                             <span className="badge rounded-pill px-3 py-2 fw-bold" style={{ backgroundColor: '#5C2D91', fontSize: 12 }}>khalti</span>
                                             <span className="badge rounded-pill px-3 py-2 fw-bold bg-secondary" style={{ fontSize: 12 }}>COD</span>
@@ -432,9 +462,9 @@ const Checkout = () => {
                 </form>
             </div>
 
-            <div className="border-top py-3 mt-4 bg-light">
+            <div className="border-top py-3 mt-2 bg-light">
                 <div className="container">
-                    <div className="d-flex justify-content-center gap-4 flex-wrap small text-muted">
+                    <div className="d-flex justify-content-center gap-3 gap-md-4 flex-wrap small text-muted">
                         <span><i className="bi bi-lock-fill text-success me-1"></i>Secure Checkout</span>
                         <span><i className="bi bi-patch-check-fill text-success me-1"></i>Verified Sellers</span>
                         <span><i className="bi bi-truck text-success me-1"></i>Fast Delivery</span>
