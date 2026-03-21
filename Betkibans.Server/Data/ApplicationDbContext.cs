@@ -29,23 +29,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RepairRequest> RepairRequests { get; set; }
     public DbSet<RepairQuote> RepairQuotes { get; set; }
     public DbSet<Wishlist> Wishlists { get; set; }
-    public DbSet<PlatformSettings> PlatformSettings { get; set; }
+    public DbSet<Coupon> Coupons { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-        
-        // PlatformSettings — always a single row with Id = 1
-        modelBuilder.Entity<PlatformSettings>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.CommissionRate).HasColumnType("decimal(5,2)");
-            entity.Property(e => e.RepairCommissionRate).HasColumnType("decimal(5,2)");
-            entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.MaxOrderAmount).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.MinProductPrice).HasColumnType("decimal(10,2)");
-            entity.HasData(new PlatformSettings { Id = 1 }); // Seed default row
-        }); 
+        base.OnModelCreating(modelBuilder); 
         
         modelBuilder.Entity<Seller>(entity =>
         {
@@ -218,6 +206,19 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId);
+        });
+        
+        // Coupons
+        modelBuilder.Entity<Coupon>(entity => {
+            entity.HasKey(e => e.CouponId);
+            entity.Property(e => e.DiscountValue).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.MaxDiscountAmount).HasColumnType("decimal(10,2)");
+            entity.HasData(
+                new Coupon { CouponId = 1, Code = "WELCOME10", DiscountType = "Percentage", DiscountValue = 10, MinOrderAmount = 500, MaxDiscountAmount = 500, Description = "10% off for new customers", ExpiresAt = new DateTime(2028, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Coupon { CouponId = 2, Code = "BAMBOO200", DiscountType = "Fixed", DiscountValue = 200, MinOrderAmount = 1000, Description = "NPR 200 off on orders above 1000", ExpiresAt = new DateTime(2028, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Coupon { CouponId = 3, Code = "GREEN15", DiscountType = "Percentage", DiscountValue = 15, MinOrderAmount = 2000, MaxDiscountAmount = 1000, Description = "15% off on orders above NPR 2000", ExpiresAt = new DateTime(2028, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            );
         });
     }
 }
