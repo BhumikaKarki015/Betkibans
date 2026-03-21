@@ -134,6 +134,7 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
             OrderNumber = o.OrderNumber,
             TotalAmount = o.TotalAmount,
             Status = o.Status,
+            TrackingNumber = o.TrackingNumber,
             CreatedAt = o.CreatedAt,
             OrderItems = o.OrderItems.Select(oi => new OrderItemResponseDto
             {
@@ -173,6 +174,7 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
             order.ShippingCost,
             order.TaxAmount,
             order.Notes,
+            order.TrackingNumber,
             order.CreatedAt,
             // Map address fields explicitly
             FullName = order.Address?.FullName ?? "",
@@ -244,6 +246,8 @@ public async Task<IActionResult> PlaceOrder([FromBody] OrderRequestDto dto)
 
         order.Status = dto.Status;
         order.UpdatedAt = DateTime.UtcNow;
+        if (!string.IsNullOrEmpty(dto.TrackingNumber))
+            order.TrackingNumber = dto.TrackingNumber;
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Status updated successfully" });

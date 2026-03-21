@@ -19,6 +19,7 @@ public class Order
     public string PaymentStatus { get; set; } = "Pending"; 
     public string? KhaltiPidx { get; set; }
     public string? Notes { get; set; }
+    public string? TrackingNumber { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     

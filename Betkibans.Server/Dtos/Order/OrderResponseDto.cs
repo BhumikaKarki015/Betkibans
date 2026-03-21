@@ -6,6 +6,7 @@ public class OrderResponseDto
     public string OrderNumber { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string? TrackingNumber { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<OrderItemResponseDto> OrderItems { get; set; } = new();
     public string CustomerName { get; set; } = string.Empty;
