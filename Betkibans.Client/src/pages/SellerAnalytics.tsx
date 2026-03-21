@@ -58,7 +58,7 @@ const SellerAnalytics = () => {
             <div className="container">
 
                 {/* Header */}
-                <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-3 mb-md-4 flex-wrap gap-2">
                     <div>
                         <h4 className="fw-bold mb-0">Analytics</h4>
                         <small className="text-muted">Your store performance overview</small>
@@ -82,12 +82,12 @@ const SellerAnalytics = () => {
                             <div className="rounded-3 p-3 h-100" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
                                 <div className="d-flex align-items-center gap-2 mb-2">
                                     <div className="rounded-2 d-flex align-items-center justify-content-center"
-                                         style={{ width: 36, height: 36, backgroundColor: s.color + '20' }}>
-                                        <i className={`bi ${s.icon}`} style={{ color: s.color, fontSize: 16 }}></i>
+                                         style={{ width: 30, height: 30, backgroundColor: s.color + '20' }}>
+                                        <i className={`bi ${s.icon}`} style={{ color: s.color, fontSize: 14 }}></i>
                                     </div>
-                                    <small className="text-muted fw-medium">{s.label}</small>
+                                    <small className="text-muted fw-medium" style={{ fontSize: 11 }}>{s.label}</small>
                                 </div>
-                                <div className="fw-bold mb-1" style={{ fontSize: 20 }}>{s.value}</div>
+                                <div className="fw-bold mb-1" style={{ fontSize: 'clamp(14px, 4vw, 20px)' }}>{s.value}</div>
                                 <small className="text-muted">{s.sub}</small>
                             </div>
                         </div>
@@ -97,7 +97,7 @@ const SellerAnalytics = () => {
                 <div className="row g-3 mb-4">
                     {/* Revenue Chart */}
                     <div className="col-lg-8">
-                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                        <div className="rounded-3 p-3 p-md-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
                             <h6 className="fw-bold mb-4">Revenue — Last 6 Months</h6>
                             <div className="d-flex align-items-end gap-2" style={{ height: 160 }}>
                                 {analytics.monthlyData.map((m, i) => {
@@ -158,7 +158,7 @@ const SellerAnalytics = () => {
                 <div className="row g-3">
                     {/* Top Products */}
                     <div className="col-lg-7">
-                        <div className="rounded-3 p-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
+                        <div className="rounded-3 p-3 p-md-4" style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
                             <div className="d-flex justify-content-between align-items-center mb-3">
                                 <h6 className="fw-bold mb-0">Top Products by Revenue</h6>
                                 <button className="btn btn-sm" onClick={() => navigate('/seller/products')}
