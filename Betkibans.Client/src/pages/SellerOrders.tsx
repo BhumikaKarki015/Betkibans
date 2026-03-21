@@ -130,7 +130,7 @@ const SellerOrders = () => {
     );
 
     return (
-        <div className="container-fluid py-4 px-4" style={{ backgroundColor: '#F5F2EC', minHeight: '100vh' }}>
+        <div className="container-fluid py-3 py-md-4 px-2 px-md-4" style={{ backgroundColor: '#F5F2EC', minHeight: '100vh' }}>
 
             {/* ── Page Header ── */}
             <div className="mb-4">
@@ -165,7 +165,7 @@ const SellerOrders = () => {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="d-flex gap-2 flex-wrap">
+                <div className="d-flex gap-2 flex-wrap order-filter-scroll" style={{ overflowX: "auto", flexWrap: "nowrap", scrollbarWidth: "none", paddingBottom: 2 }}>
                     {FILTERS.map(f => (
                         <button key={f}
                                 className="btn btn-sm fw-medium px-3"
@@ -216,7 +216,7 @@ const SellerOrders = () => {
                                  style={{ backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
 
                                 {/* Order Header */}
-                                <div className="d-flex justify-content-between align-items-center px-4 py-3 border-bottom"
+                                <div className="d-flex justify-content-between align-items-center px-3 px-md-4 py-3 border-bottom"
                                      style={{ backgroundColor: '#F5F2EC' }}>
                                     <div>
                                         <span className="fw-bold" style={{ fontSize: 14 }}>
@@ -228,12 +228,12 @@ const SellerOrders = () => {
                                         </span>
                                     </div>
                                     <span className="badge px-3 py-2 fw-semibold"
-                                          style={{ backgroundColor: style.bg, color: style.color, fontSize: 12 }}>
+                                          style={{ backgroundColor: style.bg, color: style.color, fontSize: 12, whiteSpace: "nowrap" }}>
                                         {order.status}
                                     </span>
                                 </div>
 
-                                <div className="px-4 py-3">
+                                <div className="px-3 px-md-4 py-3">
                                     {/* Order Items */}
                                     <div className="mb-3">
                                         {order.orderItems.map((item, i) => (
@@ -280,7 +280,7 @@ const SellerOrders = () => {
                                             <div className="row g-2 align-items-end">
 
                                                 {/* Status Update */}
-                                                <div className="col-md-5">
+                                                <div className="col-12 col-md-5">
                                                     <label className="form-label fw-medium mb-1" style={{ fontSize: 12, color: '#666' }}>
                                                         Update Status
                                                     </label>
@@ -299,7 +299,7 @@ const SellerOrders = () => {
                                                 </div>
 
                                                 {/* Tracking Info */}
-                                                <div className="col-md-4">
+                                                <div className="col-12 col-md-4">
                                                     <label className="form-label fw-medium mb-1" style={{ fontSize: 12, color: '#666' }}>
                                                         Tracking Info <span className="text-muted fw-normal">(optional)</span>
                                                     </label>
@@ -316,7 +316,7 @@ const SellerOrders = () => {
                                                 </div>
 
                                                 {/* Buttons */}
-                                                <div className="col-md-3 d-flex gap-2">
+                                                <div className="col-12 col-md-3 d-flex gap-2">
                                                     <button
                                                         className="btn btn-sm fw-semibold flex-grow-1 text-white"
                                                         onClick={() => handleUpdateStatus(order)}
