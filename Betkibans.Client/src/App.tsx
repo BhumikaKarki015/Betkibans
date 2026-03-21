@@ -26,6 +26,8 @@ import UserProfile from './pages/UserProfile';
 import AddressManagement from './pages/AddressManagement';
 import Wishlist from './pages/Wishlist';
 import ForgotPassword from './pages/ForgotPassword';
+import AboutUs from './pages/AboutUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import ResetPassword from './pages/ResetPassword';
 
 // Seller Pages
@@ -96,6 +98,8 @@ function App() {
                                                                                     <Route path="/seller/repairs" element={<SellerRepairDashboard />} />
                                                                                     <Route path="/seller/orders" element={<SellerOrders />} />
                                                                                     <Route path="/seller/analytics" element={<SellerAnalytics />} />
+                                                                                    <Route path="/about" element={<AboutUs />} />
+                                                                                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                                                                                     <Route path="/seller/settings" element={<SellerSettings />} />
                                                                                     <Route path="*" element={<div className="p-5 text-center"><h1>404 - Page Not Found</h1></div>} />
                                                                             </Routes>

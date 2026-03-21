@@ -16,8 +16,8 @@ const Footer = () => {
                         <span>© 2026 Betkibans Admin Panel. All Rights Reserved.</span>
                         <div className="d-flex gap-3">
                             <span>Version 1.0.5</span>
-                            <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
-                            <span style={{ cursor: 'pointer' }}>Terms</span>
+                            <Link to='/privacy-policy' className='text-reset text-decoration-none'>Privacy Policy</Link>
+                            <Link to='/privacy-policy#terms' className='text-reset text-decoration-none'>Terms</Link>
                         </div>
                     </div>
                 </div>
@@ -69,8 +69,8 @@ const Footer = () => {
                     <div className="d-flex justify-content-between align-items-center small opacity-50">
                         <span>© 2026 Betkibans. All Rights Reserved.</span>
                         <div className="d-flex gap-3">
-                            <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
-                            <span style={{ cursor: 'pointer' }}>Terms</span>
+                            <Link to='/privacy-policy' className='text-reset text-decoration-none'>Privacy Policy</Link>
+                            <Link to='/privacy-policy#terms' className='text-reset text-decoration-none'>Terms</Link>
                         </div>
                     </div>
                 </div>
@@ -176,8 +176,8 @@ const Footer = () => {
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 small opacity-50">
                     <p className="mb-0">© 2026 Betkibans. All Rights Reserved.</p>
                     <div className="d-flex gap-4">
-                        <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
-                        <span style={{ cursor: 'pointer' }}>Terms of Service</span>
+                        <Link to='/privacy-policy' className='text-reset text-decoration-none'>Privacy Policy</Link>
+                        <Link to='/privacy-policy#terms' className='text-reset text-decoration-none'>Terms of Service</Link>
                     </div>
                 </div>
             </div>
