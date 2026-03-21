@@ -198,66 +198,106 @@ namespace Betkibans.Server.Controllers
 
             return Ok(result);
         }
-        
-        // GET: api/Admin/settings
-        [HttpGet("settings")]
+
+
+        // GET: api/Admin/analytics
+        [HttpGet("analytics")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetSettings()
+        public async Task<IActionResult> GetAnalytics()
         {
-            var settings = await _context.PlatformSettings.FindAsync(1);
-            if (settings == null)
-            {
-                settings = new PlatformSettings { Id = 1 };
-                _context.PlatformSettings.Add(settings);
-                await _context.SaveChangesAsync();
-            }
-            return Ok(settings);
-        }
- 
-        // PUT: api/Admin/settings
-        [HttpPut("settings")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateSettings([FromBody] PlatformSettings dto)
-        {
-            var settings = await _context.PlatformSettings.FindAsync(1);
-            if (settings == null) return NotFound();
- 
-            var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
- 
-            // Platform Info
-            settings.PlatformName = dto.PlatformName;
-            settings.Tagline = dto.Tagline;
-            settings.SupportEmail = dto.SupportEmail;
-            settings.SupportPhone = dto.SupportPhone;
-            settings.Address = dto.Address;
- 
-            // Commission & Limits
-            settings.CommissionRate = dto.CommissionRate;
-            settings.RepairCommissionRate = dto.RepairCommissionRate;
-            settings.MinOrderAmount = dto.MinOrderAmount;
-            settings.MaxOrderAmount = dto.MaxOrderAmount;
- 
-            // Seller Settings
-            settings.RequireSellerVerification = dto.RequireSellerVerification;
-            settings.AutoApproveVerifiedSellers = dto.AutoApproveVerifiedSellers;
-            settings.AllowDiscounts = dto.AllowDiscounts;
-            settings.EnableSellerAnalytics = dto.EnableSellerAnalytics;
-            settings.MinProductPrice = dto.MinProductPrice;
-            settings.MaxProductImages = dto.MaxProductImages;
-            settings.MinDescriptionLength = dto.MinDescriptionLength;
- 
-            // Customer Settings
-            settings.AllowGuestCheckout = dto.AllowGuestCheckout;
-            settings.EnableWishlist = dto.EnableWishlist;
-            settings.EnableProductReviews = dto.EnableProductReviews;
-            settings.EnablePurchaseForReview = dto.EnablePurchaseForReview;
-            settings.EnableRepairRequests = dto.EnableRepairRequests;
- 
-            settings.UpdatedAt = DateTime.UtcNow;
-            settings.UpdatedBy = adminId;
- 
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Settings saved successfully." });
+            var now = DateTime.UtcNow;
+
+            // Monthly revenue for last 6 months
+            var monthlyData = Enumerable.Range(0, 6).Select(i => {
+                var date = now.AddMonths(-i);
+                var rev = _context.Orders
+                    .Where(o => o.Status != "Cancelled" && o.CreatedAt.Month == date.Month && o.CreatedAt.Year == date.Year)
+                    .Sum(o => (decimal?)o.TotalAmount) ?? 0;
+                return new { month = date.ToString("MMM yyyy"), revenue = rev };
+            }).Reverse().ToList();
+
+            // Orders by status
+            var ordersByStatus = await _context.Orders
+                .GroupBy(o => o.Status)
+                .Select(g => new { status = g.Key, count = g.Count() })
+                .ToListAsync();
+
+            // Top sellers by revenue
+            var topSellers = await _context.Sellers
+                .Include(s => s.Products)
+                .ThenInclude(p => p.OrderItems)
+                .Where(s => s.IsVerified)
+                .Select(s => new {
+                    s.SellerId,
+                    s.BusinessName,
+                    s.City,
+                    TotalProducts = s.Products.Count(p => p.IsActive),
+                    Revenue = s.Products
+                        .SelectMany(p => p.OrderItems)
+                        .Sum(oi => (decimal?)(oi.UnitPrice * oi.Quantity)) ?? 0
+                })
+                .OrderByDescending(s => s.Revenue)
+                .Take(5)
+                .ToListAsync();
+
+            // Top products by revenue
+            var topProducts = await _context.Products
+                .Include(p => p.OrderItems)
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Where(p => p.IsActive)
+                .Select(p => new {
+                    p.ProductId,
+                    p.Name,
+                    CategoryName = p.Category.CategoryName,
+                    SellerName = p.Seller.BusinessName,
+                    Revenue = p.OrderItems.Sum(oi => (decimal?)(oi.UnitPrice * oi.Quantity)) ?? 0,
+                    TotalSold = p.OrderItems.Sum(oi => (int?)oi.Quantity) ?? 0
+                })
+                .OrderByDescending(p => p.Revenue)
+                .Take(5)
+                .ToListAsync();
+
+            // User growth last 6 months
+            var userGrowth = Enumerable.Range(0, 6).Select(i => {
+                var date = now.AddMonths(-i);
+                var count = _context.Users
+                    .OfType<ApplicationUser>()
+                    .Count(u => u.CreatedAt.Month == date.Month && u.CreatedAt.Year == date.Year);
+                return new { month = date.ToString("MMM yyyy"), count };
+            }).Reverse().ToList();
+
+            // Category breakdown
+            var categoryBreakdown = await _context.Products
+                .Include(p => p.Category)
+                .Where(p => p.IsActive)
+                .GroupBy(p => p.Category.CategoryName)
+                .Select(g => new { category = g.Key, count = g.Count() })
+                .OrderByDescending(c => c.count)
+                .ToListAsync();
+
+            var thisMonth = now.Month;
+            var thisYear = now.Year;
+            var lastMonth = now.AddMonths(-1);
+
+            return Ok(new {
+                // Summary
+                totalRevenue = await _context.Orders.Where(o => o.Status != "Cancelled").SumAsync(o => (decimal?)o.TotalAmount) ?? 0,
+                monthlyRevenue = await _context.Orders.Where(o => o.Status != "Cancelled" && o.CreatedAt.Month == thisMonth && o.CreatedAt.Year == thisYear).SumAsync(o => (decimal?)o.TotalAmount) ?? 0,
+                totalOrders = await _context.Orders.CountAsync(),
+                totalUsers = await _context.Users.CountAsync(),
+                totalSellers = await _context.Sellers.CountAsync(s => s.IsVerified),
+                pendingSellers = await _context.Sellers.CountAsync(s => !s.IsVerified && s.KycDocumentPath != null),
+                totalProducts = await _context.Products.CountAsync(p => p.IsActive),
+                totalRepairs = await _context.RepairRequests.CountAsync(),
+                // Charts
+                monthlyData,
+                userGrowth,
+                ordersByStatus,
+                categoryBreakdown,
+                topSellers,
+                topProducts
+            });
         }
 
         // GET: api/Admin/stats
@@ -282,109 +322,3 @@ namespace Betkibans.Server.Controllers
         public string? RejectionReason { get; set; }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
