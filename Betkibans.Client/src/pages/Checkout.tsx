@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
@@ -20,13 +20,17 @@ interface Address {
 }
 
 const Checkout = () => {
-    const { showToast } = useToast();
     const navigate = useNavigate();
+    const location = useLocation();
     const { cartItems, cartTotal, refreshCart } = useCart();
+    const { showToast } = useToast();
+
+    const discountAmount = (location.state as any)?.discountAmount ?? 0;
+    const couponCode = (location.state as any)?.couponCode ?? null;
+
     const [loading, setLoading] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
-    const [promoCode, setPromoCode] = useState('');
 
     const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
@@ -53,10 +57,11 @@ const Checkout = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const shippingCost = 500;
+    const shippingCost = 150;
     const taxRate = 0.13;
-    const taxAmount = Math.round(cartTotal * taxRate);
-    const totalAmount = cartTotal + shippingCost + taxAmount;
+    const discountedSubtotal = Math.max(cartTotal - discountAmount, 0);
+    const taxAmount = Math.round(discountedSubtotal * taxRate);
+    const totalAmount = discountedSubtotal + shippingCost + taxAmount;
 
     const buildOrderPayload = () => {
         const selectedAddr = savedAddresses.find(a => a.addressId === selectedAddressId);
@@ -80,7 +85,6 @@ const Checkout = () => {
 
         setLoading(true);
         try {
-            // Step 1: Always place order first
             const response = await api.post('/Order/place-order', buildOrderPayload());
 
             if (response.status === 200) {
@@ -88,12 +92,11 @@ const Checkout = () => {
                 const orderNumber = response.data.orderNumber;
 
                 if (paymentMethod === 'Khalti') {
-                    // Step 2: Initiate Khalti payment and redirect
                     try {
                         const paymentRes = await api.post(`/Payment/initiate/${orderId}`);
                         await refreshCart();
                         window.location.href = paymentRes.data.paymentUrl;
-                    } catch (err: any) {
+                    } catch {
                         showToast('Failed to initiate Khalti payment. Your order was placed — you can pay on delivery.', 'warning');
                         await refreshCart();
                         navigate('/order-success', { state: { orderNumber } });
@@ -373,13 +376,24 @@ const Checkout = () => {
                                                 ))}
                                                 <hr />
                                                 <div className="d-flex justify-content-between mb-2 small">
-                                                    <span className="text-muted">Subtotal</span><span>Rs. {cartTotal.toLocaleString()}</span>
+                                                    <span className="text-muted">Subtotal</span>
+                                                    <span>Rs. {cartTotal.toLocaleString()}</span>
+                                                </div>
+                                                {discountAmount > 0 && (
+                                                    <div className="d-flex justify-content-between mb-2 small">
+                                                        <span className="text-success">
+                                                            <i className="bi bi-tag-fill me-1"></i>{couponCode}
+                                                        </span>
+                                                        <span className="text-success fw-semibold">− Rs. {discountAmount.toLocaleString()}</span>
+                                                    </div>
+                                                )}
+                                                <div className="d-flex justify-content-between mb-2 small">
+                                                    <span className="text-muted">Shipping</span>
+                                                    <span>Rs. {shippingCost.toLocaleString()}</span>
                                                 </div>
                                                 <div className="d-flex justify-content-between mb-2 small">
-                                                    <span className="text-muted">Shipping</span><span>Rs. {shippingCost.toLocaleString()}</span>
-                                                </div>
-                                                <div className="d-flex justify-content-between mb-2 small">
-                                                    <span className="text-muted">Tax (13%)</span><span>Rs. {taxAmount.toLocaleString()}</span>
+                                                    <span className="text-muted">Tax (13%)</span>
+                                                    <span>Rs. {taxAmount.toLocaleString()}</span>
                                                 </div>
                                                 <hr />
                                                 <div className="d-flex justify-content-between fw-bold fs-5">
@@ -394,18 +408,6 @@ const Checkout = () => {
                                                 onClick={handlePlaceOrder}>
                                             {loading ? 'Processing...' : 'Place Order'}
                                         </button>
-                                    </div>
-                                </div>
-
-                                <div className="card border-0 shadow-sm mb-3">
-                                    <div className="card-body p-4">
-                                        <h6 className="fw-bold mb-2 text-uppercase small" style={{ letterSpacing: 1 }}>Promo Code</h6>
-                                        <div className="input-group">
-                                            <input type="text" className="form-control" placeholder="Enter a promo code"
-                                                   value={promoCode} onChange={e => setPromoCode(e.target.value)} />
-                                            <button type="button" className="btn btn-outline-success"
-                                                    onClick={() => showToast('Promo code feature coming soon!', 'info')}>Apply</button>
-                                        </div>
                                     </div>
                                 </div>
 
