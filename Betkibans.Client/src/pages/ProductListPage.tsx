@@ -11,8 +11,8 @@ const ProductListPage = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
+    const [showFilterOffcanvas, setShowFilterOffcanvas] = useState(false);
 
-    // ✅ Initialize filters FROM the URL immediately — no race condition
     const [filters, setFilters] = useState<ProductFilters>(() => ({
         categoryIds: [],
         materialIds: [],
@@ -20,7 +20,6 @@ const ProductListPage = () => {
         search: searchParams.get('search') || undefined,
     }));
 
-    // When URL changes (new search, category nav), sync filters
     useEffect(() => {
         const search = searchParams.get('search');
         const categoryName = searchParams.get('category');
@@ -47,7 +46,6 @@ const ProductListPage = () => {
         }
     }, [searchParams]);
 
-    // Fetch whenever filters change
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
@@ -55,7 +53,7 @@ const ProductListPage = () => {
                 const data = await productService.getAllProducts(filters);
                 setProducts(data);
             } catch (error) {
-                console.error("Failed to fetch products", error);
+                console.error('Failed to fetch products', error);
             } finally {
                 setLoading(false);
             }
@@ -65,20 +63,76 @@ const ProductListPage = () => {
 
     const handleFilterChange = (newFilters: Partial<ProductFilters>) => {
         setFilters(prev => ({ ...prev, ...newFilters }));
+        // Auto-close offcanvas after applying filters on mobile
+        setShowFilterOffcanvas(false);
     };
 
     return (
         <>
-            <div className="bg-light py-5">
+            {/* ── Mobile Filter Offcanvas ── */}
+            {showFilterOffcanvas && (
+                <div
+                    className="offcanvas offcanvas-start show offcanvas-filter"
+                    style={{ visibility: 'visible', width: 300 }}
+                    tabIndex={-1}
+                >
+                    <div className="offcanvas-header">
+                        <h5 className="offcanvas-title fw-bold mb-0">Filters</h5>
+                        <button
+                            type="button"
+                            className="btn-close"
+                            onClick={() => setShowFilterOffcanvas(false)}
+                        />
+                    </div>
+                    <div className="offcanvas-body p-0">
+                        <FilterSidebar onFilterChange={handleFilterChange} hideHeader />
+                    </div>
+                </div>
+            )}
+            {/* Backdrop */}
+            {showFilterOffcanvas && (
+                <div
+                    className="offcanvas-backdrop fade show"
+                    onClick={() => setShowFilterOffcanvas(false)}
+                />
+            )}
+
+            <div className="bg-light py-4 py-md-5">
                 <div className="container">
+
+                    {/* ── Mobile Filter Bar (visible on < lg) ── */}
+                    <div className="filter-mobile-bar d-flex align-items-center justify-content-between mb-3 p-2 rounded-2"
+                         style={{ backgroundColor: '#fff', border: '1px solid #E8E4DA', display: 'none' }}>
+                        <button
+                            className="btn btn-sm fw-semibold d-flex align-items-center gap-2"
+                            onClick={() => setShowFilterOffcanvas(true)}
+                            style={{ backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: 8 }}
+                        >
+                            <i className="bi bi-sliders"></i>
+                            Filters
+                        </button>
+                        <select
+                            className="form-select form-select-sm w-auto"
+                            value={filters.sort}
+                            onChange={(e) => handleFilterChange({ sort: e.target.value })}
+                            style={{ maxWidth: 180 }}
+                        >
+                            <option value="newest">Sort: Featured</option>
+                            <option value="price_asc">Price: Low to High</option>
+                            <option value="price_desc">Price: High to Low</option>
+                        </select>
+                    </div>
+
                     <div className="row">
-                        <div className="col-lg-3 mb-4">
+                        {/* ── Desktop Sidebar ── */}
+                        <div className="filter-sidebar-desktop col-lg-3 mb-4">
                             <FilterSidebar onFilterChange={handleFilterChange} />
                         </div>
 
                         <div className="col-lg-9">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h2 className="fw-bold mb-0">Bamboo & Cane Collection</h2>
+                            {/* Desktop sort header */}
+                            <div className="product-list-header d-none d-lg-flex justify-content-between align-items-center mb-4">
+                                <h2 className="fw-bold mb-0">Bamboo &amp; Cane Collection</h2>
                                 <select
                                     className="form-select w-auto"
                                     value={filters.sort}
@@ -89,6 +143,11 @@ const ProductListPage = () => {
                                     <option value="price_desc">Price: High to Low</option>
                                 </select>
                             </div>
+
+                            {/* Mobile: just heading */}
+                            <h2 className="fw-bold mb-3 d-lg-none" style={{ fontSize: '1.3rem' }}>
+                                Bamboo &amp; Cane Collection
+                            </h2>
 
                             {loading ? (
                                 <div className="text-center py-5">
@@ -108,7 +167,7 @@ const ProductListPage = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                                <div className="row row-cols-2 row-cols-md-2 row-cols-xl-3 g-2 g-md-3">
                                     {products.map(product => (
                                         <ProductCard key={product.productId} product={product} />
                                     ))}
