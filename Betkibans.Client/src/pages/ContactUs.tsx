@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
+import api from '../services/api';
 
 const ContactUs = () => {
     const { showToast } = useToast();
@@ -24,10 +25,14 @@ const ContactUs = () => {
             return;
         }
         setSubmitting(true);
-        // Simulate submission delay
-        await new Promise(res => setTimeout(res, 1200));
-        setSubmitting(false);
-        setSubmitted(true);
+        try {
+            await api.post('/Contact/submit', form);
+            setSubmitted(true);
+        } catch (err: any) {
+            showToast(err.response?.data?.message || 'Failed to send message. Please try again.', 'error');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const contactInfo = [
