@@ -52,7 +52,7 @@ const Footer = () => {
                             <h6 className="fw-bold mb-2 text-uppercase small">Guidelines</h6>
                             <ul className="list-unstyled small opacity-75 mb-0">
                                 <li className="mb-1"><Link to="/care-guide" className="text-reset text-decoration-none">Care Guide</Link></li>
-                                <li className="mb-1"><span className="text-reset" style={{ cursor: 'pointer' }}>Seller Policies</span></li>
+                                <li className="mb-1"><Link to='/seller-policies' className='text-reset text-decoration-none'>Seller Policies</Link></li>
                                 <li className="mb-1"><span className="text-reset" style={{ cursor: 'pointer' }}>Payments</span></li>
                             </ul>
                         </div>
@@ -129,18 +129,6 @@ const Footer = () => {
                             <li className="mb-2"><Link to="/cart" className="text-reset text-decoration-none">Cart</Link></li>
                             <li className="mb-2"><Link to="/orders" className="text-reset text-decoration-none">Orders</Link></li>
                             <li className="mb-2"><Link to="/wishlist" className="text-reset text-decoration-none">Wishlist</Link></li>
-                        </ul>
-                    </div>
-
-                    {/* For Sellers */}
-                    <div className="col-6 col-lg-1">
-                        <h6 className="fw-bold mb-3 text-uppercase small">For Sellers</h6>
-                        <ul className="list-unstyled small opacity-75">
-                            <li className="mb-2"><Link to="/register?type=seller" className="text-reset text-decoration-none">Sell</Link></li>
-                            <li className="mb-2"><Link to="/seller/dashboard" className="text-reset text-decoration-none">Dashboard</Link></li>
-                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Guidelines</span></li>
-                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Payments</span></li>
-                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Policies</span></li>
                         </ul>
                     </div>
 
