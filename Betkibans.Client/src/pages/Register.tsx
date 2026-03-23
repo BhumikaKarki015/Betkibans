@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -11,6 +9,8 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('Consumer');
 
@@ -18,7 +18,6 @@ const Register = () => {
     const [isError, setIsError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login } = useAuth();
     const brandGreen = '#2E4F3E';
     const beigeBg = '#FAF8F5';
 
@@ -54,28 +53,6 @@ const Register = () => {
             setMessage(err.response?.data?.Message || "Registration Failed. Try a stronger password.");
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const handleGoogleSuccess = async (credentialResponse: any) => {
-        try {
-            const res = await axios.post('http://localhost:5192/api/Auth/google-signin', {
-                idToken: credentialResponse.credential
-            });
-            const { token } = res.data;
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-            const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-            const userName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || '';
-            localStorage.setItem('token', token);
-            localStorage.setItem('role', role);
-            localStorage.setItem('userId', userId);
-            localStorage.setItem('userName', userName);
-            login(token, { id: userId, email: userName, fullName: userName, role });
-            navigate('/');
-        } catch {
-            setIsError(true);
-            setMessage('Google sign-in failed. Please try again.');
         }
     };
 
@@ -179,8 +156,13 @@ const Register = () => {
                             </div>
                             <div className="col-6">
                                 <label className="form-label fw-bold small mb-1">Confirm Password</label>
-                                <input type="password" className="form-control p-2" placeholder="••••••" required
-                                       value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                <div className="input-group">
+                                    <input type={showConfirmPassword ? 'text' : 'password'} className="form-control p-2 border-end-0" placeholder="••••••" required
+                                           value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                    <span className="input-group-text bg-white border-start-0" style={{ cursor: 'pointer' }} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                        <i className={showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -226,21 +208,6 @@ const Register = () => {
                             >
                                 {' '}Login here
                             </span>
-                        </div>
-
-                        <div className="d-flex align-items-center my-3">
-                            <hr className="flex-grow-1" />
-                            <span className="mx-3 text-muted small">OR</span>
-                            <hr className="flex-grow-1" />
-                        </div>
-                        <div className="d-flex justify-content-center">
-                            <GoogleLogin
-                                onSuccess={handleGoogleSuccess}
-                                onError={() => { setIsError(true); setMessage('Google sign-in failed.'); }}
-                                text="signup_with"
-                                shape="rectangular"
-                                width="400"
-                            />
                         </div>
                     </form>
                 </div>
