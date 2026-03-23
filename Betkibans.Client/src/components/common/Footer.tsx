@@ -60,8 +60,8 @@ const Footer = () => {
                             <h6 className="fw-bold mb-2 text-uppercase small">Support</h6>
                             <ul className="list-unstyled small opacity-75 mb-0">
                                 <li className="mb-1"><span>Contact Us</span></li>
-                                <li className="mb-1"><span>FAQ</span></li>
-                                <li className="mb-1"><span>Help Center</span></li>
+                                <li className="mb-1"><Link to='/support#faq' className='text-reset text-decoration-none'>FAQ</Link></li>
+                                <li className="mb-1"><Link to='/support' className='text-reset text-decoration-none'>Help Center</Link></li>
                             </ul>
                         </div>
                     </div>
@@ -132,15 +132,27 @@ const Footer = () => {
                         </ul>
                     </div>
 
+                    {/* For Sellers */}
+                    <div className="col-6 col-lg-1">
+                        <h6 className="fw-bold mb-3 text-uppercase small">For Sellers</h6>
+                        <ul className="list-unstyled small opacity-75">
+                            <li className="mb-2"><Link to="/register?type=seller" className="text-reset text-decoration-none">Sell</Link></li>
+                            <li className="mb-2"><Link to="/seller/dashboard" className="text-reset text-decoration-none">Dashboard</Link></li>
+                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Guidelines</span></li>
+                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Payments</span></li>
+                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Policies</span></li>
+                        </ul>
+                    </div>
+
                     {/* Support + Newsletter */}
                     <div className="col-6 col-lg-1">
                         <h6 className="fw-bold mb-3 text-uppercase small">Support</h6>
                         <ul className="list-unstyled small opacity-75 mb-0">
                             <li className="mb-2"><Link to="/contact" className="text-reset text-decoration-none">Contact Us</Link></li>
-                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>FAQ</span></li>
-                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Help Center</span></li>
-                            <li className="mb-2"><Link to="/care-guide" className="text-reset text-decoration-none">Shipping</Link></li>
-                            <li className="mb-2"><span className="text-reset" style={{ cursor: 'pointer' }}>Returns</span></li>
+                            <li className="mb-2"><Link to='/support#faq' className='text-reset text-decoration-none'>FAQ</Link></li>
+                            <li className="mb-2"><Link to='/support' className='text-reset text-decoration-none'>Help Center</Link></li>
+                            <li className="mb-2"><Link to='/support#shipping' className='text-reset text-decoration-none'>Shipping</Link></li>
+                            <li className="mb-2"><Link to='/support#returns' className='text-reset text-decoration-none'>Returns</Link></li>
                         </ul>
                     </div>
 

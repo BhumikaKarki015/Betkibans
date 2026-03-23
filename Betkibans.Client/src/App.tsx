@@ -27,8 +27,10 @@ import AddressManagement from './pages/AddressManagement';
 import Wishlist from './pages/Wishlist';
 import ForgotPassword from './pages/ForgotPassword';
 import AboutUs from './pages/AboutUs';
-import ContactUs from './pages/ContactUs';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import ContactUs from './pages/ContactUs';
+import Support from './pages/Support';
+import SellerPolicies from './pages/SellerPolicies';
 import ResetPassword from './pages/ResetPassword';
 
 // Seller Pages
@@ -42,7 +44,6 @@ import EditProduct from './pages/EditProduct';
 import SellerRepairDashboard from './pages/SellerRepairDashboard';
 import SellerOrders from './pages/SellerOrders';
 import SellerAnalytics from './pages/SellerAnalytics';
-import SellerPolicies from './pages/SellerPolicies';
 import SellerSettings from './pages/SellerSettings';
 
 // Admin Pages
@@ -63,7 +64,6 @@ function App() {
                                                             <Route path="/admin/verify-sellers" element={<AdminPanel />} />
                                                             <Route path="/admin/products" element={<AdminPanel />} />
                                                             <Route path="/admin/orders" element={<AdminPanel />} />
-                                                            <Route path="/admin/repairs" element={<AdminPanel />} />
                                                             <Route path="/admin/analytics" element={<AdminPanel />} />
                                                             <Route path="/admin/settings" element={<AdminPanel />} />
                                                             <Route path="/admin/messages" element={<AdminPanel />} />
@@ -105,6 +105,7 @@ function App() {
                                                                                     <Route path="/about" element={<AboutUs />} />
                                                                                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                                                                                     <Route path="/contact" element={<ContactUs />} />
+                                                                                    <Route path="/support" element={<Support />} />
                                                                                     <Route path="/seller-policies" element={<SellerPolicies />} />
                                                                                     <Route path="/seller/settings" element={<SellerSettings />} />
                                                                                     <Route path="*" element={<div className="p-5 text-center"><h1>404 - Page Not Found</h1></div>} />
