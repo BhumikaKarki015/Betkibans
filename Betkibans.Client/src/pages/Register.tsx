@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -9,15 +11,16 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('Consumer');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    const { login } = useAuth();
     const brandGreen = '#2E4F3E';
     const beigeBg = '#FAF8F5';
 
@@ -56,27 +59,43 @@ const Register = () => {
         }
     };
 
+    const handleGoogleSuccess = async (credentialResponse: any) => {
+        try {
+            const res = await axios.post('http://localhost:5192/api/Auth/google-signin', {
+                idToken: credentialResponse.credential
+            });
+            const { token } = res.data;
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+            const userName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || '';
+            localStorage.setItem('token', token);
+            localStorage.setItem('role', role);
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('userName', userName);
+            login(token, { id: userId, email: userName, fullName: userName, role });
+            navigate('/');
+        } catch {
+            setIsError(true);
+            setMessage('Google sign-in failed. Please try again.');
+        }
+    };
+
     return (
         <div className="container-fluid vh-100 d-flex p-0">
 
             {/* LEFT SIDE: Illustration */}
             <div className="d-none d-lg-flex col-lg-6 flex-column justify-content-center align-items-center"
                  style={{ backgroundColor: beigeBg }}>
-
                 <div className="w-75 mb-4">
                     <h2 className="fw-bold" style={{ color: brandGreen, fontFamily: 'serif', letterSpacing: '1px' }}>
                         Betkibans
                     </h2>
                 </div>
-
                 <div className="mb-4">
-                    <img
-                        src="/register-illustration.png"
-                        alt="Join Betkibans"
-                        style={{ maxWidth: '95%', height: 'auto' }}
-                    />
+                    <img src="/register-illustration.png" alt="Join Betkibans"
+                         style={{ maxWidth: '95%', height: 'auto' }} />
                 </div>
-
                 <div className="d-flex justify-content-between w-75 mt-3 pt-3 border-top">
                     <div className="d-flex align-items-center gap-2">
                         <span style={{ fontSize: '1.5rem' }}>📦</span>
@@ -102,7 +121,7 @@ const Register = () => {
                 </div>
             </div>
 
-            {/* RIGHT SIDE: Registration Form (Tighter Spacing) */}
+            {/* RIGHT SIDE: Registration Form */}
             <div className="col-12 col-lg-6 d-flex align-items-center justify-content-center bg-white"
                  style={{ overflowY: 'auto', height: '100vh', scrollbarWidth: 'none' }}>
 
@@ -115,16 +134,12 @@ const Register = () => {
 
                     {/* Tabs */}
                     <div className="d-flex mb-3 p-1 rounded-3" style={{ backgroundColor: '#EFEFEF' }}>
-                        <button
-                            className="btn w-50 border-0 rounded-3 text-muted small"
-                            onClick={() => navigate('/login')} // ✅ FIXED: Now points to /login
-                        >
+                        <button className="btn w-50 border-0 rounded-3 text-muted small"
+                                onClick={() => navigate('/login')}>
                             Login
                         </button>
-                        <button
-                            className="btn w-50 border-0 rounded-3 shadow-sm fw-bold small"
-                            style={{ backgroundColor: 'white', color: brandGreen }}
-                        >
+                        <button className="btn w-50 border-0 rounded-3 shadow-sm fw-bold small"
+                                style={{ backgroundColor: 'white', color: brandGreen }}>
                             Register
                         </button>
                     </div>
@@ -157,9 +172,12 @@ const Register = () => {
                             <div className="col-6">
                                 <label className="form-label fw-bold small mb-1">Confirm Password</label>
                                 <div className="input-group">
-                                    <input type={showConfirmPassword ? 'text' : 'password'} className="form-control p-2 border-end-0" placeholder="••••••" required
+                                    <input type={showConfirmPassword ? 'text' : 'password'}
+                                           className="form-control p-2 border-end-0" placeholder="••••••" required
                                            value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                                    <span className="input-group-text bg-white border-start-0" style={{ cursor: 'pointer' }} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                    <span className="input-group-text bg-white border-start-0"
+                                          style={{ cursor: 'pointer' }}
+                                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                                         <i className={showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
                                     </span>
                                 </div>
@@ -168,8 +186,16 @@ const Register = () => {
 
                         <div className="mb-2">
                             <label className="form-label fw-bold small mb-1">Password *</label>
-                            <input type="password" className="form-control p-2" placeholder="••••••" required
-                                   value={password} onChange={(e) => setPassword(e.target.value)} />
+                            <div className="input-group">
+                                <input type={showPassword ? 'text' : 'password'}
+                                       className="form-control p-2 border-end-0" placeholder="••••••" required
+                                       value={password} onChange={(e) => setPassword(e.target.value)} />
+                                <span className="input-group-text bg-white border-start-0"
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={() => setShowPassword(!showPassword)}>
+                                    <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+                                </span>
+                            </div>
                         </div>
 
                         {/* Role Selection */}
@@ -201,13 +227,26 @@ const Register = () => {
 
                         <div className="text-center small">
                             Already have an account?
-                            <span
-                                className="fw-bold cursor-pointer"
-                                style={{cursor:'pointer', color: brandGreen}}
-                                onClick={() => navigate('/login')}
-                            >
+                            <span className="fw-bold cursor-pointer"
+                                  style={{ cursor: 'pointer', color: brandGreen }}
+                                  onClick={() => navigate('/login')}>
                                 {' '}Login here
                             </span>
+                        </div>
+
+                        <div className="d-flex align-items-center my-3">
+                            <hr className="flex-grow-1" />
+                            <span className="mx-3 text-muted small">OR</span>
+                            <hr className="flex-grow-1" />
+                        </div>
+                        <div className="d-flex justify-content-center">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => { setIsError(true); setMessage('Google sign-in failed.'); }}
+                                text="signup_with"
+                                shape="rectangular"
+                                width="400"
+                            />
                         </div>
                     </form>
                 </div>
