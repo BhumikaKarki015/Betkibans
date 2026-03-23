@@ -31,6 +31,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Wishlist> Wishlists { get; set; }
     public DbSet<PlatformSettings> PlatformSettings { get; set; }
     public DbSet<Coupon> Coupons { get; set; }
+    public DbSet<ContactMessage> ContactMessages { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -220,6 +221,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 new Coupon { CouponId = 2, Code = "BAMBOO200", DiscountType = "Fixed", DiscountValue = 200, MinOrderAmount = 1000, Description = "NPR 200 off on orders above 1000", ExpiresAt = new DateTime(2028, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
                 new Coupon { CouponId = 3, Code = "GREEN15", DiscountType = "Percentage", DiscountValue = 15, MinOrderAmount = 2000, MaxDiscountAmount = 1000, Description = "15% off on orders above NPR 2000", ExpiresAt = new DateTime(2028, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
             );
+        });
+        
+        // ContactMessage Configuration
+        modelBuilder.Entity<ContactMessage>(entity =>
+        {
+            entity.HasKey(e => e.ContactMessageId);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Message).IsRequired();
         });
     }
 }
