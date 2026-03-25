@@ -352,7 +352,7 @@ const AdminPanel = () => {
         { id: 'products', label: 'Product Moderation', icon: 'bi-box-seam' },
         { id: 'orders', label: 'Order Dashboard', icon: 'bi-bag-check' },
         { id: 'repairs', label: 'Repair Management', icon: 'bi-tools' },
-        { id: 'messages', label: 'Contact Messages', icon: 'bi-envelope', badge: undefined },
+        { id: 'messages', label: 'Contact Messages', icon: 'bi-envelope', badge: messages.filter(m => !m.isRead).length },
         { id: 'analytics', label: 'Analytics & Reports', icon: 'bi-graph-up' },
         { id: 'settings', label: 'Settings', icon: 'bi-gear' },
     ];
