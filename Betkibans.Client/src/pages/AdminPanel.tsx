@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
-type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs' | 'analytics' | 'messages' | 'settings';
+type AdminTab = 'dashboard' | 'sellers' | 'users' | 'products' | 'orders' | 'repairs' | 'analytics' | 'messages' | 'coupons' | 'settings';
 
 interface AdminRepairRequest {
     repairRequestId: number;
@@ -112,6 +112,7 @@ const AdminPanel = () => {
         if (path.includes('/admin/orders')) return 'orders';
         if (path.includes('/admin/analytics')) return 'analytics';
         if (path.includes('/admin/messages')) return 'messages';
+        if (path.includes('/admin/coupons')) return 'coupons';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
     };
@@ -129,6 +130,15 @@ const AdminPanel = () => {
     const [savingSettings, setSavingSettings] = useState(false);
     const [analytics, setAnalytics] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
+    const [coupons, setCoupons] = useState<any[]>([]);
+    const [loadingCoupons, setLoadingCoupons] = useState(false);
+    const [showCouponModal, setShowCouponModal] = useState(false);
+    const [editingCoupon, setEditingCoupon] = useState<any>(null);
+    const [couponForm, setCouponForm] = useState({
+        code: '', discountType: 'Percentage', discountValue: 10,
+        minOrderAmount: 0, maxDiscountAmount: '', usageLimit: 100,
+        isActive: true, expiresAt: '', description: ''
+    });
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
@@ -154,6 +164,7 @@ const AdminPanel = () => {
         if (tab === 'settings' && !settings) fetchSettings();
         if (tab === 'analytics' && !analytics) fetchAnalytics();
         if (tab === 'messages' && messages.length === 0) fetchMessages();
+        if (tab === 'coupons' && coupons.length === 0) fetchCoupons();
     }, [location.pathname]);
 
     const fetchDashboardData = async () => {
@@ -226,9 +237,89 @@ const AdminPanel = () => {
         repairs: '/admin/repairs',
         analytics: '/admin/analytics',
         messages: '/admin/messages',
+        coupons: '/admin/coupons',
         settings: '/admin/settings',
     };
 
+
+    const fetchCoupons = async () => {
+        setLoadingCoupons(true);
+        try {
+            const res = await api.get('/Coupon');
+            setCoupons(res.data);
+        } catch {
+            showToast('Failed to load coupons', 'error');
+        } finally {
+            setLoadingCoupons(false);
+        }
+    };
+
+    const openCreateCoupon = () => {
+        setEditingCoupon(null);
+        setCouponForm({
+            code: '', discountType: 'Percentage', discountValue: 10,
+            minOrderAmount: 0, maxDiscountAmount: '', usageLimit: 100,
+            isActive: true, expiresAt: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+            description: ''
+        });
+        setShowCouponModal(true);
+    };
+
+    const openEditCoupon = (c: any) => {
+        setEditingCoupon(c);
+        setCouponForm({
+            code: c.code, discountType: c.discountType, discountValue: c.discountValue,
+            minOrderAmount: c.minOrderAmount, maxDiscountAmount: c.maxDiscountAmount || '',
+            usageLimit: c.usageLimit, isActive: c.isActive,
+            expiresAt: new Date(c.expiresAt).toISOString().split('T')[0],
+            description: c.description || ''
+        });
+        setShowCouponModal(true);
+    };
+
+    const handleSaveCoupon = async () => {
+        try {
+            const payload = {
+                ...couponForm,
+                discountValue: parseFloat(String(couponForm.discountValue)),
+                minOrderAmount: parseFloat(String(couponForm.minOrderAmount)),
+                maxDiscountAmount: couponForm.maxDiscountAmount ? parseFloat(String(couponForm.maxDiscountAmount)) : null,
+                usageLimit: parseInt(String(couponForm.usageLimit)),
+                expiresAt: new Date(couponForm.expiresAt).toISOString(),
+            };
+            if (editingCoupon) {
+                await api.put(`/Coupon/${editingCoupon.couponId}`, payload);
+                showToast('Coupon updated!', 'success');
+            } else {
+                await api.post('/Coupon', payload);
+                showToast('Coupon created!', 'success');
+            }
+            setShowCouponModal(false);
+            fetchCoupons();
+        } catch (err: any) {
+            showToast(err.response?.data?.message || 'Failed to save coupon', 'error');
+        }
+    };
+
+    const handleDeleteCoupon = async (id: number) => {
+        if (!window.confirm('Delete this coupon?')) return;
+        try {
+            await api.delete(`/Coupon/${id}`);
+            setCoupons(prev => prev.filter(c => c.couponId !== id));
+            showToast('Coupon deleted', 'success');
+        } catch {
+            showToast('Failed to delete coupon', 'error');
+        }
+    };
+
+    const handleToggleCoupon = async (id: number) => {
+        try {
+            await api.patch(`/Coupon/${id}/toggle`);
+            setCoupons(prev => prev.map(c => c.couponId === id ? { ...c, isActive: !c.isActive } : c));
+        } catch {
+            showToast('Failed to toggle coupon', 'error');
+        }
+    };
 
     const fetchMessages = async () => {
         setLoadingMessages(true);
@@ -307,6 +398,7 @@ const AdminPanel = () => {
         if (tab === 'settings' && !settings) fetchSettings();
         if (tab === 'analytics' && !analytics) fetchAnalytics();
         if (tab === 'messages' && messages.length === 0) fetchMessages();
+        if (tab === 'coupons' && coupons.length === 0) fetchCoupons();
     };
 
     const handleVerify = async (sellerId: number, isApproved: boolean) => {
@@ -353,6 +445,7 @@ const AdminPanel = () => {
         { id: 'orders', label: 'Order Dashboard', icon: 'bi-bag-check' },
         { id: 'repairs', label: 'Repair Management', icon: 'bi-tools' },
         { id: 'messages', label: 'Contact Messages', icon: 'bi-envelope', badge: messages.filter(m => !m.isRead).length },
+        { id: 'coupons', label: 'Coupon Management', icon: 'bi-tag' },
         { id: 'analytics', label: 'Analytics & Reports', icon: 'bi-graph-up' },
         { id: 'settings', label: 'Settings', icon: 'bi-gear' },
     ];
@@ -889,6 +982,208 @@ const AdminPanel = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+                    </>
+                )}
+
+
+                {activeTab === 'coupons' && (
+                    <>
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 className="fw-bold mb-0">Coupon Management</h4>
+                                <small className="text-muted">Create and manage discount coupons</small>
+                            </div>
+                            <button className="btn fw-semibold text-white"
+                                    onClick={openCreateCoupon}
+                                    style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}>
+                                <i className="bi bi-plus-circle me-2"></i>Create Coupon
+                            </button>
+                        </div>
+
+                        {/* Coupon Modal */}
+                        {showCouponModal && (
+                            <>
+                                <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}
+                                     onClick={() => setShowCouponModal(false)} />
+                                <div className="modal d-block" style={{ zIndex: 1050 }}>
+                                    <div className="modal-dialog modal-dialog-centered">
+                                        <div className="modal-content border-0 rounded-3 shadow">
+                                            <div className="modal-header border-0 pb-0">
+                                                <h5 className="modal-title fw-bold">
+                                                    {editingCoupon ? 'Edit Coupon' : 'Create Coupon'}
+                                                </h5>
+                                                <button className="btn-close" onClick={() => setShowCouponModal(false)} />
+                                            </div>
+                                            <div className="modal-body">
+                                                <div className="row g-3">
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium small">Code *</label>
+                                                        <input type="text" className="form-control text-uppercase"
+                                                               placeholder="e.g. SAVE10"
+                                                               value={couponForm.code}
+                                                               onChange={e => setCouponForm({...couponForm, code: e.target.value.toUpperCase()})} />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium small">Discount Type *</label>
+                                                        <select className="form-select"
+                                                                value={couponForm.discountType}
+                                                                onChange={e => setCouponForm({...couponForm, discountType: e.target.value})}>
+                                                            <option value="Percentage">Percentage (%)</option>
+                                                            <option value="Fixed">Fixed Amount (NPR)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium small">
+                                                            Discount Value * {couponForm.discountType === 'Percentage' ? '(%)' : '(NPR)'}
+                                                        </label>
+                                                        <input type="number" className="form-control"
+                                                               value={couponForm.discountValue}
+                                                               onChange={e => setCouponForm({...couponForm, discountValue: parseFloat(e.target.value)})} />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium small">Min Order Amount (NPR)</label>
+                                                        <input type="number" className="form-control"
+                                                               value={couponForm.minOrderAmount}
+                                                               onChange={e => setCouponForm({...couponForm, minOrderAmount: parseFloat(e.target.value)})} />
+                                                    </div>
+                                                    {couponForm.discountType === 'Percentage' && (
+                                                        <div className="col-md-6">
+                                                            <label className="form-label fw-medium small">Max Discount Cap (NPR)</label>
+                                                            <input type="number" className="form-control"
+                                                                   placeholder="Leave empty for no cap"
+                                                                   value={couponForm.maxDiscountAmount}
+                                                                   onChange={e => setCouponForm({...couponForm, maxDiscountAmount: e.target.value})} />
+                                                        </div>
+                                                    )}
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium small">Usage Limit</label>
+                                                        <input type="number" className="form-control"
+                                                               value={couponForm.usageLimit}
+                                                               onChange={e => setCouponForm({...couponForm, usageLimit: parseInt(e.target.value)})} />
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <label className="form-label fw-medium small">Expires At *</label>
+                                                        <input type="date" className="form-control"
+                                                               value={couponForm.expiresAt}
+                                                               onChange={e => setCouponForm({...couponForm, expiresAt: e.target.value})} />
+                                                    </div>
+                                                    <div className="col-12">
+                                                        <label className="form-label fw-medium small">Description</label>
+                                                        <input type="text" className="form-control"
+                                                               placeholder="e.g. 10% off for new customers"
+                                                               value={couponForm.description}
+                                                               onChange={e => setCouponForm({...couponForm, description: e.target.value})} />
+                                                    </div>
+                                                    <div className="col-12 d-flex justify-content-between align-items-center">
+                                                        <label className="form-label fw-medium small mb-0">Active</label>
+                                                        <div className="form-check form-switch mb-0">
+                                                            <input className="form-check-input" type="checkbox"
+                                                                   checked={couponForm.isActive}
+                                                                   onChange={e => setCouponForm({...couponForm, isActive: e.target.checked})} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="modal-footer border-0">
+                                                <button className="btn btn-outline-secondary" onClick={() => setShowCouponModal(false)}>Cancel</button>
+                                                <button className="btn fw-semibold text-white"
+                                                        style={{ backgroundColor: '#2D6A4F', border: 'none' }}
+                                                        onClick={handleSaveCoupon}>
+                                                    {editingCoupon ? 'Save Changes' : 'Create Coupon'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {loadingCoupons ? (
+                            <div className="text-center py-5">
+                                <div className="spinner-border" style={{ color: '#2D6A4F' }} />
+                            </div>
+                        ) : coupons.length === 0 ? (
+                            <div className="p-5 text-center" style={cardStyle}>
+                                <i className="bi bi-tag" style={{ fontSize: 48, color: '#CCC' }}></i>
+                                <h5 className="mt-3 fw-bold">No Coupons Yet</h5>
+                                <p className="text-muted">Create your first coupon to offer discounts.</p>
+                                <button className="btn fw-semibold text-white" onClick={openCreateCoupon}
+                                        style={{ backgroundColor: '#2D6A4F', border: 'none', borderRadius: 8 }}>
+                                    <i className="bi bi-plus-circle me-2"></i>Create Coupon
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="p-4" style={cardStyle}>
+                                <div className="table-responsive">
+                                    <table className="table table-hover align-middle" style={{ fontSize: 14 }}>
+                                        <thead className="table-light">
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Type</th>
+                                            <th>Value</th>
+                                            <th>Min Order</th>
+                                            <th>Used / Limit</th>
+                                            <th>Expires</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {coupons.map(c => (
+                                            <tr key={c.couponId}>
+                                                <td>
+                                                            <span className="fw-bold" style={{ color: '#2D6A4F', fontFamily: 'monospace', fontSize: 15 }}>
+                                                                {c.code}
+                                                            </span>
+                                                    {c.description && <small className="text-muted d-block">{c.description}</small>}
+                                                </td>
+                                                <td>
+                                                            <span className="badge" style={{ backgroundColor: c.discountType === 'Percentage' ? '#E8F5E9' : '#E3F2FD', color: c.discountType === 'Percentage' ? '#2D6A4F' : '#1565C0' }}>
+                                                                {c.discountType}
+                                                            </span>
+                                                </td>
+                                                <td className="fw-semibold">
+                                                    {c.discountType === 'Percentage'
+                                                        ? `${c.discountValue}%${c.maxDiscountAmount ? ` (max NPR ${c.maxDiscountAmount})` : ''}`
+                                                        : `NPR ${c.discountValue}`}
+                                                </td>
+                                                <td>NPR {c.minOrderAmount.toLocaleString()}</td>
+                                                <td>
+                                                            <span className={c.usedCount >= c.usageLimit ? 'text-danger fw-medium' : ''}>
+                                                                {c.usedCount} / {c.usageLimit}
+                                                            </span>
+                                                </td>
+                                                <td className={new Date(c.expiresAt) < new Date() ? 'text-danger' : 'text-muted'}>
+                                                    {new Date(c.expiresAt).toLocaleDateString()}
+                                                </td>
+                                                <td>
+                                                    <div className="form-check form-switch mb-0">
+                                                        <input className="form-check-input" type="checkbox"
+                                                               checked={c.isActive}
+                                                               onChange={() => handleToggleCoupon(c.couponId)} />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex gap-1">
+                                                        <button className="btn btn-sm fw-medium"
+                                                                onClick={() => openEditCoupon(c)}
+                                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 6, fontSize: 12 }}>
+                                                            <i className="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button className="btn btn-sm fw-medium"
+                                                                onClick={() => handleDeleteCoupon(c.couponId)}
+                                                                style={{ borderColor: '#C62828', color: '#C62828', borderRadius: 6, fontSize: 12 }}>
+                                                            <i className="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
                     </>

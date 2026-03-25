@@ -68,6 +68,7 @@ function App() {
                                                             <Route path="/admin/analytics" element={<AdminPanel />} />
                                                             <Route path="/admin/settings" element={<AdminPanel />} />
                                                             <Route path="/admin/messages" element={<AdminPanel />} />
+                                                            <Route path="/admin/coupons" element={<AdminPanel />} />
 
                                                             {/* All other routes - WITH Layout wrapper */}
                                                             <Route path="/*" element={
