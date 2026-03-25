@@ -64,6 +64,7 @@ function App() {
                                                             <Route path="/admin/verify-sellers" element={<AdminPanel />} />
                                                             <Route path="/admin/products" element={<AdminPanel />} />
                                                             <Route path="/admin/orders" element={<AdminPanel />} />
+                                                            <Route path="/admin/repairs" element={<AdminPanel />} />
                                                             <Route path="/admin/analytics" element={<AdminPanel />} />
                                                             <Route path="/admin/settings" element={<AdminPanel />} />
                                                             <Route path="/admin/messages" element={<AdminPanel />} />
