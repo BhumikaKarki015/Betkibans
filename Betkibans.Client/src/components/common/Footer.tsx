@@ -1,9 +1,18 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Footer = () => {
     const { user } = useAuth();
     const brandGreen = '#2E4F3E';
+    const [newsletterEmail, setNewsletterEmail] = useState('');
+    const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+
+    const handleNewsletter = () => {
+        if (!newsletterEmail.trim() || !newsletterEmail.includes('@')) return;
+        setNewsletterSubmitted(true);
+        setNewsletterEmail('');
+    };
 
     // ─────────────────────────────────────────────
     // ADMIN FOOTER — minimal
@@ -59,7 +68,7 @@ const Footer = () => {
                         <div className="col-md-4">
                             <h6 className="fw-bold mb-2 text-uppercase small">Support</h6>
                             <ul className="list-unstyled small opacity-75 mb-0">
-                                <li className="mb-1"><span>Contact Us</span></li>
+                                <li className="mb-1"><Link to="/contact" className="text-reset text-decoration-none">Contact Us</Link></li>
                                 <li className="mb-1"><Link to='/support#faq' className='text-reset text-decoration-none'>FAQ</Link></li>
                                 <li className="mb-1"><Link to='/support' className='text-reset text-decoration-none'>Help Center</Link></li>
                             </ul>
@@ -96,7 +105,6 @@ const Footer = () => {
                             <span className="badge border border-light border-opacity-50 px-2 py-1 small">🌱 100% Eco-Friendly</span>
                             <span className="badge border border-light border-opacity-50 px-2 py-1 small">🇳🇵 Made in Nepal</span>
                         </div>
-                        {/* Social icons */}
                         <div className="d-flex gap-2">
                             <a href="#" className="btn btn-sm btn-outline-light rounded-circle" style={{ width: 36, height: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <i className="bi bi-facebook"></i>
@@ -146,7 +154,7 @@ const Footer = () => {
                         </div>
                     )}
 
-                    {/* Support + Newsletter */}
+                    {/* Support */}
                     <div className="col-6 col-lg-1">
                         <h6 className="fw-bold mb-3 text-uppercase small">Support</h6>
                         <ul className="list-unstyled small opacity-75 mb-0">
@@ -162,14 +170,24 @@ const Footer = () => {
                     <div className="col-lg-2">
                         <h6 className="fw-bold mb-3 text-uppercase small">Join Our Community</h6>
                         <p className="small opacity-75">Get exclusive offers and tips on sustainable living.</p>
-                        <div className="input-group">
-                            <input
-                                type="email"
-                                className="form-control form-control-sm bg-transparent text-white border-light"
-                                placeholder="Email Address"
-                            />
-                            <button className="btn btn-outline-light btn-sm px-3" type="button">Join</button>
-                        </div>
+                        {newsletterSubmitted ? (
+                            <div className="rounded-2 p-2 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                                <i className="bi bi-check-circle-fill me-1" style={{ color: '#A5D6A7' }}></i>
+                                <small>Thanks for subscribing!</small>
+                            </div>
+                        ) : (
+                            <div className="input-group">
+                                <input
+                                    type="email"
+                                    className="form-control form-control-sm bg-transparent text-white border-light"
+                                    placeholder="Email Address"
+                                    value={newsletterEmail}
+                                    onChange={e => setNewsletterEmail(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleNewsletter()}
+                                />
+                                <button className="btn btn-outline-light btn-sm px-3" type="button" onClick={handleNewsletter}>Join</button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
