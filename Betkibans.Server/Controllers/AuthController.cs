@@ -191,7 +191,7 @@ public class AuthController : ControllerBase
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
         if (user == null)
-            return Ok(new { message = "If that email is registered, a reset link has been sent." });
+            return BadRequest(new { message = "No account found with this email address." });
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         var appUrl = _configuration["AppUrl"] ?? "http://localhost:5173";
