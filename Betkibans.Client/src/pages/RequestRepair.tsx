@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const RequestRepair = () => {
     const { showToast } = useToast();
+    const { user, isLoading } = useAuth();
+
+    useEffect(() => {
+        if (!isLoading && !user) {
+            showToast('Please log in to submit a repair request.', 'warning');
+            navigate('/login');
+        }
+    }, [user, isLoading]);
     const [description, setDescription] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
