@@ -283,6 +283,7 @@ public class SellerController : ControllerBase
     {
         var sellers = await _context.Sellers
             .Include(s => s.Products)
+                .ThenInclude(p => p.Reviews)
             .Where(s => s.IsVerified)
             .OrderByDescending(s => s.VerifiedAt)
             .Take(count)
@@ -294,7 +295,12 @@ public class SellerController : ControllerBase
             s.BusinessName,
             s.City,
             s.District,
+            s.LogoUrl,
             TotalProducts = s.Products.Count(p => p.IsActive),
+            AverageRating = s.Products.SelectMany(p => p.Reviews).Any()
+                ? s.Products.SelectMany(p => p.Reviews).Average(r => (double)r.Rating)
+                : 0,
+            TotalReviews = s.Products.SelectMany(p => p.Reviews).Count(),
         });
 
         return Ok(result);
