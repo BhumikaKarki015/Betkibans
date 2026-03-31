@@ -98,7 +98,7 @@ const Home = () => {
                             </button>
                             <button
                                 className="btn btn-lg px-4 fw-medium rounded-pill"
-                                onClick={() => navigate('/products')}
+                                onClick={() => navigate('/about')}
                                 style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.5)' }}
                             >
                                 Learn More
