@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
 import { sellerService } from '../services/sellerService';
 import { useAuth } from '../contexts/AuthContext';
 
