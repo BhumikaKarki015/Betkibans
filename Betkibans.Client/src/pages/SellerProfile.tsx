@@ -29,6 +29,7 @@ const SellerProfile = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [logoUploading, setLogoUploading] = useState(false);
+    const [logoDeleting, setLogoDeleting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [editMode, setEditMode] = useState(false);
@@ -113,6 +114,21 @@ const SellerProfile = () => {
             setError('Failed to upload logo. Max 5MB, JPEG/PNG/WebP only.');
         } finally {
             setLogoUploading(false);
+        }
+    };
+
+    const handleLogoDelete = async () => {
+        if (!window.confirm('Remove your store logo?')) return;
+        setLogoDeleting(true);
+        setError('');
+        try {
+            await api.delete('/Seller/delete-logo');
+            setSuccess('Logo removed.');
+            setProfile(prev => prev ? { ...prev, logoUrl: '' } : prev);
+        } catch {
+            setError('Failed to delete logo.');
+        } finally {
+            setLogoDeleting(false);
         }
     };
 
@@ -275,7 +291,19 @@ const SellerProfile = () => {
                             </div>
 
                             <input ref={logoInputRef} type="file" accept="image/*" className="d-none" onChange={handleLogoChange} />
-                            <p className="text-muted mb-0" style={{ fontSize: 12 }}>Click camera to upload<br />JPEG, PNG, WebP · Max 5MB</p>
+                            <p className="text-muted mb-2" style={{ fontSize: 12 }}>Click camera to upload<br />JPEG, PNG, WebP · Max 5MB</p>
+
+                            {profile?.logoUrl && (
+                                <button
+                                    className="btn btn-sm fw-medium"
+                                    onClick={handleLogoDelete}
+                                    disabled={logoDeleting}
+                                    style={{ borderColor: '#C62828', color: '#C62828', borderRadius: 8, fontSize: 12 }}>
+                                    {logoDeleting
+                                        ? <><span className="spinner-border spinner-border-sm me-1"></span>Removing...</>
+                                        : <><i className="bi bi-trash me-1"></i>Remove Logo</>}
+                                </button>
+                            )}
                         </div>
 
                         {/* Store Info Summary Card */}
