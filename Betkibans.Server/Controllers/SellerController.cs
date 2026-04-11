@@ -138,6 +138,27 @@ public class SellerController : ControllerBase
 
         return Ok(new { message = "Logo uploaded.", logoUrl = seller.LogoUrl });
     }
+    
+    // DELETE: api/Seller/delete-logo
+    [HttpDelete("delete-logo")]
+    [Authorize(Roles = "Seller")]
+    public async Task<IActionResult> DeleteLogo()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return NotFound("Seller not found");
+
+        if (string.IsNullOrEmpty(seller.LogoUrl))
+            return BadRequest("No logo to delete.");
+
+        var filePath = Path.Combine(_environment.WebRootPath, seller.LogoUrl.TrimStart('/'));
+        if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+
+        seller.LogoUrl = null;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Logo deleted." });
+    }
 
     // POST: api/Seller/upload-kyc
     [HttpPost("upload-kyc")]
