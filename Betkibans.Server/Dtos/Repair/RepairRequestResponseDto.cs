@@ -9,4 +9,9 @@ public class RepairRequestResponseDto
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public List<RepairQuoteDto> Quotes { get; set; } = new();
+
+    // Customer details (for seller view)
+    public string? CustomerName { get; set; }
+    public string? CustomerPhone { get; set; }
+    public string? CustomerEmail { get; set; }
 }
