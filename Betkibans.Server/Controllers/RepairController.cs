@@ -102,29 +102,47 @@ public class RepairController : ControllerBase
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return Unauthorized();
 
-        // Show requests that are Pending OR where this specific seller has an Accepted quote
         var requests = await _context.RepairRequests
             .Include(r => r.Product)
             .Include(r => r.RepairQuotes)
             .Where(r => r.Status == "Pending" || 
-                        (r.Status == "Accepted" && r.RepairQuotes.Any(q => q.SellerId == seller.SellerId && q.Status == "Accepted")))
+                        ((r.Status == "Accepted" || r.Status == "Completed") && r.RepairQuotes.Any(q => q.SellerId == seller.SellerId && q.Status == "Accepted")))
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
-        var response = requests.Select(r => new RepairRequestResponseDto
+        // For accepted requests, fetch customer info separately using UserId
+        var result = new List<RepairRequestResponseDto>();
+        foreach (var r in requests)
         {
-            RepairRequestId = r.RepairRequestId,
-            ProductName = r.Product?.Name ?? "General Bamboo Item",
-            Description = r.Description,
-            DamageImageUrl = r.DamageImageUrl,
-            Status = r.Status, // This will now show "Accepted" if the customer picked them
-            CreatedAt = r.CreatedAt
-        });
+            string? customerName = null;
+            string? customerPhone = null;
+            string? customerEmail = null;
 
-        return Ok(response);
+            if (r.Status == "Accepted" || r.Status == "Completed")
+            {
+                var customer = await _context.Users.FindAsync(r.UserId);
+                customerName = customer?.FullName;
+                customerPhone = customer?.PhoneNumber;
+                customerEmail = customer?.Email;
+            }
+
+            result.Add(new RepairRequestResponseDto
+            {
+                RepairRequestId = r.RepairRequestId,
+                ProductName = r.Product?.Name ?? "General Bamboo Item",
+                Description = r.Description,
+                DamageImageUrl = r.DamageImageUrl,
+                Status = r.Status,
+                CreatedAt = r.CreatedAt,
+                CustomerName = customerName,
+                CustomerPhone = customerPhone,
+                CustomerEmail = customerEmail,
+            });
+        }
+
+        return Ok(result);
     }
 
-    // 2. Submit a quote for a specific request
     [HttpPost("submit-quote")]
     [Authorize(Roles = "Seller")]
     public async Task<IActionResult> SubmitQuote([FromBody] CreateQuoteDto dto)
@@ -158,18 +176,15 @@ public class RepairController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     
-        // Find the quote and include the request to verify ownership
         var quote = await _context.RepairQuotes
             .Include(q => q.RepairRequest)
             .FirstOrDefaultAsync(q => q.RepairQuoteId == quoteId && q.RepairRequest.UserId == userId);
 
         if (quote == null) return NotFound("Quote not found or unauthorized.");
 
-        // Update statuses
         quote.Status = "Accepted";
         quote.RepairRequest.Status = "Accepted";
 
-        // Reject all other quotes for this request
         var otherQuotes = await _context.RepairQuotes
             .Where(q => q.RepairRequestId == quote.RepairRequestId && q.RepairQuoteId != quoteId)
             .ToListAsync();
@@ -178,5 +193,30 @@ public class RepairController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Quote accepted! You can now coordinate with the seller." });
+    }
+
+    // POST: api/Repair/complete/{requestId}
+    [HttpPost("complete/{requestId}")]
+    [Authorize(Roles = "Seller")]
+    public async Task<IActionResult> CompleteRepair(int requestId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller == null) return Unauthorized();
+
+        // Verify this seller has an accepted quote for this request
+        var request = await _context.RepairRequests
+            .Include(r => r.RepairQuotes)
+            .FirstOrDefaultAsync(r => r.RepairRequestId == requestId &&
+                                      r.Status == "Accepted" &&
+                                      r.RepairQuotes.Any(q => q.SellerId == seller.SellerId && q.Status == "Accepted"));
+
+        if (request == null)
+            return NotFound("Repair request not found or you are not the assigned seller.");
+
+        request.Status = "Completed";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Repair marked as completed!" });
     }
 }
