@@ -29,17 +29,17 @@ interface VerifiedSeller {
 }
 
 const CATEGORIES = [
-    { name: 'Chairs',   icon: '🪑', query: 'Chairs' },
-    { name: 'Tables',   icon: '🪵', query: 'Tables' },
-    { name: 'Beds',     icon: '🛏️', query: 'Beds' },
-    { name: 'Outdoors', icon: '🌿', query: 'Outdoor' },
-    { name: 'Storage',  icon: '🗄️', query: 'Storage' },
-    { name: 'Decor',    icon: '🏮', query: 'Decor' },
+    { name: 'Chairs',   image: '/categories/chairs.jpg',   query: 'Chairs' },
+    { name: 'Tables',   image: '/categories/tables.jpg',   query: 'Tables' },
+    { name: 'Beds',     image: '/categories/beds.jpeg',    query: 'Beds' },
+    { name: 'Outdoors', image: '/categories/outdoors.jpg', query: 'Outdoor' },
+    { name: 'Storage',  image: '/categories/storage.jpg',  query: 'Storage' },
+    { name: 'Decor',    image: '/categories/decor.jpg',    query: 'Decor' },
 ];
 
 const TESTIMONIALS = [
     { text: 'Amazing quality and authentic craftsmanship. Highly recommend!', author: 'Anita Sharma', location: 'Kathmandu' },
-    { text: 'The repair service is a game changer! Extended my sofa\'s life by years.', author: 'Rajesh Thapa', location: 'Lalitpur' },
+    { text: "The repair service is a game changer! Extended my sofa's life by years.", author: 'Rajesh Thapa', location: 'Lalitpur' },
     { text: 'Supporting local artisans feels great. Quality is outstanding!', author: 'Meera Gurung', location: 'Pokhara' },
 ];
 
@@ -72,34 +72,34 @@ const Home = () => {
             <div
                 className="hero-section position-relative d-flex align-items-center"
                 style={{
-                    minHeight: 520,
-                    background: `linear-gradient(rgba(0,0,0,0.42), rgba(0,0,0,0.42)), url('/hero.jpeg') center/cover no-repeat`,
-                    padding: '56px 0 48px',
+                    minHeight: 480,
+                    background: `linear-gradient(to right, rgba(0,0,0,0.72) 45%, rgba(0,0,0,0.15) 100%), url('/hero.jpeg') center 40%/cover no-repeat`,
+                    padding: '64px 0 56px',
                 }}
             >
                 <div className="container">
-                    <div className="col-lg-6 col-12">
-                        <p className="hero-sub text-white-50 mb-2 fw-medium" style={{ letterSpacing: 2, fontSize: 13, textTransform: 'uppercase' }}>
-                            Authentic Nepali Bamboo &amp; Cane Furniture
-                        </p>
-                        <h1 className="fw-bold text-white mb-3 lh-sm" style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)' }}>
+                    <div className="col-lg-6 col-md-7 col-12">
+                        <span className="badge mb-3 px-3 py-2" style={{ backgroundColor: 'rgba(45,106,79,0.85)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>
+                            Authentic Nepali Bamboo &amp; Cane
+                        </span>
+                        <h1 className="fw-bold text-white mb-3 lh-sm" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                             Nepali Bamboo<br />Furniture
                         </h1>
-                        <p className="hero-desc text-white-50 fs-6 mb-4">
-                            Supporting Local Artisans&nbsp;•&nbsp;Promoting Sustainable Living
+                        <p className="text-white mb-4" style={{ fontSize: 16, opacity: 0.85, maxWidth: 420 }}>
+                            Supporting Local Artisans&nbsp;&bull;&nbsp;Promoting Sustainable Living
                         </p>
-                        <div className="d-flex gap-2 gap-sm-3 flex-wrap">
+                        <div className="d-flex gap-3 flex-wrap">
                             <button
-                                className="btn btn-lg px-4 px-sm-5 fw-bold rounded-pill"
+                                className="btn btn-lg px-5 fw-bold rounded-pill"
                                 onClick={() => navigate('/products')}
-                                style={{ backgroundColor: '#2D6A4F', color: 'white', border: 'none' }}
+                                style={{ backgroundColor: '#2D6A4F', color: 'white', border: 'none', boxShadow: '0 4px 15px rgba(45,106,79,0.4)' }}
                             >
                                 Shop Now
                             </button>
                             <button
                                 className="btn btn-lg px-4 fw-medium rounded-pill"
                                 onClick={() => navigate('/about')}
-                                style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.5)' }}
+                                style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1.5px solid rgba(255,255,255,0.6)', backdropFilter: 'blur(4px)' }}
                             >
                                 Learn More
                             </button>
@@ -113,18 +113,17 @@ const Home = () => {
                 <h3 className="fw-bold text-center mb-3 mb-md-4">Shop By Category</h3>
                 <div className="row g-2 g-md-3 justify-content-center">
                     {CATEGORIES.map(cat => (
-                        <div key={cat.name} className="col-4 col-md-2">
+                        <div key={cat.name} className="col-6 col-md-2">
                             <Link
                                 to={`/products?category=${cat.query}`}
                                 className="text-decoration-none"
                             >
                                 <div
-                                    className="category-card d-flex flex-column align-items-center justify-content-center p-2 p-md-3 rounded-3 text-center h-100"
+                                    className="category-card d-flex flex-column align-items-center rounded-3 text-center h-100 overflow-hidden"
                                     style={{
                                         backgroundColor: '#fff',
                                         border: '1px solid #E8F5E9',
                                         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                                        minHeight: 90,
                                         cursor: 'pointer',
                                         transition: 'transform 0.15s, box-shadow 0.15s',
                                     }}
@@ -137,8 +136,9 @@ const Home = () => {
                                         (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
                                     }}
                                 >
-                                    <span className="category-icon" style={{ fontSize: 28, lineHeight: 1 }}>{cat.icon}</span>
-                                    <p className="mb-0 mt-1 mt-md-2 fw-semibold" style={{ color: '#2D6A4F', fontSize: 11 }}>{cat.name}</p>
+                                    <img src={cat.image} alt={cat.name}
+                                         style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                                    <p className="mb-0 fw-semibold py-2 px-1" style={{ color: '#2D6A4F', fontSize: 12 }}>{cat.name}</p>
                                 </div>
                             </Link>
                         </div>
@@ -197,7 +197,6 @@ const Home = () => {
                                             (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 6px rgba(0,0,0,0.07)';
                                         }}
                                     >
-                                        {/* Product Image */}
                                         <div className="product-card-img-home" style={{ height: 160, overflow: 'hidden', backgroundColor: '#F5F5F0' }}>
                                             {p.productImages && p.productImages.length > 0 ? (
                                                 <img
@@ -260,21 +259,9 @@ const Home = () => {
                 <h3 className="fw-bold text-center mb-3 mb-md-4" style={{ fontSize: 'clamp(1.2rem, 3vw, 1.75rem)' }}>Why Choose Betkibans?</h3>
                 <div className="row g-3 g-md-4">
                     {[
-                        {
-                            icon: '✅',
-                            title: 'Verified Artisans',
-                            desc: 'All sellers are verified through KYC process for authentic quality.',
-                        },
-                        {
-                            icon: '🔧',
-                            title: 'Repair Services',
-                            desc: 'Extend product lifespan with re-weaving and repair services.',
-                        },
-                        {
-                            icon: '🌱',
-                            title: 'Eco-Friendly',
-                            desc: 'Sustainable and biodegradable materials that reduce plastic.',
-                        },
+                        { icon: '✅', title: 'Verified Artisans', desc: 'All sellers are verified through KYC process for authentic quality.' },
+                        { icon: '🛠️', title: 'Repair Services', desc: 'Extend product lifespan with re-weaving and repair services.' },
+                        { icon: '☘️', title: 'Eco-Friendly', desc: 'Sustainable and biodegradable materials that reduce plastic.' },
                     ].map(f => (
                         <div key={f.title} className="col-12 col-sm-4">
                             <div
