@@ -98,8 +98,9 @@ public class SellerController : ControllerBase
     [HttpPost("upload-logo")]
     [Authorize(Roles = "Seller")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadLogo([FromForm] IFormFile logo)
+    public async Task<IActionResult> UploadLogo([FromForm] LogoUploadDto dto)
     {
+        var logo = dto.Logo; 
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return NotFound("Seller not found");
