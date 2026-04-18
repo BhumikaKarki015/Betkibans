@@ -86,7 +86,7 @@ const EditProduct = () => {
 
             if (product.productImages) {
                 setExistingImages(product.productImages.map((img: any) => ({
-                    url: `http://localhost:5192${img.imageUrl}`,
+                    url: `${import.meta.env.VITE_API_URL}${img.imageUrl}`,
                     isPrimary: img.isPrimary,
                 })));
             }

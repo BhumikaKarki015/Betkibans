@@ -388,7 +388,7 @@ const Checkout = () => {
                                                     <div key={item.cartItemId} className="d-flex align-items-center gap-2 gap-md-3 mb-3">
                                                         <img
                                                             src={item.product.productImages?.[0]?.imageUrl
-                                                                ? `http://localhost:5192${item.product.productImages[0].imageUrl}`
+                                                                ? `${import.meta.env.VITE_API_URL}${item.product.productImages[0].imageUrl}`
                                                                 : 'https://via.placeholder.com/56?text=Item'}
                                                             alt={item.product.name} className="rounded flex-shrink-0"
                                                             style={{ width: 48, height: 48, objectFit: 'cover' }} />

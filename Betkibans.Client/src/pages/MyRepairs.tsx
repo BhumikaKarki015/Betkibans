@@ -125,7 +125,7 @@ const MyRepairs = () => {
                                          onClick={() => setExpanded(isExpanded ? null : req.repairRequestId)}>
                                         <div className="d-flex gap-3">
                                             {req.damageImageUrl ? (
-                                                <img src={`http://localhost:5192${req.damageImageUrl}`}
+                                                <img src={`${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
                                                      alt="Damage" className="rounded-2"
                                                      style={{ width: 72, height: 72, objectFit: 'cover', flexShrink: 0 }} />
                                             ) : (

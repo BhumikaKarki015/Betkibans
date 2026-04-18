@@ -47,11 +47,11 @@ const SellerProducts = () => {
         }
     };
 
-    // ✅ Helper function to safely get the image URL
+    // Helper function to safely get the image URL
     const getProductImage = (product: Product) => {
         if (product.productImages && product.productImages.length > 0) {
             // Prepend backend URL to the relative path
-            return `http://localhost:5192${product.productImages[0].imageUrl}`;
+            return `${import.meta.env.VITE_API_URL}${product.productImages[0].imageUrl}`;
         }
         return 'https://via.placeholder.com/300?text=No+Image';
     };

@@ -78,7 +78,7 @@ const ProductDetailPage = () => {
             const data = await productService.getProductById(productId);
             setProduct(data);
             if (data.productImages?.length > 0) {
-                setSelectedImage(`http://localhost:5192${data.productImages[0].imageUrl}`);
+                setSelectedImage(`${import.meta.env.VITE_API_URL}${data.productImages[0].imageUrl}`);
             }
             try {
                 const all = await productService.getAllProducts({ categoryIds: [data.categoryId] });
@@ -214,14 +214,14 @@ const ProductDetailPage = () => {
                             <div className="d-flex gap-2 flex-wrap">
                                 {product.productImages?.map((img) => (
                                     <button key={img.productImageId}
-                                            onClick={() => setSelectedImage(`http://localhost:5192${img.imageUrl}`)}
+                                            onClick={() => setSelectedImage(`${import.meta.env.VITE_API_URL}${img.imageUrl}`)}
                                             className="product-thumb-btn p-0 border-0 rounded-2 overflow-hidden"
                                             style={{
                                                 width: 68, height: 68,
                                                 outline: selectedImage.includes(img.imageUrl) ? `2px solid #2D6A4F` : '2px solid transparent',
                                                 cursor: 'pointer', backgroundColor: '#FDFAF5',
                                             }}>
-                                        <img src={`http://localhost:5192${img.imageUrl}`}
+                                        <img src={`${import.meta.env.VITE_API_URL}${img.imageUrl}`}
                                              alt="thumb"
                                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </button>
@@ -708,7 +708,7 @@ const ProductDetailPage = () => {
                                         <div style={{ paddingTop: '75%', position: 'relative', overflow: 'hidden', backgroundColor: '#F0ECE5' }}>
                                             <img
                                                 src={(rp.productImages?.length ?? 0) > 0
-                                                    ? `http://localhost:5192${rp.productImages![0].imageUrl}`
+                                                    ? `${import.meta.env.VITE_API_URL}${rp.productImages![0].imageUrl}`
                                                     : '/placeholder.jpg'}
                                                 alt={rp.name}
                                                 className="position-absolute top-0 start-0 w-100 h-100"

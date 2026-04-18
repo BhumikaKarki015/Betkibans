@@ -38,7 +38,7 @@ const Register = () => {
         }
 
         try {
-            await axios.post('http://localhost:5192/api/auth/register', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
                 fullName: fullName,
                 email: email,
                 phoneNumber: phone,
@@ -61,7 +61,7 @@ const Register = () => {
 
     const handleGoogleSuccess = async (credentialResponse: any) => {
         try {
-            const res = await axios.post('http://localhost:5192/api/Auth/google-signin', {
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/Auth/google-signin`, {
                 idToken: credentialResponse.credential
             });
             const { token } = res.data;

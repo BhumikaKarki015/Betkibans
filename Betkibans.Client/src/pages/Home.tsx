@@ -200,7 +200,7 @@ const Home = () => {
                                         <div className="product-card-img-home" style={{ height: 160, overflow: 'hidden', backgroundColor: '#F5F5F0' }}>
                                             {p.productImages && p.productImages.length > 0 ? (
                                                 <img
-                                                    src={`http://localhost:5192${p.productImages[0].imageUrl}`}
+                                                    src={`${import.meta.env.VITE_API_URL}${p.productImages[0].imageUrl}`}
                                                     alt={p.name}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     onError={(e) => {
@@ -331,7 +331,7 @@ const Home = () => {
                                         <div className="d-flex align-items-center justify-content-center py-4"
                                              style={{ backgroundColor: '#E8F5E9', minHeight: 90 }}>
                                             {s.logoUrl ? (
-                                                <img src={`http://localhost:5192${s.logoUrl}`} alt={s.businessName}
+                                                <img src={`${import.meta.env.VITE_API_URL}${s.logoUrl}`} alt={s.businessName}
                                                      className="rounded-circle"
                                                      style={{ width: 72, height: 72, objectFit: 'cover' }} />
                                             ) : (

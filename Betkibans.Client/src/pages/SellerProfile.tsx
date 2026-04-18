@@ -268,7 +268,7 @@ const SellerProfile = () => {
                             <div className="position-relative d-inline-block mb-3">
                                 {profile?.logoUrl ? (
                                     <img
-                                        src={`http://localhost:5192${profile.logoUrl}`}
+                                        src={`${import.meta.env.VITE_API_URL}${profile.logoUrl}`}
                                         alt="Business Logo"
                                         className="rounded-circle"
                                         style={{ width: 110, height: 110, objectFit: 'cover', border: '3px solid #E8F5E9' }}

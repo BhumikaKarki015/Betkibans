@@ -79,7 +79,7 @@ const Cart = () => {
                                     {/* Image */}
                                     <div className="cart-item-img-col col-3 col-md-2">
                                         <img
-                                            src={`http://localhost:5192${item.product.productImages[0]?.imageUrl}`}
+                                            src={`${import.meta.env.VITE_API_URL}${item.product.productImages[0]?.imageUrl}`}
                                             alt={item.product.name}
                                             className="img-fluid rounded"
                                             style={{ aspectRatio: '1', objectFit: 'cover' }}

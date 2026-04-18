@@ -7,12 +7,12 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
 
-    // ✅ SAFE IMAGE HELPER
+    // SAFE IMAGE HELPER
     // This checks if images exist before trying to read them.
     // If no image, it shows a placeholder.
     const getImageUrl = () => {
         if (product.productImages && product.productImages.length > 0) {
-            return `http://localhost:5192${product.productImages[0].imageUrl}`;
+            return `${import.meta.env.VITE_API_URL}${product.productImages[0].imageUrl}`;
         }
         return 'https://via.placeholder.com/300?text=No+Image';
     };

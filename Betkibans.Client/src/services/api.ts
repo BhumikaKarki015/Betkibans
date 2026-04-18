@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5192/api', // Use the HTTPS port from your Swagger [cite: 478, 1140]
+    baseURL: import.meta.env.VITE_API_URL + '/api',
     headers: {
         'Content-Type': 'application/json',
     },

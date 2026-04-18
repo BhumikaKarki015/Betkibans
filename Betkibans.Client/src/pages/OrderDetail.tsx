@@ -124,7 +124,7 @@ const OrderDetail = () => {
                                     <div className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
                                          style={{ width: 56, height: 56, backgroundColor: '#F0EBE1' }}>
                                         {item.productImage
-                                            ? <img src={`http://localhost:5192${item.productImage}`}
+                                            ? <img src={`${import.meta.env.VITE_API_URL}${item.productImage}`}
                                                    alt={item.productName}
                                                    className="rounded-2"
                                                    style={{ width: 56, height: 56, objectFit: 'cover' }} />

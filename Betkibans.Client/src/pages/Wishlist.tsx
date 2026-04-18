@@ -123,7 +123,7 @@ const Wishlist = () => {
                                                  onClick={() => navigate(`/product/${item.productId}`)}>
                                                 <img
                                                     src={item.productImage
-                                                        ? `http://localhost:5192${item.productImage}`
+                                                        ? `${import.meta.env.VITE_API_URL}${item.productImage}`
                                                         : 'https://via.placeholder.com/100?text=Item'}
                                                     alt={item.productName}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

@@ -648,7 +648,7 @@ const AdminPanel = () => {
                                                     <i className="bi bi-x-circle me-2"></i>Reject
                                                 </button>
                                                 {seller.kycDocumentPath && (
-                                                    <a href={`http://localhost:5192${seller.kycDocumentPath}`}
+                                                    <a href={`${import.meta.env.VITE_API_URL}${seller.kycDocumentPath}`}
                                                        target="_blank" rel="noopener noreferrer"
                                                        className="btn fw-medium"
                                                        style={{ borderColor: '#CCC', color: '#555', borderRadius: 8 }}>

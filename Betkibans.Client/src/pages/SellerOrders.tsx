@@ -244,7 +244,7 @@ const SellerOrders = () => {
                                                     <div className="rounded-2 overflow-hidden flex-shrink-0"
                                                          style={{ width: 48, height: 48, backgroundColor: '#EDEAE3' }}>
                                                         {item.productImage
-                                                            ? <img src={`http://localhost:5192${item.productImage}`}
+                                                            ? <img src={`${import.meta.env.VITE_API_URL}${item.productImage}`}
                                                                    alt={item.productName}
                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                             : <div className="w-100 h-100 d-flex align-items-center justify-content-center">

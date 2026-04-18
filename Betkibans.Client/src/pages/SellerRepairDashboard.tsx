@@ -156,7 +156,7 @@ const SellerRepairDashboard = () => {
                                         <div key={req.repairRequestId} className="p-4" style={cardStyle}>
                                             <div className="d-flex gap-3">
                                                 {req.damageImageUrl ? (
-                                                    <img src={`http://localhost:5192${req.damageImageUrl}`}
+                                                    <img src={`${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
                                                          alt="Damage" className="rounded-2"
                                                          style={{ width: 80, height: 80, objectFit: 'cover', flexShrink: 0 }} />
                                                 ) : (
@@ -199,7 +199,7 @@ const SellerRepairDashboard = () => {
                                              style={{ ...cardStyle, border: '2px solid #2D6A4F' }}>
                                             <div className="d-flex gap-3">
                                                 {req.damageImageUrl ? (
-                                                    <img src={`http://localhost:5192${req.damageImageUrl}`}
+                                                    <img src={`${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
                                                          alt="Damage" className="rounded-2"
                                                          style={{ width: 80, height: 80, objectFit: 'cover', flexShrink: 0 }} />
                                                 ) : (
@@ -269,7 +269,7 @@ const SellerRepairDashboard = () => {
                                      style={{ backgroundColor: '#FDFAF5', border: '2px solid #CE93D8', borderRadius: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
                                     <div className="d-flex gap-3">
                                         {req.damageImageUrl ? (
-                                            <img src={`http://localhost:5192${req.damageImageUrl}`}
+                                            <img src={`${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
                                                  alt="Damage" className="rounded-2"
                                                  style={{ width: 80, height: 80, objectFit: 'cover', flexShrink: 0, opacity: 0.85 }} />
                                         ) : (
