@@ -8,6 +8,12 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+   ProductController handles the catalog management for Betkibans.
+   It supports public browsing with advanced filtering, as well as
+   Seller-restricted operations like product creation (including image uploads)
+   and soft-deletion.
+ */
 [Route("api/[controller]")]
 [ApiController]
 public class ProductController : ControllerBase
@@ -21,6 +27,9 @@ public class ProductController : ControllerBase
         _environment = environment;
     }
 
+    /* Retrieves a list of active products based on multiple search and filter criteria.
+       Supports search terms, category/material filtering, price ranges, and custom sorting.
+     */
     // GET: api/Product
     [HttpGet]
     public async Task<IActionResult> GetAllProducts(
@@ -33,6 +42,7 @@ public class ProductController : ControllerBase
         [FromQuery] int? sellerId
     )
     {
+        // Start with an active product query including essential related data
         var query = _context.Products
             .Include(p => p.Category)
             .Include(p => p.ProductImages)
@@ -43,13 +53,13 @@ public class ProductController : ControllerBase
 
         // --- FILTERING LOGIC ---
 
-        // 0. Seller
+        // 0. Filter by specific Seller (useful for seller profile pages)
         if (sellerId.HasValue)
         {
             query = query.Where(p => p.SellerId == sellerId.Value);
         }
 
-        // 1. Search
+        // 1. Text Search across Name and Description
         if (!string.IsNullOrEmpty(search))
         {
             var lowerSearch = search.ToLower();
@@ -63,17 +73,17 @@ public class ProductController : ControllerBase
             query = query.Where(p => categoryIds.Contains(p.CategoryId));
         }
 
-        // 3. Materials
+        // 3. Multiselect Material Filtering (e.g., Bamboo vs Cane)
         if (materialIds != null && materialIds.Length > 0)
         {
             query = query.Where(p => p.ProductMaterials.Any(pm => materialIds.Contains(pm.MaterialId)));
         }
 
-        // 4. Price
+        // 4. Price Range Constraints
         if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice);
         if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice);
 
-        // 5. Sorting
+        // 5. Sorting Logic (Defaulting to newest first)
         switch (sort)
         {
             case "price_asc": query = query.OrderBy(p => p.Price); break;
@@ -84,6 +94,7 @@ public class ProductController : ControllerBase
         return Ok(await query.ToListAsync());
     }
     
+    // Fetches full details for a single product by its unique ID.
     // GET: api/Product/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProduct(int id)
@@ -100,6 +111,7 @@ public class ProductController : ControllerBase
         return Ok(product);
     }
 
+    // Returns only the active products belonging to the logged-in Seller.
     // GET: api/Product/my-products
     [HttpGet("seller/mine")]
     [Authorize(Roles = "Seller")]
@@ -121,22 +133,26 @@ public class ProductController : ControllerBase
         return Ok(products);
     }
     
+    /* Orchestrates the creation of a new product.
+       This is a complex operation involving:
+       1. DB Record creation, 2. Local file system storage for images, 3. Many-to-Many material linking.
+     */
     [HttpPost]
     [Authorize(Roles = "Seller")]
     [Consumes("multipart/form-data")] 
     public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto dto)
     {
-        // 1. Validate Seller
+        // 1. Identity and Authorization check
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return StatusCode(403, "Seller profile not found.");
         if (!seller.IsVerified) return StatusCode(403, "Only verified sellers can add products.");
 
-        // 2. Validate Images exist
+        // 2. Initial input validation
         if (dto.Images == null || dto.Images.Count == 0)
              return BadRequest("At least one image is required.");
 
-        // 3. Create Product Entity (Basic Info)
+        // 3. Map DTO to Entity and save to generate the ProductId
         var product = new Product
         {
             SellerId = seller.SellerId,
@@ -162,7 +178,8 @@ public class ProductController : ControllerBase
         _context.Products.Add(product);
         await _context.SaveChangesAsync(); // Save to generate ProductId
 
-        // 4. Handle Image Uploads
+        // 4. Handle Physical Image Uploads
+        // Create a unique directory per product to keep the 'uploads' folder organized
         var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "products", $"product_{product.ProductId}");
         if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
 
@@ -171,17 +188,16 @@ public class ProductController : ControllerBase
         {
             if (file.Length > 0)
             {
-                // Generate unique filename
+                // Assign a unique GUID to filenames to prevent collisions
                 var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
                 var filePath = Path.Combine(uploadPath, fileName);
-
-                // Save to disk
+                
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
 
-                // Save path to database
+                // Register the image in the DB, marking the first one as the primary thumbnail
                 _context.ProductImages.Add(new ProductImage
                 {
                     ProductId = product.ProductId,
@@ -193,7 +209,7 @@ public class ProductController : ControllerBase
         }
         await _context.SaveChangesAsync(); // Save image records
 
-        // 5. Link Materials
+        // 5. Establish Many-to-Many relationships with Materials
         if (dto.MaterialIds != null && dto.MaterialIds.Any())
         {
             foreach (var matId in dto.MaterialIds)
@@ -210,6 +226,9 @@ public class ProductController : ControllerBase
         return Ok(new { message = "Product created successfully with images!", productId = product.ProductId });
     }
     
+    /* Updates non-image product details.
+       Ensures the seller can only update products they actually own.
+     */
     [HttpPut("{id}")]
     [Authorize(Roles = "Seller")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
@@ -221,7 +240,7 @@ public class ProductController : ControllerBase
         var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
         if (product == null) return NotFound("Product not found or access denied.");
 
-        // Update fields
+        // Field mapping from DTO to Entity
         product.Name = dto.Name;
         product.Description = dto.Description;
         product.Price = dto.Price;
@@ -237,6 +256,10 @@ public class ProductController : ControllerBase
         return Ok(new { message = "Product updated successfully." });
     }
     
+    /* Performs a Soft Delete on a product.
+       Instead of removing the row, we set IsActive to false. This preserves
+       referential integrity for existing Order Items.
+     */
     [HttpDelete("{id}")]
     [Authorize(Roles = "Seller")]
     public async Task<IActionResult> DeleteProduct(int id)

@@ -7,6 +7,11 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+   CartController manages the shopping cart lifecycle for individual users.
+   It handles adding items, adjusting quantities, and retrieving cart contents
+   with associated product metadata.
+ */
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
@@ -19,10 +24,15 @@ public class CartController : ControllerBase
         _context = context;
     }
 
+    /* Retrieves the current user's cart including all items,
+       product details, and product images for the UI.
+     */
     [HttpGet]
     public async Task<IActionResult> GetCart()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        // Eagerly load CartItems -> Products -> ProductImages to minimize database roundtrips
         var cart = await _context.Carts
             .Include(c => c.CartItems)
             .ThenInclude(ci => ci.Product)
@@ -34,6 +44,10 @@ public class CartController : ControllerBase
         return Ok(cart);
     }
 
+    /* Adds a product to the user's cart.
+       If a cart doesn't exist, it creates one.
+       If the product is already in the cart, it increments the quantity.
+     */
     [HttpPost("add")]
     public async Task<IActionResult> AddToCart([FromBody] AddToCartDto dto)
     {
@@ -71,6 +85,7 @@ public class CartController : ControllerBase
         return Ok(new { message = "Item added to cart" });
     }
 
+    // Removes a specific line item from the cart using its unique CartItemId.
     [HttpDelete("item/{cartItemId}")]
     public async Task<IActionResult> RemoveItem(int cartItemId)
     {
@@ -82,12 +97,16 @@ public class CartController : ControllerBase
         return Ok();
     }
 
+    /* Updates the quantity of a specific item in the cart.
+       If the quantity is set to 0 or less, the item is removed entirely.
+     */
     [HttpPut("update-quantity")]
     public async Task<IActionResult> UpdateQuantity([FromBody] UpdateCartDto dto)
     {
         var item = await _context.CartItems.FindAsync(dto.CartItemId);
         if (item == null) return NotFound();
 
+        // Business logic: treat zero or negative quantity as a removal request
         if (dto.Quantity <= 0)
         {
             _context.CartItems.Remove(item);
@@ -102,5 +121,6 @@ public class CartController : ControllerBase
     }
 }
 
+// DTOs for structured data transfer from the client
 public class AddToCartDto { public int ProductId { get; set; } public int Quantity { get; set; } }
 public class UpdateCartDto { public int CartItemId { get; set; } public int Quantity { get; set; } }

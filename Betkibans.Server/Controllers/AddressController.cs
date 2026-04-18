@@ -7,21 +7,33 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+   AddressController handles all CRUD (Create, Read, Update, Delete) operations
+   related to user shipping/billing addresses. Access is restricted to
+   authorized users only.
+ */
+
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
 public class AddressController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    
+    // Injecting the database context via constructor
 
     public AddressController(ApplicationDbContext context)
     {
         _context = context;
     }
 
+    /* Retrieves all addresses belonging to the currently logged-in user.
+       Orders them by the 'Default' status first, then by creation date.
+     */
     [HttpGet]
     public async Task<IActionResult> GetMyAddresses()
     {
+        // Extract the unique User ID from the JWT claims
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var addresses = await _context.Addresses
             .Where(a => a.UserId == userId)
@@ -31,12 +43,15 @@ public class AddressController : ControllerBase
         return Ok(addresses);
     }
 
+    /* Creates a new address for the user.
+       Includes logic to ensure only one address is marked as default.
+     */
     [HttpPost]
     public async Task<IActionResult> AddAddress([FromBody] AddressDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // If this is set as default, unset all others first
+        // If the new address is set as default, unset the 'IsDefault' flag on all existing addresses
         if (dto.IsDefault)
         {
             var existing = await _context.Addresses
@@ -45,7 +60,7 @@ public class AddressController : ControllerBase
             existing.ForEach(a => a.IsDefault = false);
         }
 
-        // If this is the first address, make it default automatically
+        // Count existing addresses to check if this is the user's first entry
         var count = await _context.Addresses.CountAsync(a => a.UserId == userId);
         
         var address = new Address
@@ -59,6 +74,7 @@ public class AddressController : ControllerBase
             District = dto.District,
             Landmark = dto.Landmark,
             PostalCode = dto.PostalCode,
+            // Automatically make the first address default, otherwise use the DTO value
             IsDefault = count == 0 ? true : dto.IsDefault,
             CreatedAt = DateTime.UtcNow
         };
@@ -68,6 +84,9 @@ public class AddressController : ControllerBase
         return Ok(address);
     }
 
+    /* Updates an existing address record.
+       Ensures the user can only update their own addresses.
+     */
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAddress(int id, [FromBody] AddressDto dto)
     {
@@ -76,6 +95,7 @@ public class AddressController : ControllerBase
             .FirstOrDefaultAsync(a => a.AddressId == id && a.UserId == userId);
         if (address == null) return NotFound();
 
+        // If this update sets the current address to default, unset other defaults
         if (dto.IsDefault)
         {
             var existing = await _context.Addresses
@@ -84,6 +104,7 @@ public class AddressController : ControllerBase
             existing.ForEach(a => a.IsDefault = false);
         }
 
+        // Mapping updated values from DTO to Entity
         address.FullName = dto.FullName;
         address.PhoneNumber = dto.PhoneNumber;
         address.AddressLine1 = dto.AddressLine1;
@@ -98,6 +119,9 @@ public class AddressController : ControllerBase
         return Ok(address);
     }
 
+    /* Removes an address from the database.
+       If the deleted address was the default, the next most recent address is promoted to default.
+     */
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAddress(int id)
     {
@@ -109,7 +133,7 @@ public class AddressController : ControllerBase
         _context.Addresses.Remove(address);
         await _context.SaveChangesAsync();
 
-        // If deleted address was default, make the most recent one default
+        // Fallback logic to ensure the user always has a default address if records exist
         if (address.IsDefault)
         {
             var next = await _context.Addresses
@@ -122,11 +146,15 @@ public class AddressController : ControllerBase
         return Ok(new { message = "Address deleted" });
     }
 
+    /* Explicitly sets a specific address as the default.
+       All other addresses for the user will have IsDefault set to false.
+     */
     [HttpPatch("{id}/set-default")]
     public async Task<IActionResult> SetDefault(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        // Fetch all addresses for the user and update the boolean flag based on the ID match
         var all = await _context.Addresses.Where(a => a.UserId == userId).ToListAsync();
         all.ForEach(a => a.IsDefault = a.AddressId == id);
 
@@ -135,6 +163,10 @@ public class AddressController : ControllerBase
     }
 }
 
+/*
+   Data Transfer Object (DTO) for Address.
+   Used to receive address data from the client in a clean format.
+ */
 public class AddressDto
 {
     public string FullName { get; set; } = string.Empty;

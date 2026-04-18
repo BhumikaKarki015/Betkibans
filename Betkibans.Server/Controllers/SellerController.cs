@@ -8,6 +8,11 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+   SellerController serves as the primary hub for artisan business management.
+   It manages seller profiles, document verification (KYC), branding, and
+   provides a deep-dive analytics suite for sellers to track their performance.
+ */
 [ApiController]
 [Route("api/[controller]")]
 public class SellerController : ControllerBase
@@ -21,10 +26,14 @@ public class SellerController : ControllerBase
         _environment = environment;
     }
 
-    // ===========================
-    // SELLER ACTIONS
-    // ===========================
+    // ==========================================================================
+    // SELLER ACTIONS (Restricted to users with the "Seller" role)
+    // ==========================================================================
 
+    /* * Retrieves the comprehensive profile of the logged-in seller.
+     * Combines data from both the Seller entity and the linked Identity User record.
+     */
+    
     // GET: api/Seller/profile
     [HttpGet("profile")]
     [Authorize(Roles = "Seller")]
@@ -38,6 +47,7 @@ public class SellerController : ControllerBase
             .FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return NotFound(new { message = "Seller profile not found" });
 
+        // Returning a flattened object for easier consumption by the React/Vue frontend
         return Ok(new
         {
             sellerId        = seller.SellerId,
@@ -62,6 +72,7 @@ public class SellerController : ControllerBase
         });
     }
 
+    // Updates the business-related metadata for the seller.
     // PUT: api/Seller/profile
     [HttpPut("profile")]
     [Authorize(Roles = "Seller")]
@@ -71,6 +82,7 @@ public class SellerController : ControllerBase
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return NotFound("Seller not found");
 
+        // Direct mapping of updated business contact and social information
         seller.BusinessName        = dto.BusinessName;
         seller.BusinessDescription = dto.BusinessDescription;
         seller.BusinessAddress     = dto.BusinessAddress;
@@ -94,6 +106,11 @@ public class SellerController : ControllerBase
         return await UpdateProfile(dto);
     }
 
+    /* Handles business logo uploads.
+       Includes validation for file types, size constraints, and handles cleanup
+       of previous logos to save disk space.
+     */
+    
     // POST: api/Seller/upload-logo
     [HttpPost("upload-logo")]
     [Authorize(Roles = "Seller")]
@@ -108,10 +125,12 @@ public class SellerController : ControllerBase
         if (logo == null || logo.Length == 0)
             return BadRequest("No file provided.");
 
+        // Validation Rule: Only modern, web-friendly image formats accepted
         var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
         if (!allowedTypes.Contains(logo.ContentType.ToLower()))
             return BadRequest("Only JPEG, PNG, or WebP images are allowed.");
 
+        // Validation Rule: Limit upload to 5MB to prevent storage bloat
         if (logo.Length > 5 * 1024 * 1024)
             return BadRequest("Image must be under 5MB.");
 
@@ -125,6 +144,7 @@ public class SellerController : ControllerBase
             if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
         }
 
+        // Generate a unique filename using SellerID and Ticks to prevent caching/naming conflicts
         var ext = Path.GetExtension(logo.FileName);
         var fileName = $"seller_{seller.SellerId}_{DateTime.Now.Ticks}{ext}";
         var filePath = Path.Combine(uploadPath, fileName);
@@ -140,6 +160,7 @@ public class SellerController : ControllerBase
         return Ok(new { message = "Logo uploaded.", logoUrl = seller.LogoUrl });
     }
     
+    // Removes the seller's business logo and deletes the physical file from storage.
     // DELETE: api/Seller/delete-logo
     [HttpDelete("delete-logo")]
     [Authorize(Roles = "Seller")]
@@ -152,6 +173,7 @@ public class SellerController : ControllerBase
         if (string.IsNullOrEmpty(seller.LogoUrl))
             return BadRequest("No logo to delete.");
 
+        // Locate and delete physical file
         var filePath = Path.Combine(_environment.WebRootPath, seller.LogoUrl.TrimStart('/'));
         if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
 
@@ -161,6 +183,10 @@ public class SellerController : ControllerBase
         return Ok(new { message = "Logo deleted." });
     }
 
+    /* Processes KYC (Know Your Customer) document submissions.
+       Expects a business license and ID document for manual admin verification.
+     */
+    
     // POST: api/Seller/upload-kyc
     [HttpPost("upload-kyc")]
     [Authorize(Roles = "Seller")]
@@ -174,9 +200,11 @@ public class SellerController : ControllerBase
         if (dto.BusinessLicense == null || dto.IdDocument == null)
             return BadRequest("Missing documents");
 
+        // Directory structure: organizes documents by seller ID for security/auditing
         var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "kyc", $"seller_{seller.SellerId}");
         if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
 
+        // Helper local function to handle asynchronous file saving
         async Task<string> SaveFile(IFormFile file)
         {
             var fileName = $"{DateTime.Now.Ticks}_{file.FileName}";
@@ -188,14 +216,19 @@ public class SellerController : ControllerBase
         seller.KycDocumentPath = await SaveFile(dto.BusinessLicense);
         await SaveFile(dto.IdDocument);
 
+        // Reset verification status if they are re-uploading documents
         seller.IsVerified = false;
         seller.RejectionReason = null;
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "KYC Uploaded", profile = seller });
     }
-
-
+    
+    /* Generates a comprehensive analytics report for the seller's dashboard.
+       Aggregates data from orders, products, and reviews to provide
+       insights into revenue, stock levels, and customer satisfaction.
+     */
+    
     // GET: api/Seller/analytics
     [HttpGet("analytics")]
     [Authorize(Roles = "Seller")]
@@ -208,14 +241,14 @@ public class SellerController : ControllerBase
             .FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return NotFound();
 
-        // All orders for this seller
+        // Step 1: Query orders that contain at least one item from this seller
         var orders = await _context.Orders
             .Include(o => o.OrderItems)
             .ThenInclude(oi => oi.Product)
             .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == seller.SellerId))
             .ToListAsync();
 
-        // All products
+        // Step 2: Query all active products belonging to the seller for stock/review tracking
         var products = await _context.Products
             .Include(p => p.Reviews)
             .Include(p => p.OrderItems)
@@ -223,12 +256,13 @@ public class SellerController : ControllerBase
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
 
-        // Revenue calculations
+        // Step 3: Calculate Lifetime Revenue (excluding cancelled orders)
         var totalRevenue = orders
             .Where(o => o.Status != "Cancelled")
             .SelectMany(o => o.OrderItems.Where(oi => oi.Product.SellerId == seller.SellerId))
             .Sum(oi => oi.UnitPrice * oi.Quantity);
 
+        // Step 4: Calculate Revenue for the current calendar month
         var thisMonth = DateTime.UtcNow.Month;
         var thisYear = DateTime.UtcNow.Year;
         var monthlyRevenue = orders
@@ -236,13 +270,13 @@ public class SellerController : ControllerBase
             .SelectMany(o => o.OrderItems.Where(oi => oi.Product.SellerId == seller.SellerId))
             .Sum(oi => oi.UnitPrice * oi.Quantity);
 
-        // Orders by status
+        // Step 5: Group orders for the status distribution chart
         var ordersByStatus = orders
             .GroupBy(o => o.Status)
             .Select(g => new { status = g.Key, count = g.Count() })
             .ToList();
 
-        // Monthly revenue for last 6 months
+        // Step 6: Generate revenue timeline for the last 6 months (Trend Analysis)
         var monthlyData = Enumerable.Range(0, 6)
             .Select(i => {
                 var date = DateTime.UtcNow.AddMonths(-i);
@@ -255,7 +289,7 @@ public class SellerController : ControllerBase
             .Reverse()
             .ToList();
 
-        // Top products by revenue
+        // Step 7: Identify the Top 5 Products by their individual revenue contribution
         var topProducts = products
             .Select(p => new {
                 p.ProductId,
@@ -271,7 +305,7 @@ public class SellerController : ControllerBase
             .Take(5)
             .ToList();
 
-        // Low stock products
+        // Step 8: Flag products nearing stock exhaustion (Threshold = 5 units)
         var lowStock = products
             .Where(p => p.StockQuantity <= 5)
             .Select(p => new { p.ProductId, p.Name, p.StockQuantity, p.Price })
@@ -293,9 +327,9 @@ public class SellerController : ControllerBase
         });
     }
 
-    // ===========================
-    // ADMIN ACTIONS
-    // ===========================
+    // ==========================================================================
+    // ADMIN ACTIONS (Oversight and Public Highlights)
+    // ==========================================================================
     
     // GET: api/Seller/verified
     // Used by the homepage to show verified artisans
@@ -328,6 +362,7 @@ public class SellerController : ControllerBase
         return Ok(result);
     }
 
+    // Lists all sellers currently waiting for KYC approval.
     // GET: api/Seller/pending
     [HttpGet("pending")]
     [Authorize(Roles = "Admin")]
@@ -352,6 +387,7 @@ public class SellerController : ControllerBase
         return Ok(pendingSellers);
     }
 
+    // Allows admins to approve or reject a seller's application.
     // PUT: api/Seller/verify/{sellerId}
     [HttpPut("verify/{sellerId}")]
     [Authorize(Roles = "Admin")]
@@ -371,6 +407,7 @@ public class SellerController : ControllerBase
         }
         else
         {
+            // If rejected, the seller stays unverified and receives a reason
             seller.IsVerified      = false;
             seller.RejectionReason = dto.RejectionReason;
         }

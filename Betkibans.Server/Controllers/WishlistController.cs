@@ -7,6 +7,11 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+   WishlistController manages the "Saved Items" functionality.
+   It allows users to curate a personal list of products they are interested in,
+   facilitating future purchases and reducing friction in the shopping experience.
+ */
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
@@ -19,12 +24,19 @@ public class WishlistController : ControllerBase
         _context = context;
     }
 
+    /* Retrieves the authenticated user's saved products.
+       Includes essential product metadata, primary images, and seller names
+       to populate the wishlist UI efficiently.
+     */
+    
     // GET: api/Wishlist
     [HttpGet]
     public async Task<IActionResult> GetMyWishlist()
     {
+        // Identify the user from the current security context
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        // Eagerly load product details and related images/sellers
         var items = await _context.Wishlists
             .Include(w => w.Product)
                 .ThenInclude(p => p.ProductImages)
@@ -32,6 +44,7 @@ public class WishlistController : ControllerBase
                 .ThenInclude(p => p.Seller)
             .Where(w => w.UserId == userId)
             .OrderByDescending(w => w.AddedAt)
+            // Use projection to return a flattened anonymous object for better performance
             .Select(w => new
             {
                 w.WishlistId,
@@ -54,6 +67,10 @@ public class WishlistController : ControllerBase
         return Ok(items);
     }
 
+    /* Adds a product to the user's wishlist.
+       Prevents duplicate entries and ensures the product actually exists.
+     */
+    
     // POST: api/Wishlist
     [HttpPost]
     public async Task<IActionResult> AddToWishlist([FromBody] AddWishlistDto dto)
@@ -81,6 +98,10 @@ public class WishlistController : ControllerBase
         return Ok(new { message = "Added to wishlist", wishlistId = wishlist.WishlistId });
     }
 
+    /* Removes an item from the user's wishlist.
+       This action is specific to the user's ID to prevent unauthorized deletions.
+     */
+    
     // DELETE: api/Wishlist/{productId}
     [HttpDelete("{productId}")]
     public async Task<IActionResult> RemoveFromWishlist(int productId)
@@ -97,6 +118,7 @@ public class WishlistController : ControllerBase
     }
 }
 
+// Data Transfer Object for adding items to the wishlist.
 public class AddWishlistDto
 {
     public int ProductId { get; set; }

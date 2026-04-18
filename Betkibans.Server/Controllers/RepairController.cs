@@ -8,6 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+   RepairController manages the "Repair Marketplace" lifecycle.
+   It allows customers to post damage reports (RepairRequests) and
+   enables verified sellers to bid on those repairs (RepairQuotes).
+ */
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
@@ -22,18 +27,23 @@ public class RepairController : ControllerBase
         _environment = environment;
     }
 
+    /* Endpoint for customers to submit a repair request.
+       Supports optional product linking and image uploads for visual damage assessment.
+     */
     [HttpPost("submit-request")]
     public async Task<IActionResult> SubmitRequest([FromForm] CreateRepairRequestDto dto, IFormFile? image)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Unauthorized();
         
+        // If ProductId is 0 or negative, treat it as a 'General Item' not purchased on the platform
         // This prevents the Foreign Key error if the product doesn't exist
         int? finalProductId = (dto.ProductId > 0) ? dto.ProductId : null;
 
         string? imageUrl = null;
         if (image != null)
         {
+            // Generate a unique filename and save the damage evidence image to the server
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
             var filePath = Path.Combine(_environment.WebRootPath, "uploads", "repairs", fileName);
         
@@ -58,6 +68,9 @@ public class RepairController : ControllerBase
         return Ok(new { message = "Repair request submitted successfully", requestId = request.RepairRequestId });
     }
 
+    /* Retrieves all repair requests submitted by the logged-in user.
+       Includes all associated quotes from different sellers for comparison.
+     */
     [HttpGet("my-requests")]
     public async Task<ActionResult<IEnumerable<RepairRequestResponseDto>>> GetMyRequests()
     {
@@ -94,6 +107,9 @@ public class RepairController : ControllerBase
         return Ok(response);
     }
     
+    /* Specialized view for Sellers to see "Open" repair jobs.
+       Shows 'Pending' jobs (to bid on) or jobs they have already 'Accepted' or 'Completed'.
+     */
     [HttpGet("available-requests")]
     [Authorize(Roles = "Seller")]
     public async Task<ActionResult<IEnumerable<RepairRequestResponseDto>>> GetAvailableRequests()
@@ -105,6 +121,7 @@ public class RepairController : ControllerBase
         var requests = await _context.RepairRequests
             .Include(r => r.Product)
             .Include(r => r.RepairQuotes)
+            // Filter: Show all new requests OR requests specific to this seller's accepted work
             .Where(r => r.Status == "Pending" || 
                         ((r.Status == "Accepted" || r.Status == "Completed") && r.RepairQuotes.Any(q => q.SellerId == seller.SellerId && q.Status == "Accepted")))
             .OrderByDescending(r => r.CreatedAt)
@@ -118,6 +135,7 @@ public class RepairController : ControllerBase
             string? customerPhone = null;
             string? customerEmail = null;
 
+            // Privacy logic: Only share contact info once the user has accepted the seller's quote
             if (r.Status == "Accepted" || r.Status == "Completed")
             {
                 var customer = await _context.Users.FindAsync(r.UserId);
@@ -143,6 +161,9 @@ public class RepairController : ControllerBase
         return Ok(result);
     }
 
+    /* Allows a seller to submit a bid (quote) for a repair request.
+       Automatically updates the request status to notify the user.
+     */
     [HttpPost("submit-quote")]
     [Authorize(Roles = "Seller")]
     public async Task<IActionResult> SubmitQuote([FromBody] CreateQuoteDto dto)
@@ -171,6 +192,9 @@ public class RepairController : ControllerBase
         return Ok(new { message = "Quote submitted successfully!" });
     }
     
+    /* Finalizes the agreement between customer and seller.
+       When one quote is accepted, all other competing bids are automatically 'Rejected'.
+     */
     [HttpPost("accept-quote/{quoteId}")]
     public async Task<IActionResult> AcceptQuote(int quoteId)
     {
@@ -182,9 +206,11 @@ public class RepairController : ControllerBase
 
         if (quote == null) return NotFound("Quote not found or unauthorized.");
 
+        // Lock the request to the winning seller
         quote.Status = "Accepted";
         quote.RepairRequest.Status = "Accepted";
 
+        // Bulk-reject all other bids to clean up the marketplace
         var otherQuotes = await _context.RepairQuotes
             .Where(q => q.RepairRequestId == quote.RepairRequestId && q.RepairQuoteId != quoteId)
             .ToListAsync();
@@ -195,6 +221,9 @@ public class RepairController : ControllerBase
         return Ok(new { message = "Quote accepted! You can now coordinate with the seller." });
     }
 
+    /* Marks the physical repair as finished.
+       Only the seller who was accepted for the job can trigger this.
+     */
     // POST: api/Repair/complete/{requestId}
     [HttpPost("complete/{requestId}")]
     [Authorize(Roles = "Seller")]

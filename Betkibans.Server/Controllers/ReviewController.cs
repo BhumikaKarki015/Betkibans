@@ -8,6 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Betkibans.Server.Controllers;
 
+/*
+  ReviewController manages user-generated content regarding product satisfaction.
+  It provides public access to view reviews and restricted access for consumers
+  to submit their feedback, ensuring data integrity by preventing duplicate reviews.
+ */
 [Route("api/[controller]")]
 [ApiController]
 public class ReviewController : ControllerBase
@@ -19,6 +24,9 @@ public class ReviewController : ControllerBase
         _context = context;
     }
 
+    /* Retrieves all reviews for a specific product.
+       Includes the reviewer's name and sorts by the most recent submission.
+     */
     // GET: api/Review/product/{productId}
     [HttpGet("product/{productId}")]
     public async Task<IActionResult> GetProductReviews(int productId)
@@ -43,6 +51,10 @@ public class ReviewController : ControllerBase
         return Ok(reviews);
     }
 
+    /* Processes a new review submission.
+       Validates that the user hasn't already reviewed the product and
+       automatically detects if the purchase was verified.
+     */
     // POST: api/Review
     [HttpPost]
     [Authorize(Roles = "Consumer")]
@@ -84,6 +96,10 @@ public class ReviewController : ControllerBase
         // Update product average rating
         await _context.SaveChangesAsync();
         
+        /* Performance Optimization:
+           Recalculate the average rating and total count on the Product record itself
+           to avoid heavy aggregation queries during catalog browsing.
+         */
         var allRatings = await _context.Reviews
             .Where(r => r.ProductId == dto.ProductId)
             .Select(r => r.Rating)

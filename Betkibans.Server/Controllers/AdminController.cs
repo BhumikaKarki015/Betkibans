@@ -9,19 +9,28 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Betkibans.Server.Controllers
 {
+    /*  AdminController provides administrative endpoints for platform management.
+        It handles user management, seller verification, product moderation,
+        order oversight, and platform-wide settings.
+        All endpoints are restricted to users with the "Admin" role.
+     */
     [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-
+        
+        // Constructor to initialize database context and Identity user manager
         public AdminController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
         }
 
+        /*  Fetches a list of sellers who have submitted KYC documents
+            but have not yet been verified or rejected.
+         */
         // GET: api/Admin/pending-sellers
         [HttpGet("pending-sellers")]
         [Authorize(Roles = "Admin")]
@@ -29,6 +38,7 @@ namespace Betkibans.Server.Controllers
         {
             var pendingSellers = await _context.Sellers
                 .Include(s => s.User)
+                // Filter for unverified sellers with uploaded docs and no previous rejection
                 .Where(s => !s.IsVerified && s.KycDocumentPath != null && s.RejectionReason == null)
                 .Select(s => new
                 {
@@ -46,6 +56,10 @@ namespace Betkibans.Server.Controllers
             return Ok(pendingSellers);
         }
 
+        /* Processes seller applications.
+           If approved, the seller is verified. If rejected, documents are cleared
+           and a reason must be provided.
+         */
         // PUT: api/Admin/verify-seller/{sellerId}
         [HttpPut("verify-seller/{sellerId}")]
         [Authorize(Roles = "Admin")]
@@ -54,6 +68,7 @@ namespace Betkibans.Server.Controllers
             var seller = await _context.Sellers.FindAsync(sellerId);
             if (seller == null) return NotFound("Seller not found");
 
+            // Identify which admin is performing the action
             var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (dto.IsApproved)
@@ -67,6 +82,7 @@ namespace Betkibans.Server.Controllers
             {
                 seller.IsVerified = false;
                 seller.RejectionReason = dto.RejectionReason;
+                // Remove document path so the seller can re-upload fresh documents
                 seller.KycDocumentPath = null;
             }
 
@@ -74,6 +90,9 @@ namespace Betkibans.Server.Controllers
             return Ok(new { message = dto.IsApproved ? "Seller Verified" : "Seller Rejected" });
         }
 
+        /* Retrieves all registered users in the system.
+           Iterates through users to attach their specific Identity roles.
+         */
         // GET: api/Admin/users
         [HttpGet("users")]
         [Authorize(Roles = "Admin")]
@@ -87,6 +106,7 @@ namespace Betkibans.Server.Controllers
             var result = new List<object>();
             foreach (var u in users)
             {
+                // Fetch roles asynchronously for each user via UserManager
                 var roles = await _userManager.GetRolesAsync(u);
                 result.Add(new
                 {
@@ -102,6 +122,9 @@ namespace Betkibans.Server.Controllers
             return Ok(result);
         }
 
+        /* Retrieves a comprehensive list of products across all sellers.
+           Includes calculated data like average rating and category names.
+         */
         // GET: api/Admin/products
         [HttpGet("products")]
         [Authorize(Roles = "Admin")]
@@ -122,6 +145,7 @@ namespace Betkibans.Server.Controllers
                     p.CreatedAt,
                     CategoryName = p.Category != null ? p.Category.CategoryName : "—",
                     SellerBusinessName = p.Seller != null ? p.Seller.BusinessName : "—",
+                    // Calculate average rating; default to 0.0 if no reviews exist
                     AverageRating = p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 0.0,
                     TotalReviews = p.Reviews.Count
                 })
@@ -130,6 +154,9 @@ namespace Betkibans.Server.Controllers
             return Ok(products);
         }
 
+        /* Toggles the 'IsActive' status of a product.
+           Used by admins to hide products that violate terms or are out of compliance.
+         */
         // PATCH: api/Admin/products/{productId}/toggle
         [HttpPatch("products/{productId}/toggle")]
         [Authorize(Roles = "Admin")]
@@ -142,6 +169,7 @@ namespace Betkibans.Server.Controllers
             return Ok(new { message = "Product status updated.", isActive = product.IsActive });
         }
 
+        // Retrieves all platform orders for administrative monitoring.
         // GET: api/Admin/orders
         [HttpGet("orders")]
         [Authorize(Roles = "Admin")]
@@ -169,6 +197,7 @@ namespace Betkibans.Server.Controllers
             return Ok(result);
         }
 
+        // Lists all repair service requests submitted by users.
         // GET: api/Admin/repairs
         [HttpGet("repairs")]
         [Authorize(Roles = "Admin")]
@@ -199,6 +228,7 @@ namespace Betkibans.Server.Controllers
             return Ok(result);
         }
 
+        // Provides high-level summary counts for the Admin Dashboard header cards.
         // GET: api/Admin/stats
         [HttpGet("stats")]
         [Authorize(Roles = "Admin")]
@@ -214,7 +244,9 @@ namespace Betkibans.Server.Controllers
             });
         }
 
-
+        /* Generates detailed analytics data for charts and tables.
+           Includes revenue trends, status distributions, and top-performing sellers.
+         */
         // GET: api/Admin/analytics
         [HttpGet("analytics")]
         [Authorize(Roles = "Admin")]
@@ -222,6 +254,7 @@ namespace Betkibans.Server.Controllers
         {
             var now = DateTime.UtcNow;
 
+            // Generate revenue data for the last 6 months
             var monthlyData = Enumerable.Range(0, 6).Select(i => {
                 var date = now.AddMonths(-i);
                 var rev = _context.Orders
@@ -230,11 +263,13 @@ namespace Betkibans.Server.Controllers
                 return new { month = date.ToString("MMM yyyy"), revenue = rev };
             }).Reverse().ToList();
 
+            // Group orders by status (e.g., Pending, Delivered, Cancelled)
             var ordersByStatus = await _context.Orders
                 .GroupBy(o => o.Status)
                 .Select(g => new { status = g.Key, count = g.Count() })
                 .ToListAsync();
 
+            // Calculate top 5 sellers based on total revenue
             var topSellers = await _context.Sellers
                 .Include(s => s.Products)
                 .ThenInclude(p => p.OrderItems)
@@ -252,6 +287,7 @@ namespace Betkibans.Server.Controllers
                 .Take(5)
                 .ToListAsync();
 
+            // Distribution of products across categories
             var categoryBreakdown = await _context.Products
                 .Include(p => p.Category)
                 .Where(p => p.IsActive)
@@ -279,6 +315,9 @@ namespace Betkibans.Server.Controllers
             });
         }
 
+        /* Retrieves global platform configuration settings.
+           Creates a default entry if no settings record exists.
+         */
         // GET: api/Admin/settings
         [HttpGet("settings")]
         [Authorize(Roles = "Admin")]
@@ -294,6 +333,7 @@ namespace Betkibans.Server.Controllers
             return Ok(settings);
         }
 
+        // Updates global platform settings (fees, validation rules, toggles).
         // PUT: api/Admin/settings
         [HttpPut("settings")]
         [Authorize(Roles = "Admin")]
@@ -304,6 +344,7 @@ namespace Betkibans.Server.Controllers
 
             var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Mapping platform configuration fields
             settings.PlatformName = dto.PlatformName;
             settings.Tagline = dto.Tagline;
             settings.SupportEmail = dto.SupportEmail;
@@ -334,6 +375,7 @@ namespace Betkibans.Server.Controllers
 
     }
 
+    // DTO for handling seller approval or rejection.
     public class VerificationDto
     {
         public bool IsApproved { get; set; }
