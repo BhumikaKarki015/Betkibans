@@ -1,3 +1,4 @@
+using Azure.Storage.Blobs;
 using Betkibans.Server.Data;
 using Betkibans.Server.DTOs.Product; 
 using Betkibans.Server.Models.Entities;
@@ -19,12 +20,12 @@ namespace Betkibans.Server.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment; // Needed for file saving
+    private readonly IConfiguration _configuration;
 
-    public ProductController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public ProductController(ApplicationDbContext context, IConfiguration configuration)
     {
         _context = context;
-        _environment = environment;
+        _configuration = configuration;
     }
 
     /* Retrieves a list of active products based on multiple search and filter criteria.
@@ -135,7 +136,7 @@ public class ProductController : ControllerBase
     
     /* Orchestrates the creation of a new product.
        This is a complex operation involving:
-       1. DB Record creation, 2. Local file system storage for images, 3. Many-to-Many material linking.
+       1. DB Record creation, 2. Azure Blob Storage for images, 3. Many-to-Many material linking.
      */
     [HttpPost]
     [Authorize(Roles = "Seller")]
@@ -178,31 +179,28 @@ public class ProductController : ControllerBase
         _context.Products.Add(product);
         await _context.SaveChangesAsync(); // Save to generate ProductId
 
-        // 4. Handle Physical Image Uploads
-        // Create a unique directory per product to keep the 'uploads' folder organized
-        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "products", $"product_{product.ProductId}");
-        if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+        // 4. Handle Image Uploads via Azure Blob Storage
+        var connectionString = _configuration["AzureStorage:ConnectionString"];
+        var containerName = _configuration["AzureStorage:ContainerName"];
+        var blobServiceClient = new BlobServiceClient(connectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
         var isFirstImage = true;
         foreach (var file in dto.Images)
         {
             if (file.Length > 0)
             {
-                // Assign a unique GUID to filenames to prevent collisions
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                var filePath = Path.Combine(uploadPath, fileName);
-                
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                var fileName = $"products/product_{product.ProductId}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var blobClient = containerClient.GetBlobClient(fileName);
+                using (var stream = file.OpenReadStream())
                 {
-                    await file.CopyToAsync(stream);
+                    await blobClient.UploadAsync(stream, overwrite: true);
                 }
-
-                // Register the image in the DB, marking the first one as the primary thumbnail
                 _context.ProductImages.Add(new ProductImage
                 {
                     ProductId = product.ProductId,
-                    ImageUrl = $"/uploads/products/product_{product.ProductId}/{fileName}",
-                    IsPrimary = isFirstImage // First uploaded image is primary
+                    ImageUrl = blobClient.Uri.ToString(),
+                    IsPrimary = isFirstImage
                 });
                 isFirstImage = false;
             }
