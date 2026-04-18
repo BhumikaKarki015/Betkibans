@@ -86,7 +86,9 @@ const EditProduct = () => {
 
             if (product.productImages) {
                 setExistingImages(product.productImages.map((img: any) => ({
-                    url: `${import.meta.env.VITE_API_URL}${img.imageUrl}`,
+                    url: img.imageUrl.startsWith('http')
+                        ? img.imageUrl
+                        : `${import.meta.env.VITE_API_URL}${img.imageUrl}`,
                     isPrimary: img.isPrimary,
                 })));
             }
@@ -139,26 +141,32 @@ const EditProduct = () => {
 
         try {
             if (!id) return;
-            await api.put(`/Product/${id}`, {
-                productId: parseInt(id),
-                name: formData.name,
-                description: formData.description,
-                price: parseFloat(formData.price),
-                discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
-                stockQuantity: parseInt(formData.stockQuantity),
-                categoryId: parseInt(formData.categoryId),
-                length: formData.length ? parseFloat(formData.length) : null,
-                width: formData.width ? parseFloat(formData.width) : null,
-                height: formData.height ? parseFloat(formData.height) : null,
-                weight: formData.weight ? parseFloat(formData.weight) : null,
-                color: formData.color || null,
-                finishType: formData.finishType || null,
-                craftingTimeDays: formData.craftingTimeDays || null,
-                careInstructions: formData.careInstructions || null,
-                careWarnings: formData.careWarnings || null,
-                isActive: formData.isActive,
-                materialIds: formData.materialIds,
+
+            const data = new FormData();
+            data.append('ProductId', id);
+            data.append('Name', formData.name);
+            data.append('Description', formData.description);
+            data.append('Price', formData.price);
+            data.append('StockQuantity', formData.stockQuantity);
+            data.append('CategoryId', formData.categoryId);
+            data.append('IsActive', formData.isActive.toString());
+            if (formData.discountPrice) data.append('DiscountPrice', formData.discountPrice);
+            if (formData.length) data.append('Length', formData.length);
+            if (formData.width) data.append('Width', formData.width);
+            if (formData.height) data.append('Height', formData.height);
+            if (formData.weight) data.append('Weight', formData.weight);
+            if (formData.color) data.append('Color', formData.color);
+            if (formData.finishType) data.append('FinishType', formData.finishType);
+            if (formData.craftingTimeDays) data.append('CraftingTimeDays', formData.craftingTimeDays);
+            if (formData.careInstructions) data.append('CareInstructions', formData.careInstructions);
+            if (formData.careWarnings) data.append('CareWarnings', formData.careWarnings);
+            formData.materialIds.forEach((matId, index) => {
+                data.append(`MaterialIds[${index}]`, matId.toString());
             });
+            newImages.forEach(image => data.append('Images', image));
+
+            await api.put(`/Product/${id}`, data);
+            
             navigate('/seller/products');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to update product');
@@ -168,7 +176,6 @@ const EditProduct = () => {
     };
 
     const handleDelete = async () => {
-
         setDeleting(true);
         try {
             await productService.deleteProduct(parseInt(id!));
@@ -376,7 +383,6 @@ const EditProduct = () => {
                             <h6 className="fw-bold mb-0">Product Images</h6>
                         </div>
 
-                        {/* Existing images */}
                         {existingImages.length > 0 && (
                             <div className="mb-3">
                                 <small className="text-muted fw-medium d-block mb-2">Current Images</small>
@@ -384,7 +390,12 @@ const EditProduct = () => {
                                     {existingImages.map((img, i) => (
                                         <div key={i} className="position-relative" style={{ width: 80, height: 80 }}>
                                             <img src={img.url} alt={`product-${i}`}
-                                                 className="rounded-2 w-100 h-100" style={{ objectFit: 'cover' }} />
+                                                 className="rounded-2 w-100 h-100" style={{ objectFit: 'cover' }}
+                                                 onError={(e) => {
+                                                     const t = e.target as HTMLImageElement;
+                                                     t.onerror = null;
+                                                     t.src = '/no-image.png';
+                                                 }} />
                                             {img.isPrimary && (
                                                 <span className="position-absolute bottom-0 start-0 w-100 text-center"
                                                       style={{ backgroundColor: 'rgba(45,106,79,0.8)', color: 'white', fontSize: 9, borderRadius: '0 0 6px 6px', padding: '1px 0' }}>
@@ -397,7 +408,6 @@ const EditProduct = () => {
                             </div>
                         )}
 
-                        {/* Add new images */}
                         <label className="d-flex flex-column align-items-center justify-content-center rounded-3 p-3 mb-2"
                                style={{ border: '2px dashed #C5BFB4', cursor: 'pointer', backgroundColor: '#F8F5F0' }}>
                             <i className="bi bi-plus-circle" style={{ fontSize: 22, color: '#2D6A4F' }}></i>
@@ -522,7 +532,7 @@ const EditProduct = () => {
                         Permanently delete this product and all its images. This action cannot be undone.
                     </p>
                     <button className="btn btn-sm fw-semibold"
-                            onClick={handleDelete}
+                            onClick={() => setShowDeleteConfirm(true)}
                             disabled={deleting}
                             style={{ backgroundColor: '#C62828', color: 'white', borderRadius: 8, border: 'none' }}>
                         {deleting
@@ -531,6 +541,7 @@ const EditProduct = () => {
                     </button>
                 </div>
             </div>
+
             {showDeleteConfirm && (
                 <div style={{
                     position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
@@ -549,14 +560,13 @@ const EditProduct = () => {
                                     onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
                             <button className="btn rounded-pill px-4 fw-semibold"
                                     style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none' }}
-                                    onClick={() => { handleDeleteProduct(); setShowDeleteConfirm(false); }}>
+                                    onClick={() => { setShowDeleteConfirm(false); handleDelete(); }}>
                                 Yes, Delete
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };
