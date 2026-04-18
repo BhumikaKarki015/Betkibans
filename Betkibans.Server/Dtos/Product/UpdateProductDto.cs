@@ -39,4 +39,6 @@ public class UpdateProductDto
     public bool IsActive { get; set; } = true;
 
     public List<int> MaterialIds { get; set; } = new List<int>();
+
+    public List<IFormFile>? Images { get; set; }
 }

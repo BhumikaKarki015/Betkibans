@@ -9,12 +9,6 @@ using System.Security.Claims;
 
 namespace Betkibans.Server.Controllers;
 
-/*
-   ProductController handles the catalog management for Betkibans.
-   It supports public browsing with advanced filtering, as well as
-   Seller-restricted operations like product creation (including image uploads)
-   and soft-deletion.
- */
 [Route("api/[controller]")]
 [ApiController]
 public class ProductController : ControllerBase
@@ -28,9 +22,6 @@ public class ProductController : ControllerBase
         _configuration = configuration;
     }
 
-    /* Retrieves a list of active products based on multiple search and filter criteria.
-       Supports search terms, category/material filtering, price ranges, and custom sorting.
-     */
     // GET: api/Product
     [HttpGet]
     public async Task<IActionResult> GetAllProducts(
@@ -43,7 +34,6 @@ public class ProductController : ControllerBase
         [FromQuery] int? sellerId
     )
     {
-        // Start with an active product query including essential related data
         var query = _context.Products
             .Include(p => p.Category)
             .Include(p => p.ProductImages)
@@ -52,15 +42,9 @@ public class ProductController : ControllerBase
             .Where(p => p.IsActive)
             .AsQueryable();
 
-        // --- FILTERING LOGIC ---
-
-        // 0. Filter by specific Seller (useful for seller profile pages)
         if (sellerId.HasValue)
-        {
             query = query.Where(p => p.SellerId == sellerId.Value);
-        }
 
-        // 1. Text Search across Name and Description
         if (!string.IsNullOrEmpty(search))
         {
             var lowerSearch = search.ToLower();
@@ -68,23 +52,15 @@ public class ProductController : ControllerBase
                                      || p.Description.ToLower().Contains(lowerSearch));
         }
 
-        // 2. Categories (Show products that match ANY of the selected categories)
         if (categoryIds != null && categoryIds.Length > 0)
-        {
             query = query.Where(p => categoryIds.Contains(p.CategoryId));
-        }
 
-        // 3. Multiselect Material Filtering (e.g., Bamboo vs Cane)
         if (materialIds != null && materialIds.Length > 0)
-        {
             query = query.Where(p => p.ProductMaterials.Any(pm => materialIds.Contains(pm.MaterialId)));
-        }
 
-        // 4. Price Range Constraints
         if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice);
         if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice);
 
-        // 5. Sorting Logic (Defaulting to newest first)
         switch (sort)
         {
             case "price_asc": query = query.OrderBy(p => p.Price); break;
@@ -95,7 +71,6 @@ public class ProductController : ControllerBase
         return Ok(await query.ToListAsync());
     }
     
-    // Fetches full details for a single product by its unique ID.
     // GET: api/Product/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProduct(int id)
@@ -108,12 +83,10 @@ public class ProductController : ControllerBase
             .FirstOrDefaultAsync(p => p.ProductId == id);
 
         if (product == null) return NotFound();
-
         return Ok(product);
     }
 
-    // Returns only the active products belonging to the logged-in Seller.
-    // GET: api/Product/my-products
+    // GET: api/Product/seller/mine
     [HttpGet("seller/mine")]
     [Authorize(Roles = "Seller")]
     public async Task<IActionResult> GetMyProducts()
@@ -134,26 +107,20 @@ public class ProductController : ControllerBase
         return Ok(products);
     }
     
-    /* Orchestrates the creation of a new product.
-       This is a complex operation involving:
-       1. DB Record creation, 2. Azure Blob Storage for images, 3. Many-to-Many material linking.
-     */
+    // POST: api/Product
     [HttpPost]
     [Authorize(Roles = "Seller")]
     [Consumes("multipart/form-data")] 
     public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto dto)
     {
-        // 1. Identity and Authorization check
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return StatusCode(403, "Seller profile not found.");
         if (!seller.IsVerified) return StatusCode(403, "Only verified sellers can add products.");
 
-        // 2. Initial input validation
         if (dto.Images == null || dto.Images.Count == 0)
-             return BadRequest("At least one image is required.");
+            return BadRequest("At least one image is required.");
 
-        // 3. Map DTO to Entity and save to generate the ProductId
         var product = new Product
         {
             SellerId = seller.SellerId,
@@ -177,37 +144,10 @@ public class ProductController : ControllerBase
         };
 
         _context.Products.Add(product);
-        await _context.SaveChangesAsync(); // Save to generate ProductId
+        await _context.SaveChangesAsync();
 
-        // 4. Handle Image Uploads via Azure Blob Storage
-        var connectionString = _configuration["AzureStorage:ConnectionString"];
-        var containerName = _configuration["AzureStorage:ContainerName"];
-        var blobServiceClient = new BlobServiceClient(connectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+        await UploadImagesToBlob(product.ProductId, dto.Images);
 
-        var isFirstImage = true;
-        foreach (var file in dto.Images)
-        {
-            if (file.Length > 0)
-            {
-                var fileName = $"products/product_{product.ProductId}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                var blobClient = containerClient.GetBlobClient(fileName);
-                using (var stream = file.OpenReadStream())
-                {
-                    await blobClient.UploadAsync(stream, overwrite: true);
-                }
-                _context.ProductImages.Add(new ProductImage
-                {
-                    ProductId = product.ProductId,
-                    ImageUrl = blobClient.Uri.ToString(),
-                    IsPrimary = isFirstImage
-                });
-                isFirstImage = false;
-            }
-        }
-        await _context.SaveChangesAsync(); // Save image records
-
-        // 5. Establish Many-to-Many relationships with Materials
         if (dto.MaterialIds != null && dto.MaterialIds.Any())
         {
             foreach (var matId in dto.MaterialIds)
@@ -218,46 +158,72 @@ public class ProductController : ControllerBase
                     MaterialId = matId
                 });
             }
-            await _context.SaveChangesAsync(); // Save material links
+            await _context.SaveChangesAsync();
         }
 
-        return Ok(new { message = "Product created successfully with images!", productId = product.ProductId });
+        return Ok(new { message = "Product created successfully!", productId = product.ProductId });
     }
     
-    /* Updates non-image product details.
-       Ensures the seller can only update products they actually own.
-     */
+    // PUT: api/Product/{id}
     [HttpPut("{id}")]
     [Authorize(Roles = "Seller")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdateProduct(int id, [FromForm] UpdateProductDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return Unauthorized();
 
-        var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
+        var product = await _context.Products
+            .Include(p => p.ProductMaterials)
+            .FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
         if (product == null) return NotFound("Product not found or access denied.");
 
-        // Field mapping from DTO to Entity
+        // Update fields
         product.Name = dto.Name;
         product.Description = dto.Description;
         product.Price = dto.Price;
         product.StockQuantity = dto.StockQuantity;
         product.DiscountPrice = dto.DiscountPrice;
+        product.CategoryId = dto.CategoryId;
         product.Color = dto.Color;
         product.FinishType = dto.FinishType;
         product.CraftingTimeDays = dto.CraftingTimeDays;
         product.CareInstructions = dto.CareInstructions;
         product.CareWarnings = dto.CareWarnings;
+        product.IsActive = dto.IsActive;
+        product.Length = dto.Length;
+        product.Width = dto.Width;
+        product.Height = dto.Height;
+        product.Weight = dto.Weight;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        // Update materials
+        if (dto.MaterialIds != null)
+        {
+            _context.ProductMaterials.RemoveRange(product.ProductMaterials);
+            foreach (var matId in dto.MaterialIds)
+            {
+                _context.ProductMaterials.Add(new ProductMaterial
+                {
+                    ProductId = product.ProductId,
+                    MaterialId = matId
+                });
+            }
+        }
 
         await _context.SaveChangesAsync();
+
+        // Upload new images if provided
+        if (dto.Images != null && dto.Images.Count > 0)
+        {
+            await UploadImagesToBlob(product.ProductId, dto.Images);
+        }
+
         return Ok(new { message = "Product updated successfully." });
     }
     
-    /* Performs a Soft Delete on a product.
-       Instead of removing the row, we set IsActive to false. This preserves
-       referential integrity for existing Order Items.
-     */
+    // DELETE: api/Product/{id}
     [HttpDelete("{id}")]
     [Authorize(Roles = "Seller")]
     public async Task<IActionResult> DeleteProduct(int id)
@@ -268,14 +234,43 @@ public class ProductController : ControllerBase
 
         var product = await _context.Products
             .FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
-    
         if (product == null) return NotFound("Product not found or access denied.");
 
-        // Soft delete — keeps order history intact
         product.IsActive = false;
         product.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Product deleted successfully." });
+    }
+
+    // Shared helper — uploads images to Azure Blob and saves records to DB
+    private async Task UploadImagesToBlob(int productId, List<IFormFile> images)
+    {
+        var connectionString = _configuration["AzureStorage:ConnectionString"];
+        var containerName = _configuration["AzureStorage:ContainerName"];
+        var blobServiceClient = new BlobServiceClient(connectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+        var isFirstImage = !await _context.ProductImages.AnyAsync(pi => pi.ProductId == productId);
+
+        foreach (var file in images)
+        {
+            if (file.Length > 0)
+            {
+                var fileName = $"products/product_{productId}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var blobClient = containerClient.GetBlobClient(fileName);
+                using var stream = file.OpenReadStream();
+                await blobClient.UploadAsync(stream, overwrite: true);
+
+                _context.ProductImages.Add(new ProductImage
+                {
+                    ProductId = productId,
+                    ImageUrl = blobClient.Uri.ToString(),
+                    IsPrimary = isFirstImage
+                });
+                isFirstImage = false;
+            }
+        }
+        await _context.SaveChangesAsync();
     }
 }
