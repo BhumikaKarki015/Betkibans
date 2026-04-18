@@ -36,8 +36,6 @@ const SellerProducts = () => {
     };
 
     const handleDelete = async (productId: number) => {
-
-
         try {
             await productService.deleteProduct(productId);
             setProducts(products.filter(p => p.productId !== productId));
@@ -47,13 +45,15 @@ const SellerProducts = () => {
         }
     };
 
-    // Helper function to safely get the image URL
     const getProductImage = (product: Product) => {
         if (product.productImages && product.productImages.length > 0) {
-            // Prepend backend URL to the relative path
-            return `${import.meta.env.VITE_API_URL}${product.productImages[0].imageUrl}`;
+            const imageUrl = product.productImages[0].imageUrl;
+            if (imageUrl.startsWith('http')) {
+                return imageUrl;
+            }
+            return `${import.meta.env.VITE_API_URL}${imageUrl}`;
         }
-        return 'https://via.placeholder.com/300?text=No+Image';
+        return null;
     };
 
     if (loading) {
@@ -121,12 +121,16 @@ const SellerProducts = () => {
                                 <div key={product.productId} className="col-md-6 col-lg-4">
                                     <div className="card h-100 border-0 shadow-sm">
                                         <div className="position-relative" style={{ paddingTop: '75%', overflow: 'hidden' }}>
-                                            {/* ✅ UPDATED: Use the helper function for src */}
                                             <img
-                                                src={getProductImage(product)}
+                                                src={getProductImage(product) ?? '/no-image.png'}
                                                 alt={product.name}
                                                 className="position-absolute top-0 start-0 w-100 h-100"
                                                 style={{ objectFit: 'cover' }}
+                                                onError={(e) => {
+                                                    const t = e.target as HTMLImageElement;
+                                                    t.onerror = null;
+                                                    t.src = '/no-image.png';
+                                                }}
                                             />
                                             {product.stockQuantity === 0 && (
                                                 <div className="position-absolute top-0 end-0 m-2">

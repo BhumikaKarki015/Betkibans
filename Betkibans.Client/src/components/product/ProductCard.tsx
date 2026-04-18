@@ -7,14 +7,15 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
 
-    // SAFE IMAGE HELPER
-    // This checks if images exist before trying to read them.
-    // If no image, it shows a placeholder.
     const getImageUrl = () => {
         if (product.productImages && product.productImages.length > 0) {
-            return `${import.meta.env.VITE_API_URL}${product.productImages[0].imageUrl}`;
+            const imageUrl = product.productImages[0].imageUrl;
+            if (imageUrl.startsWith('http')) {
+                return imageUrl;
+            }
+            return `${import.meta.env.VITE_API_URL}${imageUrl}`;
         }
-        return 'https://via.placeholder.com/300?text=No+Image';
+        return null;
     };
 
     return (
@@ -24,13 +25,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 <Link to={`/product/${product.productId}`} className="text-decoration-none">
                     <div className="position-relative" style={{ paddingTop: '75%', overflow: 'hidden' }}>
                         <img
-                            src={getImageUrl()}
+                            src={getImageUrl() ?? '/no-image.png'}
                             alt={product.name}
                             className="position-absolute top-0 start-0 w-100 h-100"
                             style={{ objectFit: 'cover' }}
                             onError={(e) => {
-                                // Fallback if the image link is broken
-                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Error';
+                                const t = e.target as HTMLImageElement;
+                                t.onerror = null;
+                                t.src = '/no-image.png';
                             }}
                         />
                         {product.stockQuantity === 0 && (
