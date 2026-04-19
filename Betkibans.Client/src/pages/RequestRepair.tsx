@@ -34,9 +34,8 @@ const RequestRepair = () => {
         formData.append('description', description);
         if (image) formData.append('image', image);
         try {
-            await api.post('/Repair/submit-request', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            await api.post('/Repair/submit-request', formData);
+            
             navigate('/my-repairs');
         } catch {
             showToast('Error submitting request. Please try again.', 'error');
