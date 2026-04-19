@@ -44,6 +44,13 @@ const Stars = ({
     </span>
 );
 
+// Helper to resolve image URLs (handles both old local paths and new Blob URLs)
+const resolveImageUrl = (imageUrl: string): string => {
+    if (!imageUrl) return '/no-image.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${import.meta.env.VITE_API_URL}${imageUrl}`;
+};
+
 const ProductDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -78,7 +85,7 @@ const ProductDetailPage = () => {
             const data = await productService.getProductById(productId);
             setProduct(data);
             if (data.productImages?.length > 0) {
-                setSelectedImage(`${import.meta.env.VITE_API_URL}${data.productImages[0].imageUrl}`);
+                setSelectedImage(resolveImageUrl(data.productImages[0].imageUrl));
             }
             try {
                 const all = await productService.getAllProducts({ categoryIds: [data.categoryId] });
@@ -200,13 +207,14 @@ const ProductDetailPage = () => {
 
                     {/* LEFT: Image gallery */}
                     <div className="col-12 col-lg-5">
-                        {/* Main image — responsive height */}
+                        {/* Main image */}
                         <div className="product-detail-main-img rounded-3 overflow-hidden mb-3 d-flex align-items-center justify-content-center"
                              style={{ backgroundColor: '#FDFAF5', height: 420, boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
                             <img
-                                src={selectedImage || '/placeholder.jpg'}
+                                src={selectedImage || '/no-image.png'}
                                 alt={product.name}
                                 style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', padding: 16 }}
+                                onError={(e) => { const t = e.target as HTMLImageElement; t.onerror = null; t.src = '/no-image.png'; }}
                             />
                         </div>
                         {/* Thumbnails */}
@@ -214,16 +222,17 @@ const ProductDetailPage = () => {
                             <div className="d-flex gap-2 flex-wrap">
                                 {product.productImages?.map((img) => (
                                     <button key={img.productImageId}
-                                            onClick={() => setSelectedImage(`${import.meta.env.VITE_API_URL}${img.imageUrl}`)}
+                                            onClick={() => setSelectedImage(resolveImageUrl(img.imageUrl))}
                                             className="product-thumb-btn p-0 border-0 rounded-2 overflow-hidden"
                                             style={{
                                                 width: 68, height: 68,
-                                                outline: selectedImage.includes(img.imageUrl) ? `2px solid #2D6A4F` : '2px solid transparent',
+                                                outline: selectedImage === resolveImageUrl(img.imageUrl) ? `2px solid #2D6A4F` : '2px solid transparent',
                                                 cursor: 'pointer', backgroundColor: '#FDFAF5',
                                             }}>
-                                        <img src={`${import.meta.env.VITE_API_URL}${img.imageUrl}`}
+                                        <img src={resolveImageUrl(img.imageUrl)}
                                              alt="thumb"
-                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                             onError={(e) => { const t = e.target as HTMLImageElement; t.onerror = null; t.src = '/no-image.png'; }} />
                                     </button>
                                 ))}
                             </div>
@@ -265,7 +274,7 @@ const ProductDetailPage = () => {
                             )}
                         </div>
 
-                        {/* Seller card — stacks on mobile */}
+                        {/* Seller card */}
                         <div className="seller-info-card rounded-3 p-3 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
                              style={{ backgroundColor: '#EDEAE3', border: '1px solid #DDD9D2' }}>
                             <div className="d-flex align-items-center gap-3">
@@ -332,9 +341,8 @@ const ProductDetailPage = () => {
                             </div>
                         )}
 
-                        {/* Add to Cart + Wishlist + Buy Now — full width on mobile */}
+                        {/* Add to Cart + Wishlist + Buy Now */}
                         <div className="d-grid gap-2 mb-3" style={{ maxWidth: 480 }}>
-                            {/* Row 1: Add to Cart + Wishlist */}
                             <div className="product-cta-row d-flex gap-2">
                                 <button className="btn btn-lg fw-semibold text-white flex-grow-1"
                                         onClick={handleAddToCart}
@@ -355,7 +363,6 @@ const ProductDetailPage = () => {
                                     <i className={`bi ${isWishlisted(product.productId) ? 'bi-heart-fill' : 'bi-heart'}`}></i>
                                 </button>
                             </div>
-                            {/* Row 2: Buy Now */}
                             {product.stockQuantity > 0 && (
                                 <button className="btn btn-lg fw-semibold"
                                         onClick={handleBuyNow}
@@ -390,7 +397,6 @@ const ProductDetailPage = () => {
 
                 {/* ── Tabs ── */}
                 <div className="mb-4 mb-md-5">
-                    {/* Tab headers — horizontally scrollable on mobile */}
                     <div className="border-bottom mb-3 mb-md-4">
                         <div className="product-tabs d-flex gap-0"
                              style={{ overflowX: 'auto', flexWrap: 'nowrap', scrollbarWidth: 'none' }}>
@@ -708,11 +714,12 @@ const ProductDetailPage = () => {
                                         <div style={{ paddingTop: '75%', position: 'relative', overflow: 'hidden', backgroundColor: '#F0ECE5' }}>
                                             <img
                                                 src={(rp.productImages?.length ?? 0) > 0
-                                                    ? `${import.meta.env.VITE_API_URL}${rp.productImages![0].imageUrl}`
-                                                    : '/placeholder.jpg'}
+                                                    ? resolveImageUrl(rp.productImages![0].imageUrl)
+                                                    : '/no-image.png'}
                                                 alt={rp.name}
                                                 className="position-absolute top-0 start-0 w-100 h-100"
                                                 style={{ objectFit: 'cover' }}
+                                                onError={(e) => { const t = e.target as HTMLImageElement; t.onerror = null; t.src = '/no-image.png'; }}
                                             />
                                         </div>
                                         <div className="p-2 p-md-3">
