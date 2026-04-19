@@ -59,9 +59,9 @@ const AboutUs = () => {
                 <div className="row g-3 text-center">
                     {stats.map(s => (
                         <div key={s.label} className="col-6 col-md-3">
-                            <div className="p-4 rounded-3" style={cardStyle}>
-                                <div className="fw-bold mb-1" style={{ fontSize: 36, color: green }}>{s.value}</div>
-                                <small className="text-muted fw-medium">{s.label}</small>
+                            <div className="p-3 p-md-4 rounded-3" style={cardStyle}>
+                                <div className="fw-bold mb-1" style={{ fontSize: 'clamp(1.5rem, 5vw, 2.25rem)', color: green }}>{s.value}</div>
+                                <small className="text-muted fw-medium" style={{ fontSize: 'clamp(11px, 2.5vw, 13px)' }}>{s.label}</small>
                             </div>
                         </div>
                     ))}

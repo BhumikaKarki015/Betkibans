@@ -163,24 +163,37 @@ const Register = () => {
                                    value={email} onChange={(e) => setEmail(e.target.value)} />
                         </div>
 
-                        <div className="row mb-2">
-                            <div className="col-6">
-                                <label className="form-label fw-bold small mb-1">Phone Number *</label>
-                                <input type="text" className="form-control p-2" placeholder="+977-98..." required
-                                       value={phone} onChange={(e) => setPhone(e.target.value)} />
+                        <div className="mb-2">
+                            <label className="form-label fw-bold small mb-1">Phone Number *</label>
+                            <input type="text" className="form-control p-2" placeholder="+977-98..." required
+                                   value={phone} onChange={(e) => setPhone(e.target.value)} />
+                        </div>
+
+                        <div className="mb-2">
+                            <label className="form-label fw-bold small mb-1">Password *</label>
+                            <div className="input-group">
+                                <input type={showPassword ? 'text' : 'password'}
+                                       className="form-control p-2 border-end-0" placeholder="••••••" required
+                                       value={password} onChange={(e) => setPassword(e.target.value)} />
+                                <span className="input-group-text bg-white border-start-0"
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={() => setShowPassword(!showPassword)}>
+                                    <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+                                </span>
                             </div>
-                            <div className="col-6">
-                                <label className="form-label fw-bold small mb-1">Confirm Password</label>
-                                <div className="input-group">
-                                    <input type={showConfirmPassword ? 'text' : 'password'}
-                                           className="form-control p-2 border-end-0" placeholder="••••••" required
-                                           value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                                    <span className="input-group-text bg-white border-start-0"
-                                          style={{ cursor: 'pointer' }}
-                                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                                        <i className={showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
-                                    </span>
-                                </div>
+                        </div>
+
+                        <div className="mb-2">
+                            <label className="form-label fw-bold small mb-1">Confirm Password *</label>
+                            <div className="input-group">
+                                <input type={showConfirmPassword ? 'text' : 'password'}
+                                       className="form-control p-2 border-end-0" placeholder="••••••" required
+                                       value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                <span className="input-group-text bg-white border-start-0"
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                    <i className={showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+                                </span>
                             </div>
                         </div>
 
