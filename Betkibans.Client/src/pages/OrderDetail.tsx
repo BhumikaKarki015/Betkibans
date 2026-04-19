@@ -124,7 +124,8 @@ const OrderDetail = () => {
                                     <div className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
                                          style={{ width: 56, height: 56, backgroundColor: '#F0EBE1' }}>
                                         {item.productImage
-                                            ? <img src={`${import.meta.env.VITE_API_URL}${item.productImage}`}
+                                            ? <img src={item.productImage.startsWith('http') ? item.productImage : `${import.meta.env.VITE_API_URL}${item.productImage}`}
+                                                   onError={(e) => { const t = e.target as HTMLImageElement; t.onerror = null; t.src = '/no-image.png'; }}
                                                    alt={item.productName}
                                                    className="rounded-2"
                                                    style={{ width: 56, height: 56, objectFit: 'cover' }} />
