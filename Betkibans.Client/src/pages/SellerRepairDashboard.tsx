@@ -156,7 +156,7 @@ const SellerRepairDashboard = () => {
                                         <div key={req.repairRequestId} className="p-4" style={cardStyle}>
                                             <div className="d-flex gap-3">
                                                 {req.damageImageUrl ? (
-                                                    <img src={`${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
+                                                    <img src={req.damageImageUrl?.startsWith('http') ? req.damageImageUrl : `${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
                                                          alt="Damage" className="rounded-2"
                                                          style={{ width: 80, height: 80, objectFit: 'cover', flexShrink: 0 }} />
                                                 ) : (

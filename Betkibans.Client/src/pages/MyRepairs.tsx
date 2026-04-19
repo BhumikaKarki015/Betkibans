@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useToast } from '../contexts/ToastContext';
 
 interface Quote {
     repairQuoteId: number;
@@ -32,7 +31,6 @@ const statusConfig: Record<string, { color: string; bg: string; label: string; i
 };
 
 const MyRepairs = () => {
-    const { showToast } = useToast();
     const [confirmAcceptId, setConfirmAcceptId] = useState<number | null>(null);
 
     const [requests, setRequests] = useState<RepairRequest[]>([]);
@@ -125,7 +123,7 @@ const MyRepairs = () => {
                                          onClick={() => setExpanded(isExpanded ? null : req.repairRequestId)}>
                                         <div className="d-flex gap-3">
                                             {req.damageImageUrl ? (
-                                                <img src={`${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
+                                                <img src={req.damageImageUrl?.startsWith('http') ? req.damageImageUrl : `${import.meta.env.VITE_API_URL}${req.damageImageUrl}`}
                                                      alt="Damage" className="rounded-2"
                                                      style={{ width: 72, height: 72, objectFit: 'cover', flexShrink: 0 }} />
                                             ) : (
@@ -278,7 +276,7 @@ const MyRepairs = () => {
                             </button>
                             <button className="btn rounded-pill px-4 fw-semibold"
                                     style={{ backgroundColor: '#2D6A4F', color: 'white', border: 'none' }}
-                                    onClick={() => {handleAcceptQuote(confirmAcceptId!); setConfirmAcceptId(null);}}>
+                                    onClick={() => {handleAccept(confirmAcceptId!); setConfirmAcceptId(null);}}>
                                 Yes, Accept
                             </button>
                         </div>
