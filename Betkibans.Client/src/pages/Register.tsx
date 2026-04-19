@@ -122,8 +122,8 @@ const Register = () => {
             </div>
 
             {/* RIGHT SIDE: Registration Form */}
-            <div className="col-12 col-lg-6 d-flex align-items-center justify-content-center bg-white"
-                 style={{ overflowY: 'auto', height: '100vh', scrollbarWidth: 'none' }}>
+            <div className="col-12 col-lg-6 d-flex align-items-start justify-content-center bg-white"
+                 style={{ overflowY: 'auto', height: '100vh', scrollbarWidth: 'none', paddingTop: '2rem' }}>
 
                 <style>{`div::-webkit-scrollbar { display: none; }`}</style>
 
