@@ -388,10 +388,19 @@ const Checkout = () => {
                                                     <div key={item.cartItemId} className="d-flex align-items-center gap-2 gap-md-3 mb-3">
                                                         <img
                                                             src={item.product.productImages?.[0]?.imageUrl
-                                                                ? `${import.meta.env.VITE_API_URL}${item.product.productImages[0].imageUrl}`
-                                                                : 'https://via.placeholder.com/56?text=Item'}
-                                                            alt={item.product.name} className="rounded flex-shrink-0"
-                                                            style={{ width: 48, height: 48, objectFit: 'cover' }} />
+                                                                ? (item.product.productImages[0].imageUrl.startsWith('http')
+                                                                    ? item.product.productImages[0].imageUrl
+                                                                    : `${import.meta.env.VITE_API_URL}${item.product.productImages[0].imageUrl}`)
+                                                                : '/no-image.png'}
+                                                            alt={item.product.name}
+                                                            className="rounded flex-shrink-0"
+                                                            style={{ width: 48, height: 48, objectFit: 'cover' }}
+                                                            onError={(e) => {
+                                                                const t = e.target as HTMLImageElement;
+                                                                t.onerror = null;
+                                                                t.src = '/no-image.png';
+                                                            }}
+                                                        />
                                                         <div className="flex-grow-1 min-w-0">
                                                             <p className="mb-0 small fw-medium text-truncate">{item.product.name}</p>
                                                             <small className="text-muted">Qty: {item.quantity}</small>
