@@ -1,3 +1,4 @@
+using Azure.Storage.Blobs;
 using Betkibans.Server.Data;
 using Betkibans.Server.DTOs.Seller;
 using Betkibans.Server.Models.Entities;
@@ -18,12 +19,12 @@ namespace Betkibans.Server.Controllers;
 public class SellerController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
-    public SellerController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public SellerController(ApplicationDbContext context, IConfiguration configuration)
     {
         _context = context;
-        _environment = environment;
+        _configuration = configuration;
     }
 
     // ==========================================================================
@@ -33,7 +34,7 @@ public class SellerController : ControllerBase
     /* * Retrieves the comprehensive profile of the logged-in seller.
      * Combines data from both the Seller entity and the linked Identity User record.
      */
-    
+
     // GET: api/Seller/profile
     [HttpGet("profile")]
     [Authorize(Roles = "Seller")]
@@ -50,25 +51,25 @@ public class SellerController : ControllerBase
         // Returning a flattened object for easier consumption by the React/Vue frontend
         return Ok(new
         {
-            sellerId        = seller.SellerId,
-            businessName    = seller.BusinessName,
+            sellerId            = seller.SellerId,
+            businessName        = seller.BusinessName,
             businessDescription = seller.BusinessDescription,
-            businessAddress = seller.BusinessAddress,
-            city            = seller.City,
-            district        = seller.District,
-            phoneNumber     = seller.PhoneNumber,
-            website         = seller.Website,
-            businessHours   = seller.BusinessHours,
-            logoUrl         = seller.LogoUrl,
-            facebookUrl     = seller.FacebookUrl,
-            instagramUrl    = seller.InstagramUrl,
-            isVerified      = seller.IsVerified,
-            kycDocumentPath = seller.KycDocumentPath,
-            createdAt       = seller.CreatedAt,
-            verifiedAt      = seller.VerifiedAt,
-            rejectionReason = seller.RejectionReason,
-            ownerName       = seller.User.FullName,
-            ownerEmail      = seller.User.Email,
+            businessAddress     = seller.BusinessAddress,
+            city                = seller.City,
+            district            = seller.District,
+            phoneNumber         = seller.PhoneNumber,
+            website             = seller.Website,
+            businessHours       = seller.BusinessHours,
+            logoUrl             = seller.LogoUrl,
+            facebookUrl         = seller.FacebookUrl,
+            instagramUrl        = seller.InstagramUrl,
+            isVerified          = seller.IsVerified,
+            kycDocumentPath     = seller.KycDocumentPath,
+            createdAt           = seller.CreatedAt,
+            verifiedAt          = seller.VerifiedAt,
+            rejectionReason     = seller.RejectionReason,
+            ownerName           = seller.User.FullName,
+            ownerEmail          = seller.User.Email,
         });
     }
 
@@ -108,16 +109,16 @@ public class SellerController : ControllerBase
 
     /* Handles business logo uploads.
        Includes validation for file types, size constraints, and handles cleanup
-       of previous logos to save disk space.
+       of previous logos to save storage space.
      */
-    
+
     // POST: api/Seller/upload-logo
     [HttpPost("upload-logo")]
     [Authorize(Roles = "Seller")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadLogo([FromForm] LogoUploadDto dto)
     {
-        var logo = dto.Logo; 
+        var logo = dto.Logo;
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
         if (seller == null) return NotFound("Seller not found");
@@ -134,33 +135,35 @@ public class SellerController : ControllerBase
         if (logo.Length > 5 * 1024 * 1024)
             return BadRequest("Image must be under 5MB.");
 
-        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "logos");
-        if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+        var containerClient = GetContainerClient();
 
-        // Delete old logo if exists
-        if (!string.IsNullOrEmpty(seller.LogoUrl))
+        // Delete old logo from Blob Storage if it exists
+        if (!string.IsNullOrEmpty(seller.LogoUrl) && seller.LogoUrl.Contains("blob.core.windows.net"))
         {
-            var oldPath = Path.Combine(_environment.WebRootPath, seller.LogoUrl.TrimStart('/'));
-            if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+            try
+            {
+                var oldUri = new Uri(seller.LogoUrl);
+                var oldBlobName = string.Join("/", oldUri.Segments[2..]);
+                await containerClient.GetBlobClient(oldBlobName).DeleteIfExistsAsync();
+            }
+            catch { /* ignore delete errors */ }
         }
 
         // Generate a unique filename using SellerID and Ticks to prevent caching/naming conflicts
         var ext = Path.GetExtension(logo.FileName);
-        var fileName = $"seller_{seller.SellerId}_{DateTime.Now.Ticks}{ext}";
-        var filePath = Path.Combine(uploadPath, fileName);
+        var fileName = $"logos/seller_{seller.SellerId}_{DateTime.UtcNow.Ticks}{ext}";
+        var blobClient = containerClient.GetBlobClient(fileName);
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await logo.CopyToAsync(stream);
-        }
+        using var stream = logo.OpenReadStream();
+        await blobClient.UploadAsync(stream, overwrite: true);
 
-        seller.LogoUrl = $"/uploads/logos/{fileName}";
+        seller.LogoUrl = blobClient.Uri.ToString();
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Logo uploaded.", logoUrl = seller.LogoUrl });
     }
-    
-    // Removes the seller's business logo and deletes the physical file from storage.
+
+    // Removes the seller's business logo and deletes the file from Blob Storage.
     // DELETE: api/Seller/delete-logo
     [HttpDelete("delete-logo")]
     [Authorize(Roles = "Seller")]
@@ -173,9 +176,17 @@ public class SellerController : ControllerBase
         if (string.IsNullOrEmpty(seller.LogoUrl))
             return BadRequest("No logo to delete.");
 
-        // Locate and delete physical file
-        var filePath = Path.Combine(_environment.WebRootPath, seller.LogoUrl.TrimStart('/'));
-        if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+        // Locate and delete file from Blob Storage
+        if (seller.LogoUrl.Contains("blob.core.windows.net"))
+        {
+            try
+            {
+                var oldUri = new Uri(seller.LogoUrl);
+                var oldBlobName = string.Join("/", oldUri.Segments[2..]);
+                await GetContainerClient().GetBlobClient(oldBlobName).DeleteIfExistsAsync();
+            }
+            catch { /* ignore delete errors */ }
+        }
 
         seller.LogoUrl = null;
         await _context.SaveChangesAsync();
@@ -186,7 +197,7 @@ public class SellerController : ControllerBase
     /* Processes KYC (Know Your Customer) document submissions.
        Expects a business license and ID document for manual admin verification.
      */
-    
+
     // POST: api/Seller/upload-kyc
     [HttpPost("upload-kyc")]
     [Authorize(Roles = "Seller")]
@@ -200,21 +211,20 @@ public class SellerController : ControllerBase
         if (dto.BusinessLicense == null || dto.IdDocument == null)
             return BadRequest("Missing documents");
 
-        // Directory structure: organizes documents by seller ID for security/auditing
-        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "kyc", $"seller_{seller.SellerId}");
-        if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+        var containerClient = GetContainerClient();
 
-        // Helper local function to handle asynchronous file saving
-        async Task<string> SaveFile(IFormFile file)
+        // Helper local function to handle asynchronous Blob Storage upload
+        async Task<string> UploadToBlob(IFormFile file, string prefix)
         {
-            var fileName = $"{DateTime.Now.Ticks}_{file.FileName}";
-            var filePath = Path.Combine(uploadPath, fileName);
-            using (var stream = new FileStream(filePath, FileMode.Create)) { await file.CopyToAsync(stream); }
-            return $"/uploads/kyc/seller_{seller.SellerId}/{fileName}";
+            var fileName = $"kyc/seller_{seller.SellerId}/{prefix}_{DateTime.UtcNow.Ticks}{Path.GetExtension(file.FileName)}";
+            var blobClient = containerClient.GetBlobClient(fileName);
+            using var stream = file.OpenReadStream();
+            await blobClient.UploadAsync(stream, overwrite: true);
+            return blobClient.Uri.ToString();
         }
 
-        seller.KycDocumentPath = await SaveFile(dto.BusinessLicense);
-        await SaveFile(dto.IdDocument);
+        seller.KycDocumentPath = await UploadToBlob(dto.BusinessLicense, "business_license");
+        await UploadToBlob(dto.IdDocument, "id_document");
 
         // Reset verification status if they are re-uploading documents
         seller.IsVerified = false;
@@ -223,12 +233,12 @@ public class SellerController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { message = "KYC Uploaded", profile = seller });
     }
-    
+
     /* Generates a comprehensive analytics report for the seller's dashboard.
        Aggregates data from orders, products, and reviews to provide
        insights into revenue, stock levels, and customer satisfaction.
      */
-    
+
     // GET: api/Seller/analytics
     [HttpGet("analytics")]
     [Authorize(Roles = "Seller")]
@@ -296,10 +306,10 @@ public class SellerController : ControllerBase
                 p.Name,
                 p.Price,
                 p.StockQuantity,
-                TotalSold = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
-                Revenue = p.OrderItems?.Sum(oi => oi.UnitPrice * oi.Quantity) ?? 0,
+                TotalSold     = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
+                Revenue       = p.OrderItems?.Sum(oi => oi.UnitPrice * oi.Quantity) ?? 0,
                 AverageRating = p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 0,
-                TotalReviews = p.Reviews.Count
+                TotalReviews  = p.Reviews.Count
             })
             .OrderByDescending(p => p.Revenue)
             .Take(5)
@@ -314,12 +324,12 @@ public class SellerController : ControllerBase
         return Ok(new {
             totalRevenue,
             monthlyRevenue,
-            totalOrders = orders.Count,
-            totalProducts = products.Count,
-            averageRating = products.Any(p => p.Reviews.Any()) 
-                ? products.SelectMany(p => p.Reviews).Average(r => (double)r.Rating) 
+            totalOrders    = orders.Count,
+            totalProducts  = products.Count,
+            averageRating  = products.Any(p => p.Reviews.Any())
+                ? products.SelectMany(p => p.Reviews).Average(r => (double)r.Rating)
                 : 0,
-            totalReviews = products.Sum(p => p.Reviews.Count),
+            totalReviews   = products.Sum(p => p.Reviews.Count),
             ordersByStatus,
             monthlyData,
             topProducts,
@@ -330,7 +340,7 @@ public class SellerController : ControllerBase
     // ==========================================================================
     // ADMIN ACTIONS (Oversight and Public Highlights)
     // ==========================================================================
-    
+
     // GET: api/Seller/verified
     // Used by the homepage to show verified artisans
     [HttpGet("verified")]
@@ -414,5 +424,14 @@ public class SellerController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(new { message = dto.IsApproved ? "Seller Verified" : "Seller Rejected" });
+    }
+
+    // ── Private helper: creates a reusable Blob container client ──
+    private BlobContainerClient GetContainerClient()
+    {
+        var connectionString  = _configuration["AzureStorage:ConnectionString"];
+        var containerName     = _configuration["AzureStorage:ContainerName"];
+        var blobServiceClient = new BlobServiceClient(connectionString);
+        return blobServiceClient.GetBlobContainerClient(containerName);
     }
 }
