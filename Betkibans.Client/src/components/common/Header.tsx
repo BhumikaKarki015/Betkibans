@@ -18,9 +18,14 @@ const Header = () => {
     // Seller notifications
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [showOrderDropdown, setShowOrderDropdown] = useState(false);
+    const [dismissedOrderIds, setDismissedOrderIds] = useState<number[]>(() => {
+        try { return JSON.parse(localStorage.getItem('dismissedOrderIds') || '[]'); }
+        catch { return []; }
+    });
     const orderDropdownRef = useRef<HTMLDivElement>(null);
 
     const cartCount = cartItems?.reduce((total, item) => total + item.quantity, 0) || 0;
+    const newPendingOrders = pendingOrders.filter(o => !dismissedOrderIds.includes(o.orderId));
 
     useEffect(() => {
         if (user?.role === 'Admin') {
@@ -155,7 +160,12 @@ const Header = () => {
                                                     <div key={m.contactMessageId}
                                                          className="px-3 py-2 d-flex align-items-start gap-2"
                                                          style={{ borderBottom: '1px solid #F5F2EC', cursor: 'pointer' }}
-                                                         onClick={() => { navigate('/admin/messages'); setShowMessageDropdown(false); }}>
+                                                         onClick={async () => {
+                                                             try { await api.put(`/Contact/messages/${m.contactMessageId}/read`); } catch {}
+                                                             setUnreadMessages(prev => prev.filter(msg => msg.contactMessageId !== m.contactMessageId));
+                                                             navigate('/admin/messages');
+                                                             setShowMessageDropdown(false);
+                                                         }}>
                                                         <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
                                                              style={{ width: 32, height: 32, backgroundColor: green, fontSize: 13 }}>
                                                             {m.name?.[0]?.toUpperCase() || '?'}
@@ -262,13 +272,21 @@ const Header = () => {
                                 <button
                                     className="btn btn-sm border-0 p-1 position-relative"
                                     style={{ color: '#333' }}
-                                    onClick={() => setShowOrderDropdown(!showOrderDropdown)}
+                                    onClick={() => {
+                                        setShowOrderDropdown(!showOrderDropdown);
+                                        // Dismiss all currently visible pending orders when opened
+                                        if (!showOrderDropdown) {
+                                            const allIds = [...dismissedOrderIds, ...pendingOrders.map(o => o.orderId)];
+                                            setDismissedOrderIds(allIds);
+                                            localStorage.setItem('dismissedOrderIds', JSON.stringify(allIds));
+                                        }
+                                    }}
                                 >
                                     <i className="bi bi-bell fs-5"></i>
-                                    {pendingOrders.length > 0 && (
+                                    {newPendingOrders.length > 0 && (
                                         <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                                               style={{ fontSize: '0.6rem', padding: '0.3em 0.5em' }}>
-                                            {pendingOrders.length}
+                                            {newPendingOrders.length}
                                         </span>
                                     )}
                                 </button>
