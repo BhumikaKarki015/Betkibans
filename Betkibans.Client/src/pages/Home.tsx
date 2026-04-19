@@ -200,12 +200,17 @@ const Home = () => {
                                         <div className="product-card-img-home" style={{ height: 160, overflow: 'hidden', backgroundColor: '#F5F5F0' }}>
                                             {p.productImages && p.productImages.length > 0 ? (
                                                 <img
-                                                    src={`${import.meta.env.VITE_API_URL}${p.productImages[0].imageUrl}`}
+                                                    src={
+                                                        p.productImages[0].imageUrl.startsWith('http')
+                                                            ? p.productImages[0].imageUrl
+                                                            : `${import.meta.env.VITE_API_URL}${p.productImages[0].imageUrl}`
+                                                    }
                                                     alt={p.name}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = '';
-                                                        (e.target as HTMLImageElement).style.display = 'none';
+                                                        const t = e.target as HTMLImageElement;
+                                                        t.onerror = null;
+                                                        t.src = '/no-image.png';
                                                     }}
                                                 />
                                             ) : (
@@ -331,7 +336,11 @@ const Home = () => {
                                         <div className="d-flex align-items-center justify-content-center py-4"
                                              style={{ backgroundColor: '#E8F5E9', minHeight: 90 }}>
                                             {s.logoUrl ? (
-                                                <img src={`${import.meta.env.VITE_API_URL}${s.logoUrl}`} alt={s.businessName}
+                                                <img src={
+                                                    s.logoUrl.startsWith('http')
+                                                        ? s.logoUrl
+                                                        : `${import.meta.env.VITE_API_URL}${s.logoUrl}`
+                                                }
                                                      className="rounded-circle"
                                                      style={{ width: 72, height: 72, objectFit: 'cover' }} />
                                             ) : (
