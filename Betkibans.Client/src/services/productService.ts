@@ -1,7 +1,6 @@
 import api from './api';
 import type { Product } from '../types/Product';
 
-// Define what filters look like
 export interface ProductFilters {
     search?: string;
     categoryIds?: number[];
@@ -13,25 +12,22 @@ export interface ProductFilters {
 }
 
 export const productService = {
-    // Accept 'filters' as an argument here!
     getAllProducts: async (filters?: ProductFilters): Promise<Product[]> => {
-        const params = new URLSearchParams();
-
-        // Convert the object into URL parameters
-        if (filters) {
-            if (filters.search) params.append('search', filters.search);
-            if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
-            if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
-            if (filters.sort) params.append('sort', filters.sort);
-            if (filters.sellerId) params.append('sellerId', filters.sellerId.toString());
-
-            // Handle Arrays (e.g. categoryIds=1&categoryIds=2)
-            filters.categoryIds?.forEach(id => params.append('categoryIds', id.toString()));
-            filters.materialIds?.forEach(id => params.append('materialIds', id.toString()));
-        }
-
-        // Send the parameters to the backend
-        const response = await api.get('/Product', { params });
+        const response = await api.get('/Product', {
+            params: filters,
+            paramsSerializer: (params) => {
+                const searchParams = new URLSearchParams();
+                Object.entries(params).forEach(([key, value]) => {
+                    if (value === undefined || value === null) return;
+                    if (Array.isArray(value)) {
+                        value.forEach(v => searchParams.append(key, v.toString()));
+                    } else {
+                        searchParams.append(key, value.toString());
+                    }
+                });
+                return searchParams.toString();
+            }
+        });
         return response.data;
     },
 
