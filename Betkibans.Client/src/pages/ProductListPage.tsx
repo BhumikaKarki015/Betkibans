@@ -31,7 +31,8 @@ const ProductListPage = () => {
             api.get('/Category').then(res => {
                 const match = res.data.find(
                     (c: { categoryId: number; categoryName: string }) =>
-                        c.categoryName.toLowerCase() === categoryName.toLowerCase()
+                        c.categoryName.toLowerCase().includes(categoryName.toLowerCase()) ||
+                        categoryName.toLowerCase().includes(c.categoryName.toLowerCase())
                 );
                 setFilters({
                     categoryIds: match ? [match.categoryId] : [],
@@ -85,7 +86,7 @@ const ProductListPage = () => {
                         />
                     </div>
                     <div className="offcanvas-body p-0">
-                        <FilterSidebar onFilterChange={handleFilterChange} hideHeader />
+                        <FilterSidebar onFilterChange={handleFilterChange} currentFilters={filters} hideHeader />
                     </div>
                 </div>
             )}
@@ -126,7 +127,7 @@ const ProductListPage = () => {
                     <div className="row">
                         {/* ── Desktop Sidebar ── */}
                         <div className="filter-sidebar-desktop col-lg-3 mb-4">
-                            <FilterSidebar onFilterChange={handleFilterChange} />
+                            <FilterSidebar onFilterChange={handleFilterChange} currentFilters={filters} />
                         </div>
 
                         <div className="col-lg-9">

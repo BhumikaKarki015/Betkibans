@@ -16,9 +16,10 @@ interface FilterSidebarProps {
     onFilterChange: (filters: Partial<ProductFilters>) => void;
     /** When true the card header is hidden (used inside the mobile offcanvas) */
     hideHeader?: boolean;
+    currentFilters?: ProductFilters;
 }
 
-const FilterSidebar = ({ onFilterChange, hideHeader = false }: FilterSidebarProps) => {
+const FilterSidebar = ({ onFilterChange, hideHeader = false, currentFilters }: FilterSidebarProps) => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [materials, setMaterials] = useState<Material[]>([]);
 
@@ -42,6 +43,16 @@ const FilterSidebar = ({ onFilterChange, hideHeader = false }: FilterSidebarProp
         fetchData();
     }, []);
 
+    // Sync sidebar checkboxes when currentFilters changes (e.g. from URL params)
+    useEffect(() => {
+        if (currentFilters?.categoryIds) {
+            setSelectedCategories(currentFilters.categoryIds);
+        }
+        if (currentFilters?.materialIds) {
+            setSelectedMaterials(currentFilters.materialIds);
+        }
+    }, [currentFilters?.categoryIds, currentFilters?.materialIds]);
+
     const handleCategoryToggle = (id: number) => {
         setSelectedCategories(prev =>
             prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
@@ -59,7 +70,9 @@ const FilterSidebar = ({ onFilterChange, hideHeader = false }: FilterSidebarProp
             categoryIds: selectedCategories,
             materialIds: selectedMaterials,
             minPrice: priceRange.min ? parseFloat(priceRange.min) : undefined,
-            maxPrice: priceRange.max ? parseFloat(priceRange.max) : undefined
+            maxPrice: priceRange.max ? parseFloat(priceRange.max) : undefined,
+            search: currentFilters?.search,
+            sellerId: currentFilters?.sellerId,
         });
     };
 
