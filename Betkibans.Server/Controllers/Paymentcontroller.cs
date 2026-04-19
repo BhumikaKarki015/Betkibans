@@ -59,10 +59,12 @@ public class PaymentController : ControllerBase
         var amountInPaisa = (int)(order.TotalAmount * 100);
 
         // Construct the payload as per Khalti ePayment API documentation
+        var frontendUrl = _config["App:FrontendUrl"] ?? "https://betkibans.vercel.app";
+
         var payload = new
         {
-            return_url = "http://localhost:5173/payment/success",
-            website_url = "http://localhost:5173",
+            return_url = $"{frontendUrl}/payment/success",
+            website_url = frontendUrl,
             amount = amountInPaisa,
             purchase_order_id = order.OrderNumber,
             purchase_order_name = $"Betkibans Order #{order.OrderNumber}",
