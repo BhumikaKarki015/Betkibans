@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Azure.Storage.Blobs;
 using Betkibans.Server.Data;
 using Betkibans.Server.Dtos.Repair;
 using Betkibans.Server.Models.Entities;
@@ -19,12 +20,12 @@ namespace Betkibans.Server.Controllers;
 public class RepairController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
-    public RepairController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public RepairController(ApplicationDbContext context, IConfiguration configuration)
     {
         _context = context;
-        _environment = environment;
+        _configuration = configuration;
     }
 
     /* Endpoint for customers to submit a repair request.
@@ -43,14 +44,13 @@ public class RepairController : ControllerBase
         string? imageUrl = null;
         if (image != null)
         {
-            // Generate a unique filename and save the damage evidence image to the server
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-            var filePath = Path.Combine(_environment.WebRootPath, "uploads", "repairs", fileName);
-        
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-            using var stream = new FileStream(filePath, FileMode.Create);
-            await image.CopyToAsync(stream);
-            imageUrl = $"/uploads/repairs/{fileName}";
+            // Upload damage evidence image to Azure Blob Storage
+            var containerClient = GetContainerClient();
+            var fileName = $"repairs/{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
+            var blobClient = containerClient.GetBlobClient(fileName);
+            using var stream = image.OpenReadStream();
+            await blobClient.UploadAsync(stream, overwrite: true);
+            imageUrl = blobClient.Uri.ToString();
         }
 
         var request = new RepairRequest
@@ -247,5 +247,14 @@ public class RepairController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Repair marked as completed!" });
+    }
+
+    // ── Private helper: creates a reusable Blob container client ──
+    private BlobContainerClient GetContainerClient()
+    {
+        var connectionString  = _configuration["AzureStorage:ConnectionString"];
+        var containerName     = _configuration["AzureStorage:ContainerName"];
+        var blobServiceClient = new BlobServiceClient(connectionString);
+        return blobServiceClient.GetBlobContainerClient(containerName);
     }
 }
