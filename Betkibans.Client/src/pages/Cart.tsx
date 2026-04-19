@@ -79,7 +79,12 @@ const Cart = () => {
                                     {/* Image */}
                                     <div className="cart-item-img-col col-3 col-md-2">
                                         <img
-                                            src={`${import.meta.env.VITE_API_URL}${item.product.productImages[0]?.imageUrl}`}
+                                            src={item.product.productImages[0]?.imageUrl
+                                                ? (item.product.productImages[0].imageUrl.startsWith('http')
+                                                    ? item.product.productImages[0].imageUrl
+                                                    : `${import.meta.env.VITE_API_URL}${item.product.productImages[0].imageUrl}`)
+                                                : '/no-image.png'}
+                                            onError={(e) => { const t = e.target as HTMLImageElement; t.onerror = null; t.src = '/no-image.png'; }}
                                             alt={item.product.name}
                                             className="img-fluid rounded"
                                             style={{ aspectRatio: '1', objectFit: 'cover' }}
