@@ -151,6 +151,7 @@ const Register = () => {
                     )}
 
                     <form onSubmit={handleRegister}>
+
                         <div className="mb-2">
                             <label className="form-label fw-bold small mb-1">Full Name *</label>
                             <input type="text" className="form-control p-2" placeholder="Your full name" required
@@ -193,20 +194,6 @@ const Register = () => {
                                       style={{ cursor: 'pointer' }}
                                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                                     <i className={showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="mb-2">
-                            <label className="form-label fw-bold small mb-1">Password *</label>
-                            <div className="input-group">
-                                <input type={showPassword ? 'text' : 'password'}
-                                       className="form-control p-2 border-end-0" placeholder="••••••" required
-                                       value={password} onChange={(e) => setPassword(e.target.value)} />
-                                <span className="input-group-text bg-white border-start-0"
-                                      style={{ cursor: 'pointer' }}
-                                      onClick={() => setShowPassword(!showPassword)}>
-                                    <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
                                 </span>
                             </div>
                         </div>
