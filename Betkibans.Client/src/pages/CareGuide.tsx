@@ -118,8 +118,8 @@ const CareGuide = () => {
                                 our verified artisans can help through our Repair Request service.
                             </p>
                             <Link to="/request-repair"
-                                  className="btn fw-semibold text-white w-100"
-                                  style={{ backgroundColor: green, border: 'none', borderRadius: 8 }}>
+                                  className="btn fw-semibold w-100"
+                                  style={{ backgroundColor: '#1B4332', color: 'white', border: 'none', borderRadius: 8 }}>
                                 Request a Repair
                             </Link>
                             <div className="mt-3 pt-3" style={{ borderTop: '1px dashed #A5D6A7' }}>

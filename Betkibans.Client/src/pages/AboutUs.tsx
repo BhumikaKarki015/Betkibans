@@ -189,11 +189,11 @@ const AboutUs = () => {
                     </p>
                     <div className="d-flex gap-3 justify-content-center flex-wrap">
                         <Link to="/products" className="btn btn-lg px-5 fw-bold rounded-pill"
-                              style={{ backgroundColor: '#fff', color: green, border: 'none' }}>
+                              style={{ backgroundColor: '#fff', color: green, border: '2px solid #fff' }}>
                             Shop Now
                         </Link>
                         <Link to="/register" className="btn btn-lg px-5 fw-medium rounded-pill"
-                              style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.5)' }}>
+                              style={{ backgroundColor: 'transparent', color: 'white', border: '2px solid rgba(255,255,255,0.7)' }}>
                             Join as a Seller
                         </Link>
                     </div>
