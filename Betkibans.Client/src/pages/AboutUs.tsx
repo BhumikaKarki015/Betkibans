@@ -189,8 +189,8 @@ const AboutUs = () => {
                     </p>
                     <div className="d-flex gap-3 justify-content-center flex-wrap">
                         <Link to="/products" className="btn btn-lg px-5 fw-bold rounded-pill"
-                              style={{ backgroundColor: '#fff', color: green, border: '2px solid #fff' }}>
-                            Shop Now
+                              style={{ backgroundColor: '#fff', color: '#2D6A4F !important' as any, border: '2px solid #fff', fontWeight: 800 }}>
+                            <span style={{ color: '#2D6A4F' }}>Shop Now</span>
                         </Link>
                         <Link to="/register" className="btn btn-lg px-5 fw-medium rounded-pill"
                               style={{ backgroundColor: 'transparent', color: 'white', border: '2px solid rgba(255,255,255,0.7)' }}>

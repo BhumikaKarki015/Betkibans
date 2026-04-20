@@ -117,10 +117,9 @@ const CareGuide = () => {
                                 If your furniture has structural damage, broken weaving, or needs expert restoration,
                                 our verified artisans can help through our Repair Request service.
                             </p>
-                            <Link to="/request-repair"
-                                  className="btn fw-semibold w-100"
-                                  style={{ backgroundColor: '#1B4332', color: 'white', border: 'none', borderRadius: 8 }}>
-                                Request a Repair
+                            <Link to="/request-repair" className="btn fw-semibold w-100"
+                                  style={{ backgroundColor: '#fff', border: '2px solid #2D6A4F', borderRadius: 8 }}>
+                                <span style={{ color: '#2D6A4F' }}>Request a Repair</span>
                             </Link>
                             <div className="mt-3 pt-3" style={{ borderTop: '1px dashed #A5D6A7' }}>
                                 <small className="text-muted d-block mb-1">
