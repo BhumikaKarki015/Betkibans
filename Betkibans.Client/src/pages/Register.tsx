@@ -53,7 +53,13 @@ const Register = () => {
 
         } catch (err: any) {
             setIsError(true);
-            setMessage(err.response?.data?.Message || "Registration Failed. Try a stronger password.");
+            setMessage(
+                err.response?.data?.message ||
+                err.response?.data?.Message ||
+                err.response?.data?.errors?.join(', ') ||
+                err.response?.data ||
+                "Registration Failed. Please try again."
+            );
         } finally {
             setIsLoading(false);
         }
