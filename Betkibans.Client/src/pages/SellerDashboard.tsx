@@ -171,7 +171,12 @@ const SellerDashboard = () => {
                                 {isRejected && (
                                     <div>
                                         <span className="badge bg-danger mb-2">Verification Rejected</span>
-                                        <div className="alert alert-danger py-2 small">{profile?.rejectionReason}</div>
+                                        <div className="alert alert-danger py-2 small mb-2">{profile?.rejectionReason}</div>
+                                        <button className="btn btn-sm fw-semibold text-white"
+                                                onClick={() => navigate('/seller/upload-kyc')}
+                                                style={{ backgroundColor: '#C62828', border: 'none', borderRadius: 8, fontSize: 13 }}>
+                                            <i className="bi bi-upload me-2"></i>Re-upload KYC Documents
+                                        </button>
                                     </div>
                                 )}
                                 {pendingVerification && <span className="badge bg-warning text-dark">⏳ Pending Admin Review</span>}
@@ -183,7 +188,7 @@ const SellerDashboard = () => {
                                 <h6 className="fw-bold mb-3">Complete Your Seller Setup</h6>
                                 {[
                                     { step: 1, title: 'Complete Business Profile', desc: 'Add your business name, description, and location', done: !needsProfileCompletion, action: () => navigate('/seller/complete-profile'), actionLabel: 'Complete Profile', disabled: false },
-                                    { step: 2, title: 'Upload KYC Documents', desc: 'Submit citizenship ID and business registration', done: !needsKycUpload && !needsProfileCompletion, action: () => navigate('/seller/upload-kyc'), actionLabel: isRejected ? 'Re-upload Documents' : 'Upload Documents', disabled: needsProfileCompletion },
+                                    { step: 2, title: 'Upload KYC Documents', desc: isRejected ? 'Your documents were rejected. Please re-upload valid documents.' : 'Submit citizenship ID and business registration', done: !needsKycUpload && !needsProfileCompletion && !isRejected, action: () => navigate('/seller/upload-kyc'), actionLabel: isRejected ? 'Re-upload Documents' : 'Upload Documents', disabled: needsProfileCompletion },
                                     { step: 3, title: 'Admin Verification', desc: pendingVerification ? 'Your documents are being reviewed...' : 'Upload documents to begin verification', done: false, action: null, disabled: false },
                                 ].map((s) => (
                                     <div key={s.step} className="d-flex align-items-start mb-3">
