@@ -12,6 +12,8 @@ const ProductListPage = () => {
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
     const [showFilterOffcanvas, setShowFilterOffcanvas] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const PRODUCTS_PER_PAGE = 9;
 
     const [filters, setFilters] = useState<ProductFilters>(() => ({
         categoryIds: [],
@@ -64,9 +66,15 @@ const ProductListPage = () => {
 
     const handleFilterChange = (newFilters: Partial<ProductFilters>) => {
         setFilters(prev => ({ ...prev, ...newFilters }));
-        // Auto-close offcanvas after applying filters on mobile
+        setCurrentPage(1);
         setShowFilterOffcanvas(false);
     };
+
+    const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
+    const paginatedProducts = products.slice(
+        (currentPage - 1) * PRODUCTS_PER_PAGE,
+        currentPage * PRODUCTS_PER_PAGE
+    );
 
     return (
         <>
@@ -168,11 +176,51 @@ const ProductListPage = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="row row-cols-2 row-cols-md-2 row-cols-xl-3 g-2 g-md-3">
-                                    {products.map(product => (
-                                        <ProductCard key={product.productId} product={product} />
-                                    ))}
-                                </div>
+                                <>
+                                    <div className="row row-cols-2 row-cols-md-2 row-cols-xl-3 g-2 g-md-3">
+                                        {paginatedProducts.map(product => (
+                                            <ProductCard key={product.productId} product={product} />
+                                        ))}
+                                    </div>
+
+                                    {totalPages > 1 && (
+                                        <div className="d-flex justify-content-center align-items-center gap-2 mt-4 flex-wrap">
+                                            <button
+                                                className="btn btn-sm fw-medium"
+                                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                disabled={currentPage === 1}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8, fontSize: 13 }}>
+                                                <i className="bi bi-chevron-left me-1"></i>Prev
+                                            </button>
+
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                <button key={page}
+                                                        className="btn btn-sm fw-semibold"
+                                                        onClick={() => setCurrentPage(page)}
+                                                        style={{
+                                                            borderRadius: 8, fontSize: 13, minWidth: 36,
+                                                            backgroundColor: currentPage === page ? '#2D6A4F' : 'transparent',
+                                                            color: currentPage === page ? 'white' : '#2D6A4F',
+                                                            borderColor: '#2D6A4F',
+                                                        }}>
+                                                    {page}
+                                                </button>
+                                            ))}
+
+                                            <button
+                                                className="btn btn-sm fw-medium"
+                                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                                disabled={currentPage === totalPages}
+                                                style={{ borderColor: '#2D6A4F', color: '#2D6A4F', borderRadius: 8, fontSize: 13 }}>
+                                                Next<i className="bi bi-chevron-right ms-1"></i>
+                                            </button>
+
+                                            <small className="text-muted ms-2">
+                                                Page {currentPage} of {totalPages} · {products.length} products
+                                            </small>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
