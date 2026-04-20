@@ -288,7 +288,10 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> CancelOrder(int orderId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
     
         if (order == null) return NotFound("Order not found.");
         
@@ -297,8 +300,16 @@ public class OrderController : ControllerBase
     
         order.Status = "Cancelled";
         order.UpdatedAt = DateTime.UtcNow;
+
+        // Restore stock quantities for each cancelled item
+        foreach (var item in order.OrderItems)
+        {
+            if (item.Product != null)
+                item.Product.StockQuantity += item.Quantity;
+        }
+
         await _context.SaveChangesAsync();
-    
+
         return Ok(new { message = "Order cancelled successfully." });
     }
 }
