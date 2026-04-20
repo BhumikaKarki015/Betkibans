@@ -22,6 +22,7 @@ const CreateProduct = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [categories, setCategories] = useState<Category[]>([]);
     const [materials, setMaterials] = useState<Material[]>([]);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -98,15 +99,23 @@ const CreateProduct = () => {
         setError('');
         setLoading(true);
 
-        if (formData.materialIds.length === 0) { setError('Please select at least one material'); setLoading(false); return; }
-        if (selectedImages.length === 0) { setError('Please upload at least one product image'); setLoading(false); return; }
-
-        // Validate discount price
+        const newErrors: Record<string, string> = {};
+        if (!formData.name.trim()) newErrors.name = 'Product name is required.';
+        if (!formData.description.trim()) newErrors.description = 'Description is required.';
+        if (!formData.categoryId) newErrors.categoryId = 'Please select a category.';
+        if (formData.materialIds.length === 0) newErrors.materialIds = 'Please select at least one material.';
+        if (!formData.price) newErrors.price = 'Price is required.';
+        if (!formData.stockQuantity) newErrors.stockQuantity = 'Stock quantity is required.';
+        if (selectedImages.length === 0) newErrors.images = 'Please upload at least one product image.';
         if (formData.discountPrice && parseFloat(formData.discountPrice) >= parseFloat(formData.price)) {
-            setError('Discount price must be lower than the original price');
+            newErrors.discountPrice = 'Discount price must be lower than the original price.';
+        }
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             setLoading(false);
             return;
         }
+        setErrors({});
 
         try {
             const data = new FormData();
@@ -188,26 +197,29 @@ const CreateProduct = () => {
                         <div className="mb-3">
                             <label className="form-label fw-medium" style={{ fontSize: 13 }}>Product Name *</label>
                             <input type="text" className="form-control" name="name" value={formData.name}
-                                   onChange={handleChange} required placeholder="e.g. Handcrafted Bamboo Rocking Chair"
+                                   onChange={handleChange} placeholder="e.g. Handcrafted Bamboo Rocking Chair"
                                    style={inputStyle} />
+                            {errors.name && <small className="text-danger">{errors.name}</small>}
                         </div>
 
                         <div className="mb-3">
                             <label className="form-label fw-medium" style={{ fontSize: 13 }}>Description *</label>
                             <textarea className="form-control" name="description" value={formData.description}
-                                      onChange={handleChange} rows={4} required style={inputStyle}
+                                      onChange={handleChange} rows={4} style={inputStyle}
                                       placeholder="Describe materials, craftsmanship, unique features and care instructions..." />
                             <small className="text-muted">{formData.description.length} / 2000</small>
+                            {errors.description && <small className="text-danger d-block">{errors.description}</small>}
                         </div>
 
                         <div className="row g-3">
                             <div className="col-md-6">
                                 <label className="form-label fw-medium" style={{ fontSize: 13 }}>Category *</label>
                                 <select className="form-select" name="categoryId" value={formData.categoryId}
-                                        onChange={handleChange} required style={inputStyle}>
+                                        onChange={handleChange} style={inputStyle}>
                                     <option value="">Select category</option>
                                     {categories.map(c => <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>)}
                                 </select>
+                                {errors.categoryId && <small className="text-danger">{errors.categoryId}</small>}
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label fw-medium" style={{ fontSize: 13 }}>Materials *</label>
@@ -223,6 +235,7 @@ const CreateProduct = () => {
                                         </div>
                                     ))}
                                 </div>
+                                {errors.materialIds && <small className="text-danger">{errors.materialIds}</small>}
                             </div>
                         </div>
                     </div>
@@ -240,9 +253,10 @@ const CreateProduct = () => {
                                 <div className="input-group">
                                     <span className="input-group-text" style={{ backgroundColor: '#F0EBE1', borderColor: '#DDD9D2', fontSize: 13 }}>Rs.</span>
                                     <input type="number" className="form-control" name="price" value={formData.price}
-                                           onChange={handleChange} required min="0" style={inputStyle}
+                                           onChange={handleChange} min="0" style={inputStyle}
                                            placeholder="15,000" />
                                 </div>
+                                {errors.price && <small className="text-danger">{errors.price}</small>}
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label fw-medium" style={{ fontSize: 13 }}>
@@ -259,12 +273,14 @@ const CreateProduct = () => {
                                            value={formData.discountPrice} onChange={handleChange} min="0"
                                            style={inputStyle} placeholder="Optional" />
                                 </div>
+                                {errors.discountPrice && <small className="text-danger">{errors.discountPrice}</small>}
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label fw-medium" style={{ fontSize: 13 }}>Stock Quantity *</label>
                                 <input type="number" className="form-control" name="stockQuantity"
-                                       value={formData.stockQuantity} onChange={handleChange} required min="0"
+                                       value={formData.stockQuantity} onChange={handleChange} min="0"
                                        style={inputStyle} placeholder="20" />
+                                {errors.stockQuantity && <small className="text-danger">{errors.stockQuantity}</small>}
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label fw-medium" style={{ fontSize: 13 }}>Crafting Time (Days)</label>
@@ -296,6 +312,7 @@ const CreateProduct = () => {
                             <input type="file" className="d-none" multiple accept="image/png,image/jpeg,image/jpg,image/webp"
                                    onChange={handleImageChange} />
                         </label>
+                        {errors.images && <small className="text-danger">{errors.images}</small>}
 
                         {selectedImages.length > 0 && (
                             <div className="d-flex flex-wrap gap-2 mt-2">
