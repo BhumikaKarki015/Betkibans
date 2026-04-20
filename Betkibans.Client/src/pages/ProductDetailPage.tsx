@@ -72,13 +72,15 @@ const ProductDetailPage = () => {
     const [submittingReview, setSubmittingReview] = useState(false);
     const [reviewHovered, setReviewHovered] = useState(0);
     const [reviewForm, setReviewForm] = useState({ rating: 0, title: '', reviewText: '' });
+    const [hasPurchased, setHasPurchased] = useState(false);
 
     useEffect(() => {
         if (id) {
             fetchProduct(parseInt(id));
             fetchReviews(parseInt(id));
+            if (user?.role === 'Consumer') checkPurchase(parseInt(id));
         }
-    }, [id]);
+    }, [id, user]);
 
     const fetchProduct = async (productId: number) => {
         try {
@@ -102,6 +104,17 @@ const ProductDetailPage = () => {
         try {
             const res = await api.get(`/Review/product/${productId}`);
             setReviews(res.data);
+        } catch { /* silently skip */ }
+    };
+
+    const checkPurchase = async (productId: number) => {
+        try {
+            const res = await api.get('/Order/my-orders');
+            const purchased = res.data.some((order: any) =>
+                order.status !== 'Cancelled' &&
+                order.orderItems.some((item: any) => item.productId === productId)
+            );
+            setHasPurchased(purchased);
         } catch { /* silently skip */ }
     };
 
@@ -586,12 +599,21 @@ const ProductDetailPage = () => {
                                 ) : (
                                     <p className="text-muted mb-0">No reviews yet — be the first!</p>
                                 )}
-                                {user?.role === 'Consumer' && !showReviewForm && (
+
+                                {user?.role === 'Consumer' && !showReviewForm && hasPurchased && (
                                     <button className="btn fw-semibold text-white px-3 px-md-4"
                                             onClick={() => setShowReviewForm(true)}
                                             style={{ backgroundColor: '#2D6A4F', borderColor: '#2D6A4F', borderRadius: 8 }}>
                                         <i className="bi bi-pencil me-2"></i>Write a Review
                                     </button>
+                                )}
+
+                                {user?.role === 'Consumer' && !showReviewForm && !hasPurchased && (
+                                    <div className="rounded-3 p-3"
+                                         style={{ backgroundColor: '#FFF8E1', border: '1px solid #FFE082', fontSize: 13 }}>
+                                        <i className="bi bi-info-circle me-2" style={{ color: '#E65100' }}></i>
+                                        <span style={{ color: '#E65100' }}>Only customers who have purchased this product can write a review.</span>
+                                    </div>
                                 )}
                             </div>
 
