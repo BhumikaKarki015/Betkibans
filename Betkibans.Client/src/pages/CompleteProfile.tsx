@@ -45,7 +45,6 @@ const CompleteProfile = () => {
     }
 
     return (
-        <Layout>
             <div className="container py-5">
                 <div className="row justify-content-center">
                     <div className="col-md-8 col-lg-6">
@@ -221,7 +220,6 @@ const CompleteProfile = () => {
                     </div>
                 </div>
             </div>
-        </Layout>
     );
 };
 
