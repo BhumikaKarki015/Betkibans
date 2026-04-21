@@ -1,7 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    BETKIBANS — MOBILE RESPONSIVENESS OVERRIDES
    Targets: xs (< 576px) and sm (576–767px) viewports
-   All rules are additive — desktop layout is untouched.
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── Global helpers ────────────────────────────────────────── */
@@ -416,10 +415,7 @@
 
 /* ─── AUTH FORMS (Login, Register, ForgotPassword, Reset, Change) ─ */
 @media (max-width: 575px) {
-    /* Fix hardcoded width panels inside auth columns.
-       Login uses 450px, Register uses 500px — both overflow on phones.
-       This CSS override works because the element has no Bootstrap
-       col class that would win specificity. */
+   
     .auth-form-panel {
         max-width: 100% !important;
         padding: 1.25rem !important;
@@ -436,8 +432,7 @@
 }
 
 /* ─── REGISTER PAGE ──────────────────────────────────────────── */
-/* Register has same split layout as Login — handled by auth styles above.
-   Additional: the name field row col-6 becomes tight on xs. */
+
 @media (max-width: 399px) {
     .register-name-row .col-6 {
         width: 100% !important;
@@ -487,8 +482,7 @@
 }
 
 /* ─── ADMIN PANEL ────────────────────────────────────────────── */
-/* The admin panel has a 240px fixed sidebar + main content flex row.
-   On mobile we collapse the sidebar to a horizontal top bar. */
+
 @media (max-width: 767px) {
     /* Outer flex wrapper */
     .admin-layout-wrapper,
@@ -542,8 +536,6 @@
 }
 
 /* ─── SELLER SETTINGS (sidebar tabs + content cols) ─────────── */
-/* Bootstrap col-md-3 / col-md-9 already stacks below 768px.
-   Just tighten the stacked sidebar appearance. */
 @media (max-width: 767px) {
     /* Settings sidebar tabs become a horizontal scroll strip */
     .col-md-3 .rounded-3 {
@@ -566,8 +558,6 @@
 
 /* ─── SELLER DASHBOARD ───────────────────────────────────────── */
 @media (max-width: 767px) {
-    /* Stat cards already col-6 col-md-3 — fine.
-       The setup guide section col-md-4 / col-md-8 stacks at 768. */
     .table-responsive {
         font-size: 12px !important;
     }
@@ -585,8 +575,6 @@
 
 /* ─── SELLER ORDERS ──────────────────────────────────────────── */
 @media (max-width: 767px) {
-    /* Order item expand form: col-md-5 / col-md-4 / col-md-3 stacks */
-    /* Shipping update form items stack natively — just add padding fix */
     .seller-order-form .col-md-5,
     .seller-order-form .col-md-4,
     .seller-order-form .col-md-3 {
@@ -596,9 +584,6 @@
 
 /* ─── SELLER ANALYTICS ───────────────────────────────────────── */
 @media (max-width: 767px) {
-    /* Stat row: col-6 col-md-3 — already 2-col on mobile, fine.
-       Chart col-lg-8 / col-lg-4 stacks at 992. On 768-991 they're full width.
-       No extra fix needed. */
 }
 
 /* ─── SELLER REPAIR DASHBOARD ────────────────────────────────── */
@@ -657,9 +642,7 @@
 }
 
 /* ─── USER PROFILE ───────────────────────────────────────────── */
-/* col-md-6 form fields already stack — fine.
-   Quick link grid: col-6 col-md-4 — two-col on mobile, fine.
-   Stat row: col-6 col-md-3 — two-col on mobile, fine. */
+
 @media (max-width: 575px) {
     /* Avatar + name row — tighten spacing */
     .user-avatar-row {
@@ -674,7 +657,7 @@
 }
 
 /* ─── ADDRESS MANAGEMENT ─────────────────────────────────────── */
-/* col-md-6 form fields already stack below 768. Just improve spacing. */
+
 @media (max-width: 575px) {
     .address-card-actions {
         flex-direction: column !important;
@@ -687,8 +670,7 @@
 }
 
 /* ─── WISHLIST ───────────────────────────────────────────────── */
-/* col-12 col-md-6 — fine. The internal d-flex gap-3 with 100px image
-   can get tight on 320px phones. */
+
 @media (max-width: 399px) {
     .wishlist-item-image {
         width: 72px !important;
@@ -705,9 +687,7 @@
 
 /* ─── FOOTER (Consumer) ──────────────────────────────────────── */
 @media (max-width: 767px) {
-    /* The main footer already has col-6 on many items.
-       Newsletter col-lg-2 becomes full-width at < lg — fine.
-       Just ensure the bottom copyright row wraps properly. */
+   
     footer .d-flex.justify-content-between {
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -723,10 +703,10 @@
    They are already mobile-safe. No additional CSS needed. */
 
 /* ─── SIMPLE FORM PAGES (ForgotPw, ResetPw, ChangePw, etc.) ─── */
-/* All use centered containers with maxWidth — already responsive.
-   Just ensure touch target sizes. */
+
+
 @media (max-width: 575px) {
-    .forgot-pw-card,
+    .forgot-pw-card
     .reset-pw-card,
     .change-pw-card {
         margin: 0 8px;
@@ -735,8 +715,7 @@
 }
 
 /* ─── CREATE PRODUCT / EDIT PRODUCT ──────────────────────────── */
-/* Large seller forms — col-md-6 fields stack fine.
-   Image upload preview area may overflow. */
+
 @media (max-width: 575px) {
     .product-form-image-preview {
         flex-wrap: wrap !important;
@@ -769,8 +748,7 @@
 }
 
 /* ─── PRODUCT CARD (list page grid) ─────────────────────────── */
-/* ProductCard uses a 75% padding-top aspect ratio trick and Bootstrap
-   col — already works on mobile. Text-truncation keeps it tidy. */
+
 @media (max-width: 399px) {
     .card .card-title {
         font-size: 0.85rem !important;

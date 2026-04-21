@@ -4,13 +4,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import { useToast } from '../contexts/ToastContext';
 
 interface Category { categoryId: number; categoryName: string; }
 interface Material { materialId: number; materialName: string; }
 
 const EditProduct = () => {
-    const { showToast } = useToast();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const { id } = useParams();

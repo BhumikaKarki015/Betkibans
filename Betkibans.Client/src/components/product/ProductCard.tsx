@@ -7,6 +7,9 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
 
+    // Returns the correct image URL for the product.
+    // If the stored path is already absolute, use it directly.
+    // Otherwise, prepend the backend API base URL.
     const getImageUrl = () => {
         if (product.productImages && product.productImages.length > 0) {
             const imageUrl = product.productImages[0].imageUrl;
@@ -35,6 +38,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
                                 t.src = '/no-image.png';
                             }}
                         />
+
+                        {/* Show stock badge when the product is unavailable */}
                         {product.stockQuantity === 0 && (
                             <div className="position-absolute top-0 end-0 m-2">
                                 <span className="badge bg-danger">Out of Stock</span>
@@ -43,7 +48,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     </div>
                 </Link>
 
-                {/* Card Body */}
+                {/* Product information section */}
                 <div className="card-body d-flex flex-column">
                     <div className="mb-2">
                         <span className="badge bg-light text-dark border me-1">
@@ -57,6 +62,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                         </Link>
                     </h5>
 
+                    {/* Truncate long descriptions to keep card layout consistent */}
                     <p className="card-text text-muted small mb-3 flex-grow-1">
                         {product.description.length > 60
                             ? `${product.description.substring(0, 60)}...`

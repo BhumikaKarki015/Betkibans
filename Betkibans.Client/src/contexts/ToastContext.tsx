@@ -12,9 +12,11 @@ interface ToastContextType {
     showToast: (message: string, type?: ToastType) => void;
 }
 
+// Creates a global toast context for displaying notification messages
 const ToastContext = createContext<ToastContextType | null>(null);
 
 export const useToast = () => {
+    // Custom hook to safely access the toast context
     const ctx = useContext(ToastContext);
     if (!ctx) throw new Error('useToast must be used inside ToastProvider');
     return ctx;
@@ -35,13 +37,17 @@ const COLORS: Record<ToastType, { bg: string; border: string; text: string }> = 
 };
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
+    // Stores the list of active toast notifications
     const [toasts, setToasts] = useState<Toast[]>([]);
     let counter = 0;
 
     const showToast = useCallback((message: string, type: ToastType = 'info') => {
+        // Generates a unique id for each toast and adds it to the list
         const id = ++counter + Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
+        // Automatically removes the toast after a short delay
         setTimeout(() => {
+            // Removes a toast manually when the close button is clicked
             setToasts(prev => prev.filter(t => t.id !== id));
         }, 3500);
     }, []);
@@ -52,7 +58,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         <ToastContext.Provider value={{ showToast }}>
             {children}
 
-            {/* Toast Container */}
+            {/* Toast notification container fixed at the top-right corner */}
             <div
                 style={{
                     position: 'fixed',

@@ -37,8 +37,6 @@ interface Product {
 }
 
 // ─── Stat Card ─────────────────────────────────────────────────────
-// KEY FIX: value font uses clamp() so it scales down on narrow col-6 cards.
-// Icon shrinks on mobile via inline responsive size.
 const StatCard = ({ icon, label, value, sub, color }: {
     icon: string; label: string; value: string; sub?: string; color: string;
 }) => (
@@ -124,7 +122,6 @@ const SellerDashboard = () => {
 
     return (
         <div style={{ backgroundColor: '#F5F2EC', minHeight: '100vh' }}>
-            {/* KEY FIX: px-4 → px-2 px-md-4 so cards have enough room on mobile */}
             <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ maxWidth: 1200 }}>
 
                 {/* Page Header */}

@@ -18,15 +18,20 @@ interface AuthContextType {
     isLoading: boolean;
 }
 
+// Creates a global authentication context to share user and token data
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // Stores the currently logged-in user information
     const [user, setUser] = useState<User | null>(null);
+    // Stores the authentication token for protected API access
     const [token, setToken] = useState<string | null>(null);
+    // Tracks whether authentication data is still being loaded from session storage
     const [isLoading, setIsLoading] = useState(true); // ← INSIDE component
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Restore authentication state after page refresh using session storage
         const savedToken = sessionStorage.getItem('token');
         const savedUser = sessionStorage.getItem('user');
 
@@ -35,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setToken(savedToken);
                 setUser(JSON.parse(savedUser));
             } catch {
+                // Clear invalid session data if parsing fails
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('user');
             }
@@ -43,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const login = (newToken: string, userData: User) => {
+        // Save authentication data in state and session storage after login
         setToken(newToken);
         setUser(userData);
         sessionStorage.setItem('token', newToken);
@@ -50,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/');
     };
 
+    // Clear authentication state and remove session data on logout
     const logout = () => {
         setToken(null);
         setUser(null);
@@ -58,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/login');
     };
 
+    // Converts token presence into a boolean authentication check
     const isAuthenticated = !!token;
 
     return (

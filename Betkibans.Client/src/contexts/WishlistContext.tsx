@@ -10,6 +10,7 @@ interface WishlistContextType {
     refreshWishlist: () => Promise<void>;
 }
 
+// Creates a global wishlist context to manage wishlist state across the application
 const WishlistContext = createContext<WishlistContextType>({
     wishlistIds: [],
     isWishlisted: () => false,
@@ -20,8 +21,10 @@ const WishlistContext = createContext<WishlistContextType>({
 
 export const WishlistProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
+    // Stores only product ids to make wishlist checks simple and efficient
     const [wishlistIds, setWishlistIds] = useState<number[]>([]);
 
+    // Load wishlist data when a user logs in, otherwise clear local wishlist state
     useEffect(() => {
         if (user) refreshWishlist();
         else setWishlistIds([]);
@@ -36,6 +39,7 @@ export const WishlistProvider = ({ children }: { children: React.ReactNode }) =>
         }
     };
 
+    // Checks whether a specific product already exists in the wishlist
     const isWishlisted = (productId: number) => wishlistIds.includes(productId);
 
     const toggleWishlist = async (productId: number) => {

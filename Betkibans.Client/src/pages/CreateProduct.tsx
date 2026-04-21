@@ -27,6 +27,7 @@ const CreateProduct = () => {
     const [materials, setMaterials] = useState<Material[]>([]);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
+    // Stores all form input values for product creation
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -47,7 +48,9 @@ const CreateProduct = () => {
     });
 
     useEffect(() => {
+        // Restrict access to verified sellers only
         if (!user || user.role !== 'Seller') { navigate('/login'); return; }
+        // Load category and material options for the form
         fetchCategoriesAndMaterials();
     }, [user, navigate]);
 
@@ -65,12 +68,14 @@ const CreateProduct = () => {
     };
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        // Updates form fields dynamically using input name attributes
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const filesArray = Array.from(e.target.files);
+            // Accept only valid image files and ignore unsupported file types
             const validImages = filesArray.filter(file => file.type.startsWith('image/'));
             if (validImages.length !== filesArray.length) showToast('Some files were not images and were ignored.', 'warning');
             setSelectedImages(prev => [...prev, ...validImages]);
@@ -78,6 +83,7 @@ const CreateProduct = () => {
     };
 
     const removeImage = (indexToRemove: number) => {
+        // Removes a selected image from the preview list before submission
         setSelectedImages(prev => prev.filter((_, i) => i !== indexToRemove));
     };
 
@@ -99,6 +105,7 @@ const CreateProduct = () => {
         setError('');
         setLoading(true);
 
+        // Performs client-side validation before sending data to the backend
         const newErrors: Record<string, string> = {};
         if (!formData.name.trim()) newErrors.name = 'Product name is required.';
         if (!formData.description.trim()) newErrors.description = 'Description is required.';
@@ -118,6 +125,7 @@ const CreateProduct = () => {
         setErrors({});
 
         try {
+            // Build multipart form data to support text fields and image uploads
             const data = new FormData();
             data.append('Name', formData.name);
             data.append('Description', formData.description);
@@ -153,6 +161,7 @@ const CreateProduct = () => {
         }
     };
 
+    // Shared inline style objects used to keep the form design consistent
     const inputStyle = { backgroundColor: '#FDFAF5', borderColor: '#DDD9D2', fontSize: 14 };
     const cardStyle = { backgroundColor: '#FDFAF5', boxShadow: '0 1px 6px rgba(0,0,0,0.08)', border: 'none', borderRadius: 12 };
     const sectionNumStyle = { width: 28, height: 28, backgroundColor: '#2D6A4F', color: 'white', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 };

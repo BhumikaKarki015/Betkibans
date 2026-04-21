@@ -25,6 +25,7 @@ const Checkout = () => {
     const { cartItems, cartTotal, refreshCart } = useCart();
     const { showToast } = useToast();
 
+    // Reads coupon-related values passed from the cart page through navigation state
     const discountAmount = (location.state as any)?.discountAmount ?? 0;
     const couponCode = (location.state as any)?.couponCode ?? null;
 
@@ -32,23 +33,28 @@ const Checkout = () => {
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
 
+    // Stores saved delivery addresses and tracks whether the user wants to use a new address
     const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
     const [useNewAddress, setUseNewAddress] = useState(false);
 
+    // Stores new address form values for checkout
     const [formData, setFormData] = useState({
         fullName: '', shippingAddress: '', city: 'Kathmandu',
         province: 'Bagmati', postalCode: '', phone: '', notes: '',
     });
 
+    // Loads saved addresses when the checkout page is first opened
     useEffect(() => { fetchSavedAddresses(); }, []);
 
     const fetchSavedAddresses = async () => {
         try {
+            // Fetches saved addresses and automatically selects the default one
             const res = await api.get('/Address');
             setSavedAddresses(res.data);
             const defaultAddr = res.data.find((a: Address) => a.isDefault);
             if (defaultAddr) setSelectedAddressId(defaultAddr.addressId);
+            // Switch to manual address form if the user has no saved addresses
             if (res.data.length === 0) setUseNewAddress(true);
         } catch { setUseNewAddress(true); }
     };
@@ -57,6 +63,7 @@ const Checkout = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // Order price calculations used in the summary section
     const shippingCost = 150;
     const taxRate = 0.13;
     const discountedSubtotal = Math.max(cartTotal - discountAmount, 0);
@@ -65,6 +72,8 @@ const Checkout = () => {
 
     const buildOrderPayload = () => {
         const selectedAddr = savedAddresses.find(a => a.addressId === selectedAddressId);
+        // Builds the order request payload based on whether the user selected
+        // a saved address or entered a new one manually
         return useNewAddress ? {
             fullName: formData.fullName,
             shippingAddress: `${formData.shippingAddress}, ${formData.province} Province`,
