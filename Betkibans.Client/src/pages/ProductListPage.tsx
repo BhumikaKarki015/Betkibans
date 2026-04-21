@@ -53,7 +53,36 @@ const ProductListPage = () => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                const data = await productService.getAllProducts(filters);
+                const search = searchParams.get('search');
+                const categoryName = searchParams.get('category');
+                const sellerId = searchParams.get('sellerId');
+
+                let resolvedFilters: ProductFilters = {
+                    categoryIds: [],
+                    materialIds: [],
+                    sort: filters.sort, // preserve current sort
+                };
+
+                if (search) {
+                    resolvedFilters.search = search;
+                } else if (categoryName) {
+                    try {
+                        const res = await api.get('/Category');
+                        const match = res.data.find(
+                            (c: { categoryId: number; categoryName: string }) =>
+                                c.categoryName.toLowerCase().includes(categoryName.toLowerCase()) ||
+                                categoryName.toLowerCase().includes(c.categoryName.toLowerCase())
+                        );
+                        resolvedFilters.categoryIds = match ? [match.categoryId] : [];
+                    } catch {
+                        resolvedFilters.categoryIds = [];
+                    }
+                } else if (sellerId) {
+                    resolvedFilters.sellerId = Number(sellerId);
+                }
+
+                setFilters(resolvedFilters);
+                const data = await productService.getAllProducts(resolvedFilters);
                 setProducts(data);
             } catch (error) {
                 console.error('Failed to fetch products', error);
@@ -61,13 +90,21 @@ const ProductListPage = () => {
                 setLoading(false);
             }
         };
-        fetchProducts();
-    }, [filters]);
 
+        fetchProducts();
+    }, [searchParams]);
+
+    // Only runs when user manually changes filters via sidebar/sort
+// NOT on initial load (searchParams effect handles that)
     const handleFilterChange = (newFilters: Partial<ProductFilters>) => {
-        setFilters(prev => ({ ...prev, ...newFilters }));
+        const updated = { ...filters, ...newFilters };
+        setFilters(updated);
         setCurrentPage(1);
         setShowFilterOffcanvas(false);
+
+        productService.getAllProducts(updated)
+            .then(data => setProducts(data))
+            .catch(err => console.error(err));
     };
 
     const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
