@@ -122,11 +122,16 @@ const Wishlist = () => {
                                                  style={{ width: 100, height: 100, backgroundColor: '#F0EBE1', cursor: 'pointer' }}
                                                  onClick={() => navigate(`/product/${item.productId}`)}>
                                                 <img
-                                                    src={item.productImage
-                                                        ? `${import.meta.env.VITE_API_URL}${item.productImage}`
-                                                        : 'https://via.placeholder.com/100?text=Item'}
+                                                    src={
+                                                        item.productImage
+                                                            ? item.productImage.startsWith('http')
+                                                                ? item.productImage
+                                                                : `${import.meta.env.VITE_API_URL?.replace(/\/$/, '')}/${item.productImage.replace(/^\//, '')}`
+                                                            : 'https://via.placeholder.com/100?text=Item'
+                                                    }
                                                     alt={item.productName}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
                                             </div>
 
                                             {/* Info */}
