@@ -111,4 +111,40 @@ public class ReviewController : ControllerBase
 
         return Ok(new { message = "Review submitted successfully!", reviewId = review.ReviewId });
     }
+    
+    /* Retrieves all reviews written by the currently authenticated user.
+   Includes product name and image for display on the My Reviews page.
+ */
+// GET: api/Review/my-reviews
+    [HttpGet("my-reviews")]
+    [Authorize]
+    public async Task<IActionResult> GetMyReviews()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null) return Unauthorized();
+
+        var reviews = await _context.Reviews
+            .Include(r => r.Product)
+            .ThenInclude(p => p.ProductImages)
+            .Where(r => r.UserId == userId)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new
+            {
+                reviewId = r.ReviewId,
+                productId = r.ProductId,
+                productName = r.Product.Name,
+                productImageUrl = r.Product.ProductImages
+                    .Where(i => i.IsPrimary)
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault() ?? r.Product.ProductImages
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault(),
+                rating = r.Rating,
+                comment = r.ReviewText,
+                createdAt = r.CreatedAt
+            })
+            .ToListAsync();
+
+        return Ok(reviews);
+    }
 }
