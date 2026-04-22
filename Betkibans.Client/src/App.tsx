@@ -32,6 +32,7 @@ import ContactUs from './pages/ContactUs';
 import Support from './pages/Support';
 import SellerPolicies from './pages/SellerPolicies';
 import ResetPassword from './pages/ResetPassword';
+import MyReviews from './pages/MyReviews';
 
 // Seller Pages
 import SellerDashboard from './pages/SellerDashboard';
@@ -102,6 +103,7 @@ function App() {
                                                                                     <Route path="/seller/products" element={<SellerProducts />} />
                                                                                     <Route path="/seller/edit-product/:id" element={<EditProduct />} />
                                                                                     <Route path="/seller/repairs" element={<SellerRepairDashboard />} />
+                                                                                    <Route path="/my-reviews" element={<MyReviews />} />
                                                                                     <Route path="/seller/orders" element={<SellerOrders />} />
                                                                                     <Route path="/seller/analytics" element={<SellerAnalytics />} />
                                                                                     <Route path="/about" element={<AboutUs />} />

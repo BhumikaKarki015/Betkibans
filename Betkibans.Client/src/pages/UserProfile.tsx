@@ -208,8 +208,8 @@ const UserProfile = () => {
                         {[
                             { icon: 'bi-bag-check', label: 'My Orders', path: '/orders' },
                             { icon: 'bi-geo-alt', label: 'Addresses', path: '/addresses' },
-                            { icon: 'bi-star', label: 'My Reviews', path: '/reviews' },
-                            { icon: 'bi-tools', label: 'Repair Requests', path: '/repairs' },
+                            { icon: 'bi-star', label: 'My Reviews', path: '/my-reviews' },
+                            { icon: 'bi-tools', label: 'Repair Requests', path: '/my-repairs' },
                             { icon: 'bi-heart', label: 'Wishlist', path: '/wishlist' },
                             { icon: 'bi-lock', label: 'Change Password', path: '/change-password' },
                         ].map(item => (
