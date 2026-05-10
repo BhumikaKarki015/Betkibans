@@ -31,7 +31,9 @@ public class ProductController : ControllerBase
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] string? sort,
-        [FromQuery] int? sellerId
+        [FromQuery] int? sellerId,
+        [FromQuery] int pageSize = 20,   // ← ADDED
+        [FromQuery] int page = 1         // ← ADDED
     )
     {
         var query = _context.Products
@@ -63,12 +65,19 @@ public class ProductController : ControllerBase
 
         switch (sort)
         {
-            case "price_asc": query = query.OrderBy(p => p.Price); break;
+            case "price_asc":  query = query.OrderBy(p => p.Price); break;
             case "price_desc": query = query.OrderByDescending(p => p.Price); break;
-            default: query = query.OrderByDescending(p => p.CreatedAt); break;
+            default:           query = query.OrderByDescending(p => p.CreatedAt); break;
         }
 
-        return Ok(await query.ToListAsync());
+        // ── PAGINATION ── (only change from original)
+        var clampedPageSize = Math.Min(pageSize, 100); // safety cap — never return more than 100
+        var result = await query
+            .Skip((page - 1) * clampedPageSize)
+            .Take(clampedPageSize)
+            .ToListAsync();
+
+        return Ok(result);
     }
     
     // GET: api/Product/{id}
@@ -179,7 +188,6 @@ public class ProductController : ControllerBase
             .FirstOrDefaultAsync(p => p.ProductId == id && p.SellerId == seller.SellerId);
         if (product == null) return NotFound("Product not found or access denied.");
 
-        // Update fields
         product.Name = dto.Name;
         product.Description = dto.Description;
         product.Price = dto.Price;
@@ -198,7 +206,6 @@ public class ProductController : ControllerBase
         product.Weight = dto.Weight;
         product.UpdatedAt = DateTime.UtcNow;
 
-        // Update materials
         if (dto.MaterialIds != null)
         {
             _context.ProductMaterials.RemoveRange(product.ProductMaterials);
@@ -214,7 +221,6 @@ public class ProductController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        // Upload new images if provided
         if (dto.Images != null && dto.Images.Count > 0)
         {
             await UploadImagesToBlob(product.ProductId, dto.Images);
