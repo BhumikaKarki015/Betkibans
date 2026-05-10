@@ -37,6 +37,7 @@ public class ProductController : ControllerBase
     )
     {
         var query = _context.Products
+            .AsNoTracking() 
             .Include(p => p.Category)
             .Include(p => p.ProductImages)
             .Include(p => p.ProductMaterials)
